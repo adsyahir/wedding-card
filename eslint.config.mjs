@@ -17,6 +17,25 @@ const compat = new FlatCompat({
 
 const eslintConfig = defineConfig([
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      // Guest-submitted names and ucapan are rendered on the public page.
+      // React escapes interpolated text by default; dangerouslySetInnerHTML
+      // bypasses that and would turn a submitted wish into stored XSS.
+      "react/no-danger": "error",
+      // Drizzle parameterises everything except `sql.raw`, which splices a
+      // string straight into the statement. Never needed here.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name='sql'][callee.property.name='raw']",
+          message:
+            "sql.raw() bypasses parameterisation. Use Drizzle's query builder or the sql`` template.",
+        },
+      ],
+    },
+  },
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",

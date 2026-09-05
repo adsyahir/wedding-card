@@ -91,6 +91,7 @@ export const rsvpSchema = z.object({
   children: z.number().int().min(MIN_CHILDREN).max(MAX_CHILDREN),
   message: z
     .string()
+    .trim()
     .max(MAX_RSVP_MESSAGE_LEN, `Message must be at most ${MAX_RSVP_MESSAGE_LEN} characters`)
     .refine((v) => !hasDisallowedControlChars(v), "Message contains invalid characters")
     .optional(),
