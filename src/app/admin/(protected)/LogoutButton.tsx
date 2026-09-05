@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
+import { csrfHeaders } from "@/lib/csrf-client";
+
 /**
- * POSTs to `/api/admin/logout` with the CSRF header the login form stashed
- * in `sessionStorage`. The server route additionally requires the request
- * be same-origin (see `requireAdminApi` in `src/lib/auth.ts`) — the header
- * alone is not sufficient, both checks must pass.
+ * POSTs to `/api/admin/logout` with the CSRF header read from the
+ * `__Host-wc_csrf` cookie (see `src/lib/csrf-client.ts`). The server route
+ * additionally requires the request be same-origin (see `requireAdminApi`
+ * in `src/lib/auth.ts`) — the header alone is not sufficient, both checks
+ * must pass.
  */
 export function LogoutButton() {
   const [pending, setPending] = useState(false);
@@ -14,24 +17,10 @@ export function LogoutButton() {
   async function handleClick() {
     setPending(true);
     try {
-      let csrfToken = "";
-      try {
-        csrfToken = sessionStorage.getItem("wc_csrf") ?? "";
-      } catch {
-        // sessionStorage unavailable — the request below will 403 and the
-        // user is told to log in again, never a silent failure.
-      }
-
       await fetch("/api/admin/logout", {
         method: "POST",
-        headers: { "X-CSRF-Token": csrfToken },
+        headers: csrfHeaders(),
       });
-
-      try {
-        sessionStorage.removeItem("wc_csrf");
-      } catch {
-        // Best-effort cleanup only.
-      }
     } finally {
       window.location.href = "/admin/login";
     }

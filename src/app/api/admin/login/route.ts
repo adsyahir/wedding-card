@@ -9,7 +9,13 @@ import { logAudit } from "@/lib/auth";
 import { verifyDummyPassword, verifyPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestVisitorHash, isSameOrigin } from "@/lib/request";
-import { createSession, SESSION_COOKIE_NAME, sessionCookieOptions } from "@/lib/session";
+import {
+  createSession,
+  CSRF_COOKIE_NAME,
+  csrfCookieOptions,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from "@/lib/session";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
 // `export const runtime = "nodejs"`. Force dynamic: a login attempt must
@@ -129,6 +135,12 @@ export async function POST(request: Request): Promise<Response> {
 
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+    // Companion, JS-readable cookie carrying the raw CSRF token — see
+    // `csrfCookieOptions` in `src/lib/session.ts` for why this is safe.
+    // The response body also still carries it (harmless, kept for
+    // backwards-compatible callers), but the cookie is the source of truth
+    // `src/lib/csrf-client.ts` reads from, which works in any tab.
+    cookieStore.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions());
 
     await logAudit({ adminUserId: user.id, action: "login" });
 

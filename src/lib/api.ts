@@ -19,6 +19,7 @@ export const API_ERRORS = {
   invalidInput: "Sila semak semula maklumat yang dimasukkan.",
   tooManyRequests: "Terlalu banyak percubaan. Sila cuba sebentar lagi.",
   serverError: "Maaf, berlaku ralat. Sila cuba sebentar lagi.",
+  notFound: "Rekod tidak dijumpai.",
 } as const;
 
 const NO_STORE_HEADERS = {

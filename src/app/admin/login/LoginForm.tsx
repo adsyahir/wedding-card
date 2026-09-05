@@ -6,11 +6,11 @@ import { useState } from "react";
  * Client component: a plain controlled form that POSTs to
  * `/api/admin/login` and shows one generic error message on failure.
  *
- * The response's `csrfToken` (present only on success) is stashed in
- * `sessionStorage` so subsequent same-tab admin mutations (e.g. the logout
- * button on the placeholder admin home page) can attach it as the
- * `X-CSRF-Token` header. It is never persisted anywhere more durable than
- * that, and is cleared on logout.
+ * On success, the server has already set the `__Host-wc_csrf` cookie (see
+ * `src/lib/session.ts` / `src/lib/csrf-client.ts`) — that cookie, not
+ * anything stashed here, is what later admin mutations read the CSRF token
+ * from. Using a cookie instead of `sessionStorage` is what makes the token
+ * available in any tab, not just the one that was open at login.
  */
 export function LoginForm() {
   const [username, setUsername] = useState("");
@@ -36,13 +36,6 @@ export function LoginForm() {
         | null;
 
       if (response.ok && data?.ok) {
-        try {
-          sessionStorage.setItem("wc_csrf", data.csrfToken);
-        } catch {
-          // sessionStorage can throw in some locked-down browser contexts;
-          // the CSRF token simply won't be pre-filled for later mutations
-          // in that case, which is a degraded UX, never a security issue.
-        }
         window.location.href = "/admin";
         return;
       }

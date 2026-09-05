@@ -2,7 +2,13 @@ import { cookies } from "next/headers";
 
 import { API_ERRORS, jsonError, jsonOk } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
-import { revokeSession, SESSION_COOKIE_NAME, sessionCookieOptions } from "@/lib/session";
+import {
+  CSRF_COOKIE_NAME,
+  csrfCookieOptions,
+  revokeSession,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +36,7 @@ export async function POST(request: Request): Promise<Response> {
 
   await revokeSession(token);
   cookieStore.set(SESSION_COOKIE_NAME, "", sessionCookieOptions(0));
+  cookieStore.set(CSRF_COOKIE_NAME, "", csrfCookieOptions(0));
 
   await logAudit({ adminUserId: guard.session.adminUserId, action: "logout" });
 

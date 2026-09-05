@@ -174,5 +174,39 @@ export function sessionCookieOptions(maxAgeSeconds = IDLE_WINDOW_MS / 1000) {
   };
 }
 
+/**
+ * The `__Host-` companion cookie carrying the RAW csrf token, set alongside
+ * the (httpOnly) session cookie at login.
+ *
+ * This is the standard double-submit-cookie pattern, and it is what makes
+ * the CSRF token available to JavaScript in ANY tab of the browser — not
+ * just the tab that happened to be open at login time, which is the bug
+ * `sessionStorage` (per-tab) had. It's safe to make this cookie readable by
+ * JS (`httpOnly: false`):
+ *
+ * - Same-origin policy stops another origin's script from reading it.
+ * - Possessing the raw token alone proves nothing: `requireAdminApi`
+ *   (`src/lib/auth.ts`) hashes whatever arrives in the `X-CSRF-Token` header
+ *   and compares it against the session's stored `csrfHash` — a request
+ *   still needs the (httpOnly) session cookie to have a session to check
+ *   against in the first place.
+ * - A cross-site attacker can trigger a cookie-bearing request but cannot
+ *   read this cookie's value (that's the entire CSRF threat model), so they
+ *   can never produce a matching `X-CSRF-Token` header.
+ *
+ * Uses the same `maxAge` as the session cookie so the two expire together.
+ */
+export const CSRF_COOKIE_NAME = "__Host-wc_csrf";
+
+export function csrfCookieOptions(maxAgeSeconds = IDLE_WINDOW_MS / 1000) {
+  return {
+    httpOnly: false,
+    secure: true,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: maxAgeSeconds,
+  };
+}
+
 export const IDLE_WINDOW_SECONDS = IDLE_WINDOW_MS / 1000;
 export const ABSOLUTE_WINDOW_SECONDS = ABSOLUTE_WINDOW_MS / 1000;

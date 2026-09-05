@@ -1,27 +1,80 @@
-import { getAdminSession } from "@/lib/auth";
+import Link from "next/link";
 
-import { LogoutButton } from "./LogoutButton";
+import { getDashboardStats, listPendingWishesPreview } from "@/db/queries/admin";
+import { requireAdmin } from "@/lib/auth";
+
+import { formatDateTime } from "./_components/format";
+import { StatCard } from "./_components/StatCard";
+import { WishActions } from "./_components/WishActions";
+
+// Never statically optimized/cached — every request must actually run the
+// guard below and fetch fresh stats.
+export const dynamic = "force-dynamic";
 
 /**
- * Placeholder admin home. Proves the guard works — reaching this page at
- * all means `(protected)/layout.tsx`'s `requireAdmin()` call succeeded.
- * Phase 5 replaces this body with the real dashboard (RSVP list, ucapan
- * moderation, stats).
+ * The admin dashboard's overview page: aggregate stats plus a short queue of
+ * pending ucapan that can be approved/rejected right here without leaving
+ * the page.
  */
 export default async function AdminHomePage() {
-  // Already validated by the layout; re-reading here is just to display
-  // the signed-in id, not a second security check.
-  const session = await getAdminSession();
+  // Defense in depth: the `(protected)` layout already calls `requireAdmin()`,
+  // but every page under it calls it again independently — never rely on the
+  // layout's call alone.
+  await requireAdmin();
+
+  const [stats, pendingPreview] = await Promise.all([
+    getDashboardStats(),
+    listPendingWishesPreview(5),
+  ]);
 
   return (
-    <main className="min-h-screen bg-cream px-6 py-10">
-      <div className="mx-auto max-w-2xl">
-        <h1 className="font-serif text-3xl text-brown-deep mb-2">Panel Admin</h1>
-        <p className="text-brown/70 mb-8">
-          Log masuk sebagai <span className="font-medium">{session?.adminUserId}</span>.
-        </p>
-        <LogoutButton />
-      </div>
-    </main>
+    <div className="flex flex-col gap-8">
+      <section>
+        <h1 className="font-serif text-2xl text-brown-deep mb-4">Ringkasan</h1>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <StatCard label="Hadir" value={stats.rsvpHadir} />
+          <StatCard label="Tidak Hadir" value={stats.rsvpTidakHadir} />
+          <StatCard label="Jumlah Dewasa" value={stats.totalDewasa} />
+          <StatCard label="Jumlah Kanak-Kanak" value={stats.totalKanakKanak} />
+          <StatCard label="Jumlah Pax" value={stats.totalPax} emphasize />
+          <StatCard
+            label="Ucapan Menunggu"
+            value={stats.wishesPending}
+            emphasize={stats.wishesPending > 0}
+          />
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-serif text-xl text-brown-deep">Ucapan terkini menunggu semakan</h2>
+          <Link href="/admin/ucapan" className="text-sm text-goldenrod underline">
+            Lihat semua
+          </Link>
+        </div>
+
+        {pendingPreview.length === 0 ? (
+          <p className="rounded-xl border border-tan/30 bg-sand/40 px-4 py-6 text-center text-sm text-brown/60">
+            Tiada ucapan menunggu semakan.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {pendingPreview.map((wish) => (
+              <li
+                key={wish.id}
+                className="flex flex-col gap-2 rounded-xl border border-tan/30 bg-sand/40 p-4 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div>
+                  <p className="font-medium text-brown-deep">{wish.name}</p>
+                  <p className="mt-1 text-sm text-brown/80">{wish.message}</p>
+                  <p className="mt-1 text-xs text-brown/50">{formatDateTime(wish.createdAt)}</p>
+                </div>
+                <WishActions id={wish.id} status={wish.status} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
