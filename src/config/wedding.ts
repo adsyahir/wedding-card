@@ -1,6 +1,8 @@
 // Edit this file to set the real wedding details. Nothing else needs to change.
 
 export type WeddingConfig = {
+  /** Public origin the card is served from. Used for OG tags and absolute URLs. */
+  siteUrl: string;
   eventType: string;
   groom: { shortName: string; fullName: string };
   bride: { shortName: string; fullName: string };
@@ -34,6 +36,9 @@ export type WeddingConfig = {
 };
 
 export const wedding = {
+  // Replace with the real domain once it is attached in Cloudflare.
+  siteUrl: "https://wedding-card-arif.workers.dev",
+
   eventType: "WALIMATUL URUS",
 
   groom: {

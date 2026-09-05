@@ -28,7 +28,7 @@ const sans = Jost({
 
 const title = `${wedding.groom.shortName} & ${wedding.bride.shortName} — Walimatul Urus`;
 const description = `Jemputan perkahwinan ${wedding.groom.shortName} & ${wedding.bride.shortName}, ${wedding.dayNameMs} ${wedding.displayDate} di ${wedding.venue.name}.`;
-const siteUrl = "https://wedding-card-arif.pages.dev";
+const siteUrl = wedding.siteUrl;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
