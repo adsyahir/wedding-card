@@ -20,6 +20,8 @@ export const API_ERRORS = {
   tooManyRequests: "Terlalu banyak percubaan. Sila cuba sebentar lagi.",
   serverError: "Maaf, berlaku ralat. Sila cuba sebentar lagi.",
   notFound: "Rekod tidak dijumpai.",
+  unsupportedMediaType: "Format fail tidak disokong.",
+  payloadTooLarge: "Saiz fail terlalu besar.",
 } as const;
 
 const NO_STORE_HEADERS = {

@@ -28,12 +28,33 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Background music
 
-Drop an MP3 at `public/music/preset-1.mp3` to enable the bundled preset
-background track. If that file is absent, `getActiveMusicSrc()`
-(`src/db/queries/public.ts`) returns `null` and the music toggle simply
-doesn't render — no broken player, no 404. An admin can later override the
-active track via the `site_settings` row `active_music_track` (`"none"` to
-disable, an uploaded track id to point at `/api/music/<id>`).
+There are two ways background music gets onto the card:
+
+- **Bundled preset**: `wedding.presetMusicPath` in `src/config/wedding.ts`
+  declares a static file under `public/`. It ships as `null` — drop an MP3
+  into `public/music/` and set the value (e.g. `"/music/preset-1.mp3"`) to
+  enable it.
+- **Admin-managed uploads**: from `/admin/settings`, an admin can upload an
+  MP3/M4A (up to 8 MB), listen to it inline before switching, and pick it as
+  the active track. Uploads are validated by magic bytes (never by the
+  declared `Content-Type` or filename) and stored in the `ASSETS_BUCKET` R2
+  bucket under a server-generated key — the original filename is kept only
+  for display. The public invite streams the active uploaded track from
+  `/api/music/<track-id>` (`src/app/api/music/[id]/route.ts`), which
+  supports HTTP Range requests (required for iOS Safari to play it at all).
+
+Either way, `getActiveMusicSrc()` (`src/db/queries/public.ts`) resolves what
+actually plays, based on the `site_settings` row `active_music_track`:
+`"none"` disables music entirely (no player, no mute toggle rendered),
+`"preset"` (or unset) falls back to the bundled file above, and anything
+else is treated as an uploaded track's id. The track never autoplays — it
+starts only when a guest taps **BUKA** on the envelope, and the mute choice
+is remembered per device. If "Lagu lalai" is selected but no preset file is
+bundled, the settings page warns about it explicitly, and the invite still
+renders cleanly with no player rather than a broken one. The active track
+also can't be deleted out from under the invite — `/admin/settings` refuses
+that (409) until a different track is selected first.
+
 ### Admin login
 
 The admin dashboard (`/admin`) is protected by a username/password login
@@ -70,15 +91,6 @@ npm run db:local:path      # print the .sqlite path, to open in any GUI
 
 `npm run db:local:path` prints a path you can open directly in TablePlus,
 DBeaver, `sqlite3`, or any other SQLite client.
-
-### Background music
-
-`wedding.presetMusicPath` in `src/config/wedding.ts` declares the bundled
-track. It ships as `null`, so no player and no mute toggle are rendered.
-Drop an MP3 into `public/music/` and set the value (e.g.
-`"/music/preset-1.mp3"`) to enable it. The track never autoplays — it starts
-only when a guest taps **BUKA** on the envelope, and the mute choice is
-remembered per device.
 
 ## Scripts
 

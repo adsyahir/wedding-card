@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/admin", label: "Ringkasan" },
   { href: "/admin/rsvp", label: "RSVP" },
   { href: "/admin/ucapan", label: "Ucapan" },
+  { href: "/admin/settings", label: "Tetapan" },
 ] as const;
 
 /**

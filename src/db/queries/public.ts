@@ -4,7 +4,7 @@ import { and, count, desc, eq, isNull } from "drizzle-orm";
 
 import { wedding } from "@/config/wedding";
 import { getDb } from "@/db";
-import { rsvps, siteSettings, wishes } from "@/db/schema";
+import { musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
 
 /**
  * Read-only queries for data rendered on the public invitation page.
@@ -76,7 +76,10 @@ export async function getAttendanceCounts(): Promise<AttendanceCounts> {
   }
 }
 
-const ACTIVE_MUSIC_TRACK_KEY = "active_music_track";
+// Exported so `src/db/queries/admin.ts` (the admin settings page/routes)
+// reads and writes the exact same `site_settings` row key — never
+// duplicate this literal elsewhere.
+export const ACTIVE_MUSIC_TRACK_KEY = "active_music_track";
 // The bundled preset is DECLARED in the wedding config rather than probed
 // for at runtime: the ASSETS binding points at the built asset bundle, so a
 // probe can never succeed under `next dev` and would silently disable music
@@ -111,4 +114,33 @@ export async function getActiveMusicSrc(): Promise<string | null> {
     console.error("getActiveMusicSrc failed, falling back to no music", error);
     return null;
   }
+}
+
+export type MusicTrackForStream = {
+  source: "preset" | "upload";
+  r2Key: string | null;
+  mime: string | null;
+};
+
+/**
+ * Looked up by the public `/api/music/[id]` streaming route
+ * (`src/app/api/music/[id]/route.ts`) to resolve an id to its R2 key and
+ * stored mime type.
+ *
+ * Unlike every other function in this file, this one deliberately does NOT
+ * swallow errors into a safe fallback: the streaming route needs to tell
+ * "id not found" (404) apart from "the database is unreachable" (500),
+ * which collapsing every failure into `null` would make impossible. Only
+ * page-rendering queries in this file get the "degrade to empty" treatment
+ * — an API route is expected to return real status codes.
+ */
+export async function getMusicTrackForStream(id: string): Promise<MusicTrackForStream | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ source: musicTracks.source, r2Key: musicTracks.r2Key, mime: musicTracks.mime })
+    .from(musicTracks)
+    .where(eq(musicTracks.id, id))
+    .limit(1);
+
+  return row ?? null;
 }

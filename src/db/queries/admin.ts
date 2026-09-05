@@ -3,7 +3,8 @@ import "server-only";
 import { and, asc, count, desc, eq, isNull, or, sql, sum } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { rsvps, wishes } from "@/db/schema";
+import { musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
+import { ACTIVE_MUSIC_TRACK_KEY } from "@/db/queries/public";
 
 /**
  * Read (and existence-check) queries backing the admin dashboard
@@ -368,6 +369,108 @@ export async function findWishById(id: string): Promise<{ id: string; status: Wi
     .select({ id: wishes.id, status: wishes.status })
     .from(wishes)
     .where(eq(wishes.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Music-management queries backing `/admin/settings`
+ * (`src/app/admin/(protected)/settings/page.tsx`) and the
+ * `/api/admin/music/*` routes.
+ *
+ * SECURITY: `music_tracks.r2_key` is the internal R2 storage key — the
+ * public streaming route (`src/app/api/music/[id]/route.ts`) resolves it
+ * server-side via `src/db/queries/public.ts#getMusicTrackForStream`, which
+ * is intentionally a SEPARATE function from the ones below. Nothing in
+ * this file that reaches a JSON response or the settings page's props may
+ * select `r2Key`.
+ */
+
+export type MusicTrackRow = {
+  id: string;
+  label: string;
+  source: "preset" | "upload";
+  filename: string | null;
+  mime: string | null;
+  sizeBytes: number | null;
+  uploadedAt: string;
+};
+
+const MUSIC_TRACK_LIST_COLUMNS = {
+  id: musicTracks.id,
+  label: musicTracks.label,
+  source: musicTracks.source,
+  filename: musicTracks.filename,
+  mime: musicTracks.mime,
+  sizeBytes: musicTracks.sizeBytes,
+  uploadedAt: musicTracks.uploadedAt,
+} as const;
+
+function toMusicTrackRow(row: {
+  id: string;
+  label: string;
+  source: "preset" | "upload";
+  filename: string | null;
+  mime: string | null;
+  sizeBytes: number | null;
+  uploadedAt: Date;
+}): MusicTrackRow {
+  return {
+    id: row.id,
+    label: row.label,
+    source: row.source,
+    filename: row.filename,
+    mime: row.mime,
+    sizeBytes: row.sizeBytes,
+    uploadedAt: row.uploadedAt.toISOString(),
+  };
+}
+
+/** Every uploaded track, newest first, for the settings page's track list. Never selects `r2Key`. */
+export async function listMusicTracks(): Promise<MusicTrackRow[]> {
+  const db = getDb();
+  const rows = await db
+    .select(MUSIC_TRACK_LIST_COLUMNS)
+    .from(musicTracks)
+    .orderBy(desc(musicTracks.uploadedAt));
+  return rows.map(toMusicTrackRow);
+}
+
+/**
+ * The raw `active_music_track` `site_settings` value (`"none"`,
+ * `"preset"`, an uploaded track id, or `null` if never set) — same key
+ * `getActiveMusicSrc` (`src/db/queries/public.ts`) reads for the public
+ * invite page.
+ */
+export async function getActiveMusicSetting(): Promise<string | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ value: siteSettings.value })
+    .from(siteSettings)
+    .where(eq(siteSettings.key, ACTIVE_MUSIC_TRACK_KEY))
+    .limit(1);
+  return row?.value ?? null;
+}
+
+export type MusicTrackForAdmin = {
+  id: string;
+  source: "preset" | "upload";
+  r2Key: string | null;
+};
+
+/**
+ * Existence check for the select/delete routes — looked up BEFORE the
+ * write, same IDOR-guarding reason as `findActiveRsvpById`/`findWishById`.
+ * Also the ONLY place in this file that returns `r2Key`: the delete route
+ * needs it to remove the R2 object, but the row is used internally by the
+ * route handler and never serialized straight into a JSON response.
+ */
+export async function findMusicTrackById(id: string): Promise<MusicTrackForAdmin | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: musicTracks.id, source: musicTracks.source, r2Key: musicTracks.r2Key })
+    .from(musicTracks)
+    .where(eq(musicTracks.id, id))
     .limit(1);
   return row ?? null;
 }
