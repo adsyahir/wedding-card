@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, count, desc, eq, isNull } from "drizzle-orm";
 
+import { wedding } from "@/config/wedding";
 import { getDb } from "@/db";
 import { rsvps, siteSettings, wishes } from "@/db/schema";
 
@@ -76,29 +77,10 @@ export async function getAttendanceCounts(): Promise<AttendanceCounts> {
 }
 
 const ACTIVE_MUSIC_TRACK_KEY = "active_music_track";
-const PRESET_MUSIC_PATH = "/music/preset-1.mp3";
-
-/**
- * Whether a static asset shipped under `public/` actually exists in the
- * deployed asset bundle. Uses the Cloudflare `ASSETS` Fetcher binding (a HEAD
- * request never touches application logic, just the static asset router) so
- * this works in the real Workers runtime; if that binding isn't available
- * (e.g. local `next dev`) or the check fails for any reason, we conservatively
- * assume the file is missing rather than ever risk linking to a 404.
- */
-async function assetExists(pathname: string): Promise<boolean> {
-  try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const { env } = getCloudflareContext();
-    if (!env.ASSETS) return false;
-
-    const response = await env.ASSETS.fetch(new Request(`https://assets.local${pathname}`, { method: "HEAD" }));
-    return response.ok;
-  } catch (error) {
-    console.error(`assetExists(${pathname}) failed, assuming missing`, error);
-    return false;
-  }
-}
+// The bundled preset is DECLARED in the wedding config rather than probed
+// for at runtime: the ASSETS binding points at the built asset bundle, so a
+// probe can never succeed under `next dev` and would silently disable music
+// in local development while appearing to work in production.
 
 /**
  * Resolves the background music `<audio>` source, or `null` if music should
@@ -108,8 +90,7 @@ async function assetExists(pathname: string): Promise<boolean> {
  * - An uploaded track id -> `/api/music/<id>` (that route is built in a
  *   later phase; only the URL shape is decided here). The raw R2 key is
  *   never returned to the client.
- * - Otherwise -> the bundled preset path, but only if that file actually
- *   exists in the deployed asset bundle.
+ * - Otherwise -> `wedding.presetMusicPath` (null when no preset is bundled).
  */
 export async function getActiveMusicSrc(): Promise<string | null> {
   try {
@@ -125,7 +106,7 @@ export async function getActiveMusicSrc(): Promise<string | null> {
     if (value === "none") return null;
     if (value && value !== "preset") return `/api/music/${value}`;
 
-    return (await assetExists(PRESET_MUSIC_PATH)) ? PRESET_MUSIC_PATH : null;
+    return wedding.presetMusicPath;
   } catch (error) {
     console.error("getActiveMusicSrc failed, falling back to no music", error);
     return null;

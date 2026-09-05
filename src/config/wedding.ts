@@ -3,6 +3,13 @@
 export type WeddingConfig = {
   /** Public origin the card is served from. Used for OG tags and absolute URLs. */
   siteUrl: string;
+  /**
+   * Path to the bundled background-music track under `public/`, or `null`
+   * for no music. Drop an MP3 into `public/music/` and set this to e.g.
+   * "/music/preset-1.mp3". Left null so the card never links a file that
+   * isn't there. An admin can override this later from /admin/settings.
+   */
+  presetMusicPath: string | null;
   eventType: string;
   groom: { shortName: string; fullName: string };
   bride: { shortName: string; fullName: string };
@@ -38,6 +45,9 @@ export type WeddingConfig = {
 export const wedding = {
   // Replace with the real domain once it is attached in Cloudflare.
   siteUrl: "https://wedding-card-arif.workers.dev",
+
+  // Set to "/music/preset-1.mp3" once you add the file. See README.
+  presetMusicPath: null,
 
   eventType: "WALIMATUL URUS",
 

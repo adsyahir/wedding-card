@@ -13,7 +13,10 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "seed:admin": "node scripts/seed-admin.mjs",
+    "db:studio": "drizzle-kit studio --config drizzle.config.local.ts",
+    "db:local:path": "node scripts/local-d1-path.mjs"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

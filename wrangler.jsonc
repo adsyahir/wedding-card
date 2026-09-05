@@ -12,7 +12,10 @@
 		{
 			"binding": "DB",
 			"database_name": "wedding-card-db",
-			"database_id": "PLACEHOLDER_REPLACE_ME",
+			// LOCAL-ONLY placeholder. No remote D1 database exists yet — Miniflare
+			// just keys its local SQLite store off this value. Before deploying,
+			// run `wrangler d1 create wedding-card-db` and paste the real id here.
+			"database_id": "d53c99d8-2853-4a35-89f3-6da853c8147f",
 			"migrations_dir": "drizzle"
 		}
 	],

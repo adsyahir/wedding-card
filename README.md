@@ -34,6 +34,51 @@ background track. If that file is absent, `getActiveMusicSrc()`
 doesn't render — no broken player, no 404. An admin can later override the
 active track via the `site_settings` row `active_music_track` (`"none"` to
 disable, an uploaded track id to point at `/api/music/<id>`).
+### Admin login
+
+The admin dashboard (`/admin`) is protected by a username/password login
+backed by the `admin_users` D1 table. Create the first admin user with:
+
+```bash
+npm run seed:admin
+```
+
+This prompts interactively for a username and password (the password is
+never echoed to the terminal, and is never accepted as a CLI argument or
+environment variable — both would leak into shell history / the process
+table). It enforces a minimum password length of 12 characters, derives a
+PBKDF2-SHA256 hash locally (identical parameters to `src/lib/password.ts`),
+and writes the row to the **local** D1 database via `wrangler d1 execute`.
+
+- `npm run seed:admin -- --remote` writes to the real, deployed D1 database
+  instead of the local one.
+- `npm run seed:admin -- --force` allows overwriting an existing username
+  (the script refuses to do this by default).
+
+### Local database
+
+Local development already runs entirely on **SQLite**. `next dev` serves the
+app through Miniflare, whose D1 implementation is a plain SQLite file on
+disk under `.wrangler/state` — the same file `wrangler d1 execute DB --local`
+writes to. There is no separate local database to keep in sync.
+
+```bash
+npm run db:migrate:local   # create/upgrade the local schema
+npm run db:studio          # browse it in Drizzle Studio
+npm run db:local:path      # print the .sqlite path, to open in any GUI
+```
+
+`npm run db:local:path` prints a path you can open directly in TablePlus,
+DBeaver, `sqlite3`, or any other SQLite client.
+
+### Background music
+
+`wedding.presetMusicPath` in `src/config/wedding.ts` declares the bundled
+track. It ships as `null`, so no player and no mute toggle are rendered.
+Drop an MP3 into `public/music/` and set the value (e.g.
+`"/music/preset-1.mp3"`) to enable it. The track never autoplays — it starts
+only when a guest taps **BUKA** on the envelope, and the mute choice is
+remembered per device.
 
 ## Scripts
 
@@ -50,6 +95,10 @@ disable, an uploaded track id to point at `/api/music/<id>`).
   `src/db/schema.ts`
 - `npm run db:migrate:local` / `npm run db:migrate:remote` — apply
   migrations to the local or remote D1 database
+- `npm run seed:admin` — interactively create/update an admin login (see
+  "Admin login" above)
+- `npm run db:studio` — browse the local SQLite database in Drizzle Studio
+- `npm run db:local:path` — print the local SQLite file path
 
 ## Cloudflare setup
 
