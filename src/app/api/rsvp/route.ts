@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
   // bug but isn't — a bot that receives an error learns to adapt its
   // request; a bot that receives a fake success believes it worked and
   // moves on. The rejection is still logged server-side for visibility.
-  if (isHoneypotTripped(raw.website) || isTooFast(raw.renderedAt, Date.now())) {
+  if (isHoneypotTripped(raw.website) || isTooFast(raw.elapsedMs)) {
     console.warn("rsvp: rejected as spam (honeypot or timing check tripped)");
     return jsonOk();
   }
@@ -69,18 +69,21 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const db = getDb();
 
-    // Duplicate handling: a guest who submits twice (double-tap, changed
-    // their mind about headcount, etc.) must not create a second headcount
-    // row — that would silently inflate the Kehadiran tally. We treat "same
-    // visitor + same normalized phone number, not soft-deleted" as the same
-    // guest and UPDATE their existing row instead of inserting a new one.
-    // Either way we still return `200 { ok: true }` to the client.
+    // Duplicate handling: a guest who submits twice (double-tap, or changed
+    // their mind about headcount) must not create a second row — that would
+    // silently inflate the Kehadiran tally the caterer is booked against.
+    //
+    // The identity key is the normalized phone number ALONE, deliberately not
+    // phone + visitorHash. `visitorHash` rotates at UTC midnight and changes
+    // with the network, so keying on it would let the same guest double-count
+    // simply by resubmitting the next day or after switching from wifi to
+    // mobile data. The tradeoff is that someone who knows a guest's number
+    // could overwrite their entry; the per-visitor rate limit caps that, the
+    // admin list makes it visible, and an accurate headcount matters more.
     const [existing] = await db
       .select({ id: rsvps.id })
       .from(rsvps)
-      .where(
-        and(eq(rsvps.visitorHash, visitorHash), eq(rsvps.phone, phone), isNull(rsvps.deletedAt)),
-      )
+      .where(and(eq(rsvps.phone, phone), isNull(rsvps.deletedAt)))
       .limit(1);
 
     if (existing) {

@@ -78,7 +78,9 @@ export function RsvpForm({
   const [status, setStatus] = useState<Status>("idle");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const renderedAtRef = useRef(new Date().toISOString());
+  // Measured against one clock (this device's) and sent as a duration, so a
+  // skewed phone clock can never make the server treat a real guest as a bot.
+  const mountedAtRef = useRef(Date.now());
   const nameId = useId();
   const phoneId = useId();
   const messageId = useId();
@@ -119,7 +121,7 @@ export function RsvpForm({
 
     const outcome = await submitPublicForm("/api/rsvp", {
       ...result.data,
-      renderedAt: renderedAtRef.current,
+      elapsedMs: Date.now() - mountedAtRef.current,
     });
 
     if (outcome.ok) {

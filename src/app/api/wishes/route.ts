@@ -37,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
   // writing anything, rather than a 4xx. This looks like a bug but isn't —
   // a bot that receives an error learns to adapt; one that receives a fake
   // success believes it worked and moves on. Still logged server-side.
-  if (isHoneypotTripped(raw.website) || isTooFast(raw.renderedAt, Date.now())) {
+  if (isHoneypotTripped(raw.website) || isTooFast(raw.elapsedMs)) {
     console.warn("wishes: rejected as spam (honeypot or timing check tripped)");
     return jsonOk();
   }

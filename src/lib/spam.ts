@@ -14,30 +14,30 @@ export function isHoneypotTripped(website: unknown): boolean {
 }
 
 /**
- * True when the form appears to have been submitted suspiciously fast, or
- * with a `renderedAt` timestamp that doesn't look like it came from a real
- * page render.
+ * True when the form was filled in implausibly fast for a human.
  *
- * Flags as suspicious (returns `true`) when:
- * - `renderedAt` isn't a parseable timestamp at all (a synthesised/replayed
- *   request rather than one produced by the real form component).
- * - `renderedAt` is in the future relative to `now` (clock tampering).
- * - `renderedAt` is more than 12 hours before `now` (a stale/replayed body —
- *   real guests don't leave a form open that long before submitting).
- * - Less than `minMs` elapsed between `renderedAt` and `now` (faster than a
- *   human can plausibly fill in the form — a bot filling and submitting
- *   instantly).
+ * `elapsedMs` is measured ENTIRELY ON THE CLIENT — the form records
+ * `Date.now()` when it mounts and subtracts it from `Date.now()` at submit.
+ * We never compare a client-supplied absolute timestamp against the server
+ * clock, and that is the whole point: doing so silently discards the
+ * submission of any guest whose phone clock is skewed even slightly ahead
+ * of ours. Because a tripped check returns a *fake success* to the client,
+ * such a guest would see "Terima kasih!" while their RSVP was thrown away —
+ * the worst failure this app could have. Measuring a duration against a
+ * single clock makes the check immune to skew.
+ *
+ * A bot can of course forge `elapsedMs`, exactly as it could forge a
+ * timestamp. This check only catches naive instant submitters; the honeypot
+ * and the rate limiter are the real defences, and neither is weakened here.
+ *
+ * Flags as suspicious (returns `true`) when `elapsedMs` is not a finite
+ * non-negative number, is under `minMs`, or exceeds 12 hours (a stale tab or
+ * a replayed body).
  */
-export function isTooFast(renderedAt: unknown, now: number, minMs = 2000): boolean {
-  if (typeof renderedAt !== "string") return true;
-
-  const renderedMs = Date.parse(renderedAt);
-  if (Number.isNaN(renderedMs)) return true;
-
-  const elapsed = now - renderedMs;
-  if (elapsed < 0) return true; // renderedAt is in the future
-  if (elapsed > TOO_OLD_MS) return true; // stale/replayed
-  if (elapsed < minMs) return true; // too fast for a human
-
+export function isTooFast(elapsedMs: unknown, minMs = 2000): boolean {
+  if (typeof elapsedMs !== "number" || !Number.isFinite(elapsedMs)) return true;
+  if (elapsedMs < 0) return true;
+  if (elapsedMs < minMs) return true;
+  if (elapsedMs > TOO_OLD_MS) return true;
   return false;
 }

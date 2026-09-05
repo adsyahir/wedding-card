@@ -23,53 +23,51 @@ describe("isHoneypotTripped", () => {
 });
 
 describe("isTooFast", () => {
-  const NOW = Date.parse("2026-01-15T12:00:00.000Z");
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
-  it("is true when renderedAt is not a string", () => {
-    expect(isTooFast(undefined, NOW)).toBe(true);
-    expect(isTooFast(12345, NOW)).toBe(true);
-    expect(isTooFast(null, NOW)).toBe(true);
+  it("is true when elapsedMs is not a number", () => {
+    expect(isTooFast(undefined)).toBe(true);
+    expect(isTooFast(null)).toBe(true);
+    expect(isTooFast("5000")).toBe(true);
+    expect(isTooFast(Number.NaN)).toBe(true);
+    expect(isTooFast(Number.POSITIVE_INFINITY)).toBe(true);
   });
 
-  it("is true when renderedAt is unparseable", () => {
-    expect(isTooFast("not-a-date", NOW)).toBe(true);
+  it("is true for a negative duration", () => {
+    expect(isTooFast(-1)).toBe(true);
   });
 
-  it("is true when renderedAt is in the future", () => {
-    const future = new Date(NOW + 1000).toISOString();
-    expect(isTooFast(future, NOW)).toBe(true);
-  });
-
-  it("is true when submitted faster than minMs after render (default 2000ms)", () => {
-    const renderedAt = new Date(NOW - 1000).toISOString();
-    expect(isTooFast(renderedAt, NOW)).toBe(true);
+  it("is true below the default 2000ms threshold", () => {
+    expect(isTooFast(0)).toBe(true);
+    expect(isTooFast(1999)).toBe(true);
   });
 
   it("is false right at the minMs boundary", () => {
-    const renderedAt = new Date(NOW - 2000).toISOString();
-    expect(isTooFast(renderedAt, NOW, 2000)).toBe(false);
+    expect(isTooFast(2000)).toBe(false);
   });
 
   it("is false for a plausible human fill time", () => {
-    const renderedAt = new Date(NOW - 15_000).toISOString();
-    expect(isTooFast(renderedAt, NOW)).toBe(false);
+    expect(isTooFast(15_000)).toBe(false);
   });
 
   it("is false right at the 12-hour staleness boundary", () => {
-    const twelveHoursMs = 12 * 60 * 60 * 1000;
-    const renderedAt = new Date(NOW - twelveHoursMs).toISOString();
-    expect(isTooFast(renderedAt, NOW)).toBe(false);
+    expect(isTooFast(TWELVE_HOURS_MS)).toBe(false);
   });
 
   it("is true just past the 12-hour staleness boundary", () => {
-    const twelveHoursMs = 12 * 60 * 60 * 1000;
-    const renderedAt = new Date(NOW - twelveHoursMs - 1000).toISOString();
-    expect(isTooFast(renderedAt, NOW)).toBe(true);
+    expect(isTooFast(TWELVE_HOURS_MS + 1)).toBe(true);
   });
 
   it("respects a custom minMs", () => {
-    const renderedAt = new Date(NOW - 500).toISOString();
-    expect(isTooFast(renderedAt, NOW, 1000)).toBe(true);
-    expect(isTooFast(renderedAt, NOW, 100)).toBe(false);
+    expect(isTooFast(500, 1000)).toBe(true);
+    expect(isTooFast(500, 100)).toBe(false);
+  });
+
+  // Regression guard for the bug this signature exists to prevent: a guest
+  // whose phone clock runs ahead of the server must NOT be silently dropped.
+  it("is unaffected by client/server clock skew", () => {
+    // 8 seconds of real fill time, measured on the client, is accepted no
+    // matter how wrong that client's absolute clock is.
+    expect(isTooFast(8000)).toBe(false);
   });
 });
