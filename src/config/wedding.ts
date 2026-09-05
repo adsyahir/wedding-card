@@ -1,0 +1,105 @@
+// Edit this file to set the real wedding details. Nothing else needs to change.
+
+export type WeddingConfig = {
+  eventType: string;
+  groom: { shortName: string; fullName: string };
+  bride: { shortName: string; fullName: string };
+  hosts: { line: string; names: string };
+  salam: string;
+  invitationBody: string[];
+  honorifics: string;
+  /** ISO 8601 datetime of the akad/main ceremony, with the +08:00 Malaysia offset. */
+  date: string;
+  /** Malay day name, e.g. "Ahad" */
+  dayNameMs: string;
+  /** Human-readable date, e.g. "01 November 2026" */
+  displayDate: string;
+  /** ISO 8601 datetime the event ends — used to build the calendar (.ics) entry. */
+  endTime: string;
+  venue: {
+    name: string;
+    addressLines: string[];
+    lat: number;
+    lng: number;
+    googleMapsUrl: string;
+    wazeUrl: string;
+  };
+  aturCara: { time: string; label: string }[];
+  rsvpDeadline: string;
+  rsvpDeadlineDisplay: string;
+  contacts: { name: string; role: string; phone: string }[];
+  hashtag: string;
+  gallery: { src: string; alt: string }[];
+  doa: string;
+};
+
+export const wedding = {
+  eventType: "WALIMATUL URUS",
+
+  groom: {
+    shortName: "Arif",
+    fullName: "Muhammad Arif bin Abdullah",
+  },
+  bride: {
+    shortName: "Nur Aisyah",
+    fullName: "Nur Aisyah binti Ahmad",
+  },
+
+  hosts: {
+    line: "Dengan penuh kesyukuran ke hadrat Ilahi, kami",
+    names: "Encik Abdullah bin Hassan & Puan Zainab binti Omar\ndan\nEncik Ahmad bin Ismail & Puan Fatimah binti Kassim",
+  },
+
+  salam: "Assalamualaikum warahmatullahi wabarakatuh & salam sejahtera,",
+
+  invitationBody: [
+    "Dengan segala hormatnya kami menjemput Dato' / Datin / Tuan / Puan / Encik / Cik ke majlis perkahwinan anakanda kami.",
+    "Kehadiran serta doa restu tuan/puan amatlah kami hargai dan dinantikan.",
+  ],
+
+  honorifics: "Dato' | Datin | Tuan | Puan | Encik | Cik",
+
+  date: "2026-11-01T11:00:00+08:00",
+  dayNameMs: "Ahad",
+  displayDate: "01 November 2026",
+
+  endTime: "2026-11-01T16:00:00+08:00",
+
+  venue: {
+    name: "Dewan Serbaguna Taman Seri Indah",
+    addressLines: [
+      "Jalan Seri Indah 5,",
+      "Taman Seri Indah,",
+      "43000 Kajang, Selangor",
+    ],
+    lat: 2.9926,
+    lng: 101.7876,
+    googleMapsUrl: "https://maps.google.com/?q=2.9926,101.7876",
+    wazeUrl: "https://waze.com/ul?ll=2.9926,101.7876&navigate=yes",
+  },
+
+  aturCara: [
+    { time: "11:00 AM", label: "Ketibaan tetamu" },
+    { time: "12:00 PM", label: "Majlis makan beradab" },
+    { time: "2:00 PM", label: "Sesi bergambar bersama pengantin" },
+    { time: "4:00 PM", label: "Majlis bersurai" },
+  ],
+
+  rsvpDeadline: "2026-10-15T23:59:59+08:00",
+  rsvpDeadlineDisplay: "15 Oktober 2026",
+
+  contacts: [
+    { name: "Ahmad bin Ismail", role: "Bapa Pengantin Lelaki", phone: "+60123456789" },
+    { name: "Fatimah binti Kassim", role: "Ibu Pengantin Perempuan", phone: "+60129876543" },
+  ],
+
+  hashtag: "#PlaceholderHashtag",
+
+  gallery: [
+    { src: "/images/gallery/1.jpg", alt: "Gambar pertunangan pasangan pengantin" },
+    { src: "/images/gallery/2.jpg", alt: "Gambar pasangan pengantin bersama keluarga" },
+    { src: "/images/gallery/3.jpg", alt: "Gambar pasangan pengantin di taman" },
+  ],
+
+  doa: "Ya Allah, jadikanlah pasangan ini pasangan yang saling mencintai, penuh kasih sayang, serta diberkati zuriat yang soleh dan solehah. Aamiin.",
+} as const satisfies WeddingConfig;
