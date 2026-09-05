@@ -31,7 +31,7 @@ export function LoginForm() {
       });
 
       const data = (await response.json().catch(() => null)) as
-        | { ok: true; csrfToken: string }
+        | { ok: true }
         | { ok: false; error: string }
         | null;
 

@@ -144,7 +144,12 @@ export async function POST(request: Request): Promise<Response> {
 
     await logAudit({ adminUserId: user.id, action: "login" });
 
-    return noStore(200, { ok: true, csrfToken });
+    // The CSRF token travels ONLY in the __Host-wc_csrf cookie, which any
+    // admin tab can read. It used to also be returned here for the client
+    // to stash in sessionStorage; nothing reads it from the body any more,
+    // so it is not echoed back — no reason to put a secret in a response
+    // body that no caller consumes.
+    return noStore(200, { ok: true });
   } catch (error) {
     console.error("POST /api/admin/login: failed", error);
     return jsonError(500, API_ERRORS.serverError);

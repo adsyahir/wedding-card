@@ -12,6 +12,27 @@ export const dynamic = "force-dynamic";
 const CSV_HEADERS = ["Nama", "Telefon", "Kehadiran", "Dewasa", "Kanak-Kanak", "Pesanan", "Tarikh"];
 
 /**
+ * Formats a timestamp as `DD/MM/YYYY HH:mm` in Malaysia time. The raw ISO
+ * string is UTC and unreadable at a glance — this sheet gets opened by
+ * family and by the caterer, not by a developer.
+ */
+function formatMyDate(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kuala_Lumpur",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
+}
+
+/**
  * Downloads the full (non-deleted) RSVP list as CSV.
  *
  * A GET, not a POST — `requireAdminApi` skips the CSRF-header check for
@@ -36,7 +57,7 @@ export async function GET(request: Request): Promise<Response> {
         row.adults,
         row.children,
         row.message,
-        row.createdAt,
+        formatMyDate(row.createdAt),
       ]),
     );
 
