@@ -81,3 +81,36 @@ describe("sniffAudioType", () => {
     expect(sniffAudioType(header)).toBeNull();
   });
 });
+
+describe("MPEG frame header validation (not just the 11-bit sync)", () => {
+  // 0xFF 0xFB is a legitimate MPEG-1 Layer III sync, so a bare two-byte
+  // check accepts anything starting with it — including a polyglot whose
+  // remaining bytes are HTML. Byte 2 here is '<' (0x3C), whose sample-rate
+  // bits are `11` (reserved), which a real encoder can never emit.
+  it("rejects a polyglot: valid sync followed by HTML", () => {
+    const html = new TextEncoder().encode("<html><script>alert(1)</script></html>");
+    const polyglot = new Uint8Array([0xff, 0xfb, ...html]);
+    expect(sniffAudioType(polyglot)).toBeNull();
+  });
+
+  it("accepts a well-formed bare frame header", () => {
+    // 0xFF 0xFB 0x90: MPEG-1, Layer III, bitrate index 1001, sample rate 00.
+    expect(sniffAudioType(new Uint8Array([0xff, 0xfb, 0x90, 0x00]))).toBe("audio/mpeg");
+  });
+
+  it("rejects the reserved/invalid bit patterns", () => {
+    // version bits 01 (reserved)
+    expect(sniffAudioType(new Uint8Array([0xff, 0xeb, 0x90]))).toBeNull();
+    // layer bits 00 (reserved)
+    expect(sniffAudioType(new Uint8Array([0xff, 0xf9, 0x90]))).toBeNull();
+    // bitrate index 1111 (invalid)
+    expect(sniffAudioType(new Uint8Array([0xff, 0xfb, 0xf0]))).toBeNull();
+    // sample-rate bits 11 (reserved)
+    expect(sniffAudioType(new Uint8Array([0xff, 0xfb, 0x9c]))).toBeNull();
+  });
+
+  it("still accepts a real ID3-tagged file regardless of frame bits", () => {
+    const id3 = new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect(sniffAudioType(id3)).toBe("audio/mpeg");
+  });
+});

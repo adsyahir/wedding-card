@@ -38,11 +38,45 @@ function isMp3(bytes: Uint8Array): boolean {
     return true;
   }
 
-  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) {
-    return true;
-  }
+  return hasValidMpegFrameHeader(bytes);
+}
 
-  return false;
+/**
+ * Validates a bare MPEG audio frame header (an MP3 with no ID3 tag).
+ *
+ * A two-byte sync check alone (`0xFF` followed by three set bits) is a very
+ * weak signal — only 11 bits — so all sorts of non-audio content starts
+ * with a byte pair that satisfies it. We therefore also reject the
+ * combinations the MPEG spec marks reserved/invalid, which a real encoder
+ * can never emit:
+ *   - version bits `01`      (reserved)
+ *   - layer bits `00`        (reserved)
+ *   - bitrate index `1111`   (invalid)
+ *   - sample-rate bits `11`  (reserved)
+ *
+ * This does not make the sniffer a decoder, and a determined attacker can
+ * still craft bytes that satisfy it. It is not the last line of defence:
+ * `src/app/api/music/[id]/route.ts` serves every object with a hardcoded
+ * audio Content-Type, `X-Content-Type-Options: nosniff` and
+ * `Content-Disposition: inline`, so even content that slips through here
+ * can never be parsed as HTML or script on our origin. This check simply
+ * stops obvious junk from being stored and served as if it were music.
+ */
+function hasValidMpegFrameHeader(bytes: Uint8Array): boolean {
+  if (bytes.length < 3) return false;
+  if (bytes[0] !== 0xff || (bytes[1] & 0xe0) !== 0xe0) return false;
+
+  const version = (bytes[1] >> 3) & 0b11;
+  const layer = (bytes[1] >> 1) & 0b11;
+  const bitrateIndex = (bytes[2] >> 4) & 0b1111;
+  const sampleRate = (bytes[2] >> 2) & 0b11;
+
+  if (version === 0b01) return false;
+  if (layer === 0b00) return false;
+  if (bitrateIndex === 0b1111) return false;
+  if (sampleRate === 0b11) return false;
+
+  return true;
 }
 
 // The MP4/M4A "brand" identifiers this app accepts. Anything else in the
