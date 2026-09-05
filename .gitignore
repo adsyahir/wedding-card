@@ -20,6 +20,8 @@
 /.wrangler/
 .dev.vars
 .dev.vars.*
+# ...except the committed template documenting which vars to set locally.
+!.dev.vars.example
 
 # production
 /build

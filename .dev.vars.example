@@ -1,0 +1,12 @@
+# Local development secrets for `next dev` / `wrangler dev` (via
+# `initOpenNextCloudflareForDev`). Copy this file to `.dev.vars` (gitignored,
+# never commit it) and fill in a real value.
+#
+# In production this is set with `wrangler secret put ANALYTICS_SALT` —
+# never written into `wrangler.jsonc`.
+
+# HMAC secret used to derive the daily-rotating, one-way `visitor_hash`
+# stored against RSVPs/wishes/page views (see src/lib/crypto.ts). Any long
+# random string works for local dev; a real deployment should use a
+# cryptographically random value, e.g. `openssl rand -hex 32`.
+ANALYTICS_SALT=replace-with-a-long-random-string
