@@ -10,6 +10,13 @@ export type WeddingConfig = {
    * isn't there. An admin can override this later from /admin/settings.
    */
   presetMusicPath: string | null;
+  /**
+   * Google Analytics 4 Measurement ID (e.g. "G-XXXXXXXXXX"), or `null` to
+   * disable GA entirely. When set, `<GoogleAnalytics>` is rendered ONLY on
+   * the public invite page (never under `/admin`) — see `src/app/page.tsx`
+   * and the README's "Analytics" section.
+   */
+  gaMeasurementId: string | null;
   eventType: string;
   groom: { shortName: string; fullName: string };
   bride: { shortName: string; fullName: string };
@@ -48,6 +55,10 @@ export const wedding = {
 
   // Set to "/music/preset-1.mp3" once you add the file. See README.
   presetMusicPath: null,
+
+  // Set to a real "G-XXXXXXXXXX" Measurement ID to enable Google Analytics
+  // on the public invite page. See README.
+  gaMeasurementId: null,
 
   eventType: "WALIMATUL URUS",
 

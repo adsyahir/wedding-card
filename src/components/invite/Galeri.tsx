@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 import { Reveal } from "./Reveal";
 
@@ -56,6 +57,7 @@ export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
   function open(index: number) {
     lastTriggerIndex.current = index;
     setActiveIndex(index);
+    trackEvent("gallery_open");
   }
 
   // Focus the close button when the lightbox opens; restore focus to the

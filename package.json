@@ -19,11 +19,13 @@
     "db:local:path": "node scripts/local-d1-path.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^15.5.25",
     "drizzle-orm": "^0.45.2",
     "motion": "^13.2.0",
     "next": "^15.5.25",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "recharts": "^3.10.1",
     "zod": "^4.5.4"
   },
   "devDependencies": {

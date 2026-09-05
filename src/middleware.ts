@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { wedding } from "@/config/wedding";
 import { randomToken } from "@/lib/crypto";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
 
@@ -30,13 +31,22 @@ function buildCsp(nonce: string): string {
         `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
       : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
 
+  // Google Analytics is only ever rendered on the public invite page
+  // (`src/app/page.tsx`), and only when `wedding.gaMeasurementId` is set —
+  // so these extra CSP sources are added conditionally on that same
+  // config value, rather than unconditionally, keeping the CSP as tight
+  // as it can be for a deployment that never configures GA.
+  const gaEnabled = Boolean(wedding.gaMeasurementId);
+  const scriptSrcSources = gaEnabled
+    ? `${scriptSrc} https://www.googletagmanager.com`
+    : scriptSrc;
+  const connectSrcSources = gaEnabled
+    ? `'self' https://*.google-analytics.com https://www.google-analytics.com`
+    : `'self'`;
+
   return [
     `default-src 'self'`,
-    `script-src ${scriptSrc}`,
-    // TODO(Phase 7 - Google Analytics): add
-    //   `https://www.googletagmanager.com` to script-src, and
-    //   `https://*.google-analytics.com` to connect-src, right here, when
-    //   GA is wired up.
+    `script-src ${scriptSrcSources}`,
     // 'unsafe-inline' is required here for Next.js's own injected <style>
     // tags (App Router streaming/critical CSS) and for next/font's inlined
     // @font-face rules. There is no nonce hook for style-src in Next.js
@@ -44,7 +54,7 @@ function buildCsp(nonce: string): string {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob:`,
     `font-src 'self'`,
-    `connect-src 'self'`,
+    `connect-src ${connectSrcSources}`,
     `media-src 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,

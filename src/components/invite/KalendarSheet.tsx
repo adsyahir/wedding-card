@@ -1,6 +1,7 @@
 "use client";
 
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 import { buildIcs, toIcsUtcDate } from "./ics";
 
@@ -63,13 +64,17 @@ export function KalendarSheet({ config }: { config: typeof wedding }) {
           href={buildGoogleCalendarUrl(config)}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("calendar_add")}
           className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           Google Calendar
         </a>
         <button
           type="button"
-          onClick={() => downloadIcs(config)}
+          onClick={() => {
+            trackEvent("calendar_add");
+            downloadIcs(config);
+          }}
           className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           Apple Calendar

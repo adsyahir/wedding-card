@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useId, useRef, useState } from "react";
 
 import { MAX_WISH_MESSAGE_LEN, wishSchema } from "@/lib/validation";
+import { trackEvent } from "@/lib/track";
 
 import { submitPublicForm } from "./submitPublicForm";
 
@@ -49,6 +50,7 @@ export function UcapanForm() {
 
     if (outcome.ok) {
       setStatus("success");
+      trackEvent("ucapan_submit");
     } else {
       setStatus("error");
       setFormError("Maaf, penghantaran gagal. Sila cuba sebentar lagi.");

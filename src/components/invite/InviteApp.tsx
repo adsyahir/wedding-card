@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 import { AturCara } from "./AturCara";
 import { BottomNav } from "./BottomNav";
@@ -20,6 +21,7 @@ import { LokasiSheet } from "./LokasiSheet";
 import { MusicPlayer } from "./MusicPlayer";
 import { RsvpSheet } from "./RsvpSheet";
 import { Sheet } from "./Sheet";
+import { TrackView } from "./TrackView";
 import { Undangan } from "./Undangan";
 import { UcapanWall } from "./UcapanWall";
 import type { PublicWish } from "./UcapanWall";
@@ -56,6 +58,9 @@ export function InviteApp({
   function handleSelect(key: NavKey) {
     activeTriggerRef.current = triggerRefs.current[key];
     setActiveSheet(key);
+    if (key === "rsvp") {
+      trackEvent("rsvp_open");
+    }
   }
 
   function handleRsvpSuccess({ attending }: { attending: boolean }) {
@@ -68,6 +73,8 @@ export function InviteApp({
 
   return (
     <>
+      <TrackView />
+
       <Envelope
         groomShortName={config.groom.shortName}
         brideShortName={config.bride.shortName}

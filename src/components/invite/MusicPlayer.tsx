@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { trackEvent } from "@/lib/track";
+
 const MUTED_STORAGE_KEY = "wc:muted";
 
 function readStoredMuted(): boolean {
@@ -84,11 +86,14 @@ export function MusicPlayer({ src, play }: { src: string | null; play: boolean }
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.play().catch(() => {
-      // Autoplay was blocked, or some other playback error — fall back to
-      // showing the toggle in the "off" state rather than throwing.
-      setMuted(true);
-    });
+    audio
+      .play()
+      .then(() => trackEvent("music_play"))
+      .catch(() => {
+        // Autoplay was blocked, or some other playback error — fall back to
+        // showing the toggle in the "off" state rather than throwing.
+        setMuted(true);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, play]);
 
@@ -99,10 +104,13 @@ export function MusicPlayer({ src, play }: { src: string | null; play: boolean }
     if (muted) {
       setMuted(false);
       writeStoredMuted(false);
-      audio.play().catch(() => {
-        setMuted(true);
-        writeStoredMuted(true);
-      });
+      audio
+        .play()
+        .then(() => trackEvent("music_play"))
+        .catch(() => {
+          setMuted(true);
+          writeStoredMuted(true);
+        });
     } else {
       setMuted(true);
       writeStoredMuted(true);

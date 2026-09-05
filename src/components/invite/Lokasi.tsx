@@ -1,4 +1,5 @@
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 import { Reveal } from "./Reveal";
 
@@ -57,6 +58,7 @@ export function Lokasi({ config }: { config: typeof wedding }) {
           href={config.venue.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("maps_click")}
           className="inline-flex items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           <MapPinIcon />
@@ -66,6 +68,7 @@ export function Lokasi({ config }: { config: typeof wedding }) {
           href={config.venue.wazeUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("waze_click")}
           className="inline-flex items-center justify-center gap-2 rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           <WazeIcon />

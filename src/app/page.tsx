@@ -1,3 +1,5 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
+
 import { wedding } from "@/config/wedding";
 import { getActiveMusicSrc, getApprovedWishes, getAttendanceCounts } from "@/db/queries/public";
 
@@ -20,6 +22,13 @@ export default async function Home() {
   return (
     <main className="min-h-screen w-full bg-sand">
       <InviteApp config={wedding} wishes={wishes} initialCounts={counts} musicSrc={musicSrc} />
+      {/*
+        Rendered ONLY here, on the public invite page — never in the
+        /admin tree (which has its own, entirely separate page files that
+        never import this one). Gated on a configured measurement id so a
+        fresh clone of this repo never phones home to Google by default.
+      */}
+      {wedding.gaMeasurementId && <GoogleAnalytics gaId={wedding.gaMeasurementId} />}
     </main>
   );
 }

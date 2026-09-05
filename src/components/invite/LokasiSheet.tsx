@@ -1,6 +1,7 @@
 "use client";
 
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 export function LokasiSheet({ config }: { config: typeof wedding }) {
   return (
@@ -19,6 +20,7 @@ export function LokasiSheet({ config }: { config: typeof wedding }) {
           href={config.venue.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("maps_click")}
           className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           Google Maps
@@ -27,6 +29,7 @@ export function LokasiSheet({ config }: { config: typeof wedding }) {
           href={config.venue.wazeUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("waze_click")}
           className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           Waze

@@ -91,7 +91,7 @@ export function isSameOrigin(request: Request): boolean {
  * Cloudflare env (as opposed to bindings like D1/R2/Fetcher). Extend this
  * union — and `src/types/cloudflare-env.d.ts` — when a new secret is added.
  */
-type SecretName = "ANALYTICS_SALT";
+type SecretName = "ANALYTICS_SALT" | "CRON_SECRET";
 
 /**
  * Reads a secret from the Cloudflare env, throwing a clear (but

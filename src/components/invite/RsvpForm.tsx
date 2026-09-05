@@ -11,6 +11,7 @@ import {
   MIN_CHILDREN,
   rsvpSchema,
 } from "@/lib/validation";
+import { trackEvent } from "@/lib/track";
 
 import { submitPublicForm } from "./submitPublicForm";
 
@@ -126,6 +127,7 @@ export function RsvpForm({
 
     if (outcome.ok) {
       setStatus("success");
+      trackEvent("rsvp_submit");
       onSuccess?.({ attending, adults, children });
     } else {
       setStatus("error");

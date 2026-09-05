@@ -1,6 +1,7 @@
 "use client";
 
 import type { wedding } from "@/config/wedding";
+import { trackEvent } from "@/lib/track";
 
 function whatsappUrl(phone: string): string {
   return `https://wa.me/${phone.replace(/^\+/, "").replace(/\D/g, "")}`;
@@ -21,6 +22,7 @@ export function HubungiSheet({ config }: { config: typeof wedding }) {
           <div className="flex gap-2">
             <a
               href={`tel:${contact.phone}`}
+              onClick={() => trackEvent("contact_click")}
               className="inline-flex flex-1 items-center justify-center rounded-full border border-goldenrod bg-tan px-4 py-2 text-sm font-medium text-brown-deep"
             >
               Telefon
@@ -29,6 +31,7 @@ export function HubungiSheet({ config }: { config: typeof wedding }) {
               href={whatsappUrl(contact.phone)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent("contact_click")}
               className="inline-flex flex-1 items-center justify-center rounded-full border border-goldenrod bg-cream px-4 py-2 text-sm font-medium text-brown-deep"
             >
               WhatsApp

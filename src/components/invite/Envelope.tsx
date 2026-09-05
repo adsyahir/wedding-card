@@ -3,6 +3,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 
+import { trackEvent } from "@/lib/track";
+
 /** Botanical corner flourish used on the envelope doors. */
 function CornerOrnament({ className = "" }: { className?: string }) {
   return (
@@ -55,6 +57,7 @@ export function Envelope({
   function handleOpen() {
     if (open) return;
     setOpen(true);
+    trackEvent("envelope_open");
     onOpen();
     const durationMs = prefersReducedMotion ? 50 : 1150;
     window.setTimeout(() => {
