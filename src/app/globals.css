@@ -9,13 +9,59 @@
   --color-brown: #6B4F2A;
   --color-brown-deep: #3E2C18;
 
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-serif: ui-serif, Georgia, serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-script: var(--font-parisienne), cursive;
 }
 
 body {
   background: var(--color-cream);
   color: var(--color-brown);
+}
+
+/* Visible keyboard-focus ring in goldenrod for every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--color-goldenrod);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Screen-reader-only utility for accessible labels that shouldn't be visible. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/*
+ * Honeypot field: visually off-screen (NOT display:none / visibility:hidden)
+ * so naive bots that skip hidden inputs still fill it in, while real
+ * visitors never see or tab to it (tabIndex={-1} + aria-hidden handle the
+ * keyboard/AT side).
+ */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Safe-area aware padding helpers for fixed chrome on notched phones. */
+.pb-safe {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
 }
 
 @media (prefers-reduced-motion: reduce) {

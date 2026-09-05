@@ -26,6 +26,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Background music
+
+Drop an MP3 at `public/music/preset-1.mp3` to enable the bundled preset
+background track. If that file is absent, `getActiveMusicSrc()`
+(`src/db/queries/public.ts`) returns `null` and the music toggle simply
+doesn't render — no broken player, no 404. An admin can later override the
+active track via the `site_settings` row `active_music_track` (`"none"` to
+disable, an uploaded track id to point at `/api/music/<id>`).
+
 ## Scripts
 
 - `npm run dev` — local dev server (Cloudflare bindings available via

@@ -95,10 +95,13 @@ export const wedding = {
 
   hashtag: "#PlaceholderHashtag",
 
+  // Placeholder botanical abstractions until real photos are supplied — see
+  // public/images/gallery/*.svg. Replace src with real photos (any raster
+  // format) when available; nothing else needs to change.
   gallery: [
-    { src: "/images/gallery/1.jpg", alt: "Gambar pertunangan pasangan pengantin" },
-    { src: "/images/gallery/2.jpg", alt: "Gambar pasangan pengantin bersama keluarga" },
-    { src: "/images/gallery/3.jpg", alt: "Gambar pasangan pengantin di taman" },
+    { src: "/images/gallery/1.svg", alt: "Gambar pertunangan pasangan pengantin" },
+    { src: "/images/gallery/2.svg", alt: "Gambar pasangan pengantin bersama keluarga" },
+    { src: "/images/gallery/3.svg", alt: "Gambar pasangan pengantin di taman" },
   ],
 
   doa: "Ya Allah, jadikanlah pasangan ini pasangan yang saling mencintai, penuh kasih sayang, serta diberkati zuriat yang soleh dan solehah. Aamiin.",
