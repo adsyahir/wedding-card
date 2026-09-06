@@ -136,7 +136,7 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
             tabIndex={0}
             role="region"
             aria-label="Ucapan daripada tetamu"
-            className="no-scrollbar max-h-[26rem] overflow-y-auto px-1"
+            className="no-scrollbar fade-edges max-h-[26rem] overflow-y-auto px-1"
           >
             <div className="flex flex-col gap-8 py-2 text-center">
               {wishes.map((wish, index) => (
@@ -151,12 +151,6 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
               ))}
             </div>
           </div>
-
-          {/* Fades at both edges so the list looks like it continues rather
-              than being abruptly clipped. pointer-events-none so they never
-              swallow a tap or a scroll. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-cream to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-cream to-transparent" />
         </Reveal>
       )}
     </section>

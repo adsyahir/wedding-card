@@ -108,6 +108,35 @@ body > * {
   border-right: 1px solid rgba(216, 185, 120, 0.28);
 }
 
+/*
+ * Fades the top and bottom edges of a scrolling region.
+ *
+ * A MASK, not a pair of gradient overlays. Overlays have to guess what is
+ * behind them, and on the invitation card that guess is always wrong: the
+ * card is not flat `--color-cream` but cream plus two radial gradients
+ * plus a 5% noise grain, so a `from-cream` overlay reads as a lighter,
+ * grain-free band exactly where it is supposed to be invisible. Masking
+ * fades the content's own alpha instead, so whatever is painted behind
+ * shows through untouched, whatever that happens to be.
+ */
+.fade-edges {
+  --fade: 2rem;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--fade),
+    #000 calc(100% - var(--fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--fade),
+    #000 calc(100% - var(--fade)),
+    transparent 100%
+  );
+}
+
 /* Paper grain on the card itself, same reasoning as the background above. */
 .invite-card::before {
   content: "";
