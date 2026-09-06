@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listRsvps, resolveSort, type RsvpSortField } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang, interpolate } from "@/lib/i18n/admin";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 import { formatDateTime } from "../_components/format";
 import { RsvpDeleteButton } from "../_components/RsvpDeleteButton";
@@ -48,6 +49,12 @@ export default async function AdminRsvpPage({
 
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
+
+  const config = await getWeddingConfig();
+  // `adultsChildren` shows both columns; `total` shows one (relabelled Pax);
+  // `none` shows neither, because the guest was never asked.
+  const showPax = config.rsvpPaxMode !== "none";
+  const showSplit = config.rsvpPaxMode === "adultsChildren";
 
   const sp = await searchParams;
   const q = first(sp.q)?.trim() ?? "";
@@ -146,13 +153,23 @@ export default async function AdminRsvpPage({
               </th>
               <th className="px-3 py-2 font-medium">{dict.rsvp_colPhone}</th>
               <th className="px-3 py-2 font-medium">{dict.rsvp_colAttending}</th>
+              {/*
+                Same reasoning as the dashboard cards: with the form set to
+                a single total, "Dewasa 3 / Kanak-Kanak 0" implies the guest
+                said no children were coming when they were never asked. The
+                Dewasa column carries the total in that mode, relabelled.
+              */}
+              {showPax && (
               <th className="px-3 py-2 font-medium">
                 <Link href={sortHref("adults")} className="hover:underline">
-                  {dict.rsvp_colAdults}
+                  {showSplit ? dict.rsvp_colAdults : dict.rsvp_colPax}
                   {sortIndicator("adults")}
                 </Link>
               </th>
-              <th className="px-3 py-2 font-medium">{dict.rsvp_colChildren}</th>
+              )}
+              {showSplit && (
+                <th className="px-3 py-2 font-medium">{dict.rsvp_colChildren}</th>
+              )}
               <th className="px-3 py-2 font-medium">{dict.rsvp_colMessage}</th>
               <th className="px-3 py-2 font-medium">
                 <Link href={sortHref("createdAt")} className="hover:underline">
@@ -190,8 +207,8 @@ export default async function AdminRsvpPage({
                       {row.attending ? dict.rsvp_filterHadir : dict.rsvp_filterTidak}
                     </span>
                   </td>
-                  <td className="px-3 py-2">{row.adults}</td>
-                  <td className="px-3 py-2">{row.children}</td>
+                  {showPax && <td className="px-3 py-2">{row.adults}</td>}
+                  {showSplit && <td className="px-3 py-2">{row.children}</td>}
                   <td className="max-w-[16rem] px-3 py-2 text-brown/80">{row.message ?? "—"}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {formatDateTime(row.createdAt, lang)}

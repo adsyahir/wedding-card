@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
 import { formatDateTime } from "./_components/format";
+import { getWeddingConfig } from "@/lib/wedding-config";
+
 import { StatCard } from "./_components/StatCard";
 import { WishActions } from "./_components/WishActions";
 
@@ -26,9 +28,10 @@ export default async function AdminHomePage() {
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
 
-  const [stats, pendingPreview] = await Promise.all([
+  const [stats, pendingPreview, config] = await Promise.all([
     getDashboardStats(),
     listPendingWishesPreview(5),
+    getWeddingConfig(),
   ]);
 
   return (
@@ -38,9 +41,24 @@ export default async function AdminHomePage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard label={dict.dashboard_statHadir} value={stats.rsvpHadir} />
           <StatCard label={dict.dashboard_statTidakHadir} value={stats.rsvpTidakHadir} />
-          <StatCard label={dict.dashboard_statJumlahDewasa} value={stats.totalDewasa} />
-          <StatCard label={dict.dashboard_statJumlahKanakKanak} value={stats.totalKanakKanak} />
-          <StatCard label={dict.dashboard_statJumlahPax} value={stats.totalPax} emphasize />
+          {/*
+            Headcount cards follow the admin's `rsvpPaxMode`. Showing
+            "Jumlah Dewasa: 0" when the form never asked how many adults
+            are coming is not a neutral zero — it reads as "nobody is
+            bringing adults", which is a different and wrong statement.
+          */}
+          {config.rsvpPaxMode === "adultsChildren" && (
+            <>
+              <StatCard label={dict.dashboard_statJumlahDewasa} value={stats.totalDewasa} />
+              <StatCard
+                label={dict.dashboard_statJumlahKanakKanak}
+                value={stats.totalKanakKanak}
+              />
+            </>
+          )}
+          {config.rsvpPaxMode !== "none" && (
+            <StatCard label={dict.dashboard_statJumlahPax} value={stats.totalPax} emphasize />
+          )}
           <StatCard
             label={dict.dashboard_statUcapanMenunggu}
             value={stats.wishesPending}
