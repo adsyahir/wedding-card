@@ -4,6 +4,15 @@
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2026-09-03",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	// Public, non-secret deployment config. SET THIS to the real origin
+	// before going live: it is what the "Lihat senarai RSVP" links in the
+	// notification emails point at, and what the WhatsApp share preview
+	// resolves its image against. No trailing slash. Deliberately NOT
+	// derived from the request Host, which a guest controls — see
+	// src/lib/site-url.ts.
+	"vars": {
+		"SITE_URL": "https://wedding-card-arif.workers.dev"
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"

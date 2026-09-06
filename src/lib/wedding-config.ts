@@ -4,11 +4,14 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { wedding, type WeddingConfig } from "@/config/wedding";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
 import { getDb } from "@/db";
 import { siteSettings } from "@/db/schema";
 import { normalizeMalaysianPhone } from "@/lib/validation";
 
 import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "./script-font";
+import { resolveSiteUrl } from "./site-url";
 
 /**
  * The admin-editable slice of the wedding card's content.
@@ -24,11 +27,13 @@ import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "./script-font";
  * doc that fails validation all fall back to the file defaults — logged
  * server-side, never thrown into the caller.
  *
- * Deliberately NOT admin-editable (kept file-only, never touched here):
- * `siteUrl`, `presetMusicPath`, `gaMeasurementId`, `gallery` — none of
- * these were named in the requirements, and the first two are
- * infra-shaped/security-sensitive enough to keep out of a JSON blob an
- * admin edits from a phone.
+ * Deliberately NOT admin-editable (never touched here): `siteUrl`,
+ * `presetMusicPath`, `gaMeasurementId`, `gallery`. None were named in the
+ * requirements, and the first two are infra-shaped enough to keep out of a
+ * JSON blob an admin edits from a phone. `siteUrl` comes from the
+ * `SITE_URL` deployment var when one is bound, falling back to the file
+ * default (see `src/lib/site-url.ts`) — deployment config, not content,
+ * and never derived from the request.
  */
 
 export const WEDDING_CONFIG_KEY = "wedding_config";
@@ -334,9 +339,27 @@ function flattenWeddingConfigErrors(error: z.ZodError): Record<string, string> {
   return out;
 }
 
+/**
+ * Reads the `SITE_URL` deployment var, if one is bound. Returns null rather
+ * than throwing when it is absent (the normal case locally and for a fresh
+ * clone) or when no Workers context exists at all, e.g. during `next
+ * build`'s static pass. See `src/lib/site-url.ts` for why the origin is
+ * configuration rather than something derived from the request.
+ */
+function envSiteUrl(): string | null {
+  try {
+    const { env } = getCloudflareContext();
+    const value = (env as unknown as { SITE_URL?: unknown }).SITE_URL;
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function defaultResolvedConfig(): ResolvedWeddingConfig {
   return {
     ...wedding,
+    siteUrl: resolveSiteUrl(envSiteUrl(), wedding.siteUrl),
     sections: { ...DEFAULT_SECTIONS },
     notifications: { ...DEFAULT_NOTIFICATIONS },
   };

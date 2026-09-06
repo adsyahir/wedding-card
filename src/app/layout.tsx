@@ -66,8 +66,9 @@ const sans = Jost({
 // `metadata` doesn't support being async directly, but Next.js's App Router
 // DOES support exporting a `generateMetadata` function instead — used here
 // so the title/description reflect any admin-saved names/date/venue rather
-// than only ever the file defaults. `siteUrl` stays file-only (not
-// admin-editable — see `src/lib/wedding-config.ts`).
+// than only ever the file defaults. `siteUrl` is not admin-editable: it
+// comes from the SITE_URL deployment var, falling back to the file default
+// (see src/lib/site-url.ts).
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getWeddingConfig();
   const title = `${config.groom.shortName} & ${config.bride.shortName} | Walimatul Urus`;
