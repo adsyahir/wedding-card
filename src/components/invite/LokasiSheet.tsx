@@ -6,7 +6,8 @@ import { trackEvent } from "@/lib/track";
 export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMap: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <p className="font-script text-2xl text-brown-deep">{config.venue.name}</p>
+      {/* Sans, not script — see the note in Lokasi.tsx. */}
+      <p className="text-lg font-medium text-brown-deep">{config.venue.name}</p>
       <address className="text-sm leading-6 text-brown not-italic">
         {config.venue.addressLines.map((line) => (
           <span key={line} className="block">

@@ -50,7 +50,15 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
       </Reveal>
 
       <Reveal delay={0.1} className="mx-auto mt-8 max-w-md">
-        <p className="font-script text-3xl text-brown-deep">{config.venue.name}</p>
+{/*
+          The venue name is the one thing a guest MUST be able to read — a
+          guest who can't decipher it can't find the wedding. Deliberately
+          not the script face (and so not affected by the admin's font
+          choice): script letterforms are hard work for older readers,
+          which is most of the family. Sans, matching the address lines
+          below it, so the whole block reads as one legible unit.
+        */}
+        <p className="text-xl font-medium text-brown-deep">{config.venue.name}</p>
         <address className="mt-3 text-base leading-7 text-brown not-italic">
           {config.venue.addressLines.map((line) => (
             <span key={line} className="block">
