@@ -28,7 +28,11 @@ function computeRemaining(targetIso: string): Remaining {
 function Cell({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1 rounded-2xl bg-sand px-3 py-4 sm:px-5">
-      <span className="font-serif text-3xl tabular-nums text-brown-deep sm:text-4xl">
+      {/* `min-w-[2ch]` as well as tabular-nums: Cormorant has no tabular
+          figure feature to switch on, so the numerals are proportional and
+          "11" is narrower than "58" — the cell would breathe on every tick
+          without a floor on its width. */}
+      <span className="min-w-[2ch] font-serif text-3xl tabular-nums text-brown-deep sm:text-4xl">
         {value}
       </span>
       <span className="text-[11px] tracking-[0.15em] text-brown uppercase">{label}</span>

@@ -15,6 +15,7 @@ import { Envelope } from "./Envelope";
 import { Footer } from "./Footer";
 import { Galeri } from "./Galeri";
 import { Hero } from "./Hero";
+import { Petals } from "./Petals";
 import { HubungiSheet } from "./HubungiSheet";
 import { KalendarSheet } from "./KalendarSheet";
 import { Kehadiran } from "./Kehadiran";
@@ -104,6 +105,7 @@ export function InviteApp({
       <MusicPlayer src={musicSrc} play={musicShouldPlay} />
 
       <div className="invite-card relative mx-auto flex w-full max-w-[480px] flex-col pb-24">
+        <Petals />
         <Hero config={config} />
         {sections.undangan && <Undangan config={config} />}
         {sections.lokasi && <Lokasi config={config} />}

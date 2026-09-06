@@ -1,7 +1,30 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { ElementType, ReactNode } from "react";
+import type { ComponentType, ElementType, ReactNode } from "react";
+
+/**
+ * `motion.create()` returns a NEW component type on every call. Calling it
+ * during render therefore hands React a different type each time, so React
+ * unmounts and remounts the whole subtree — which replays the reveal
+ * animation on every single re-render.
+ *
+ * That was invisible for static sections but very visible in the countdown,
+ * which re-renders once a second: the numbers appeared to flicker because
+ * the entire grid was being torn down and faded back in every tick.
+ *
+ * Caching by element type means each tag gets exactly one stable component
+ * for the life of the module.
+ */
+const motionComponentCache = new Map<ElementType, ComponentType<Record<string, unknown>>>();
+
+function getMotionComponent(component: ElementType) {
+  const cached = motionComponentCache.get(component);
+  if (cached) return cached;
+  const created = motion.create(component) as ComponentType<Record<string, unknown>>;
+  motionComponentCache.set(component, created);
+  return created;
+}
 
 /**
  * Fade + small translate-y reveal, triggered once when the element scrolls
@@ -35,7 +58,7 @@ export function Reveal({
   delay?: number;
 }) {
   const prefersReducedMotion = useReducedMotion();
-  const MotionComponent = motion.create(Component);
+  const MotionComponent = getMotionComponent(Component);
 
   return (
     <MotionComponent

@@ -97,7 +97,7 @@ body > * {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.invite-card > * {
+.invite-card > *:not(.petal-layer) {
   position: relative;
   z-index: 1;
 }
@@ -163,5 +163,81 @@ body > * {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+
+/* ---------------------------------------------------------------------
+ * Drifting leaves (see src/components/invite/Petals.tsx)
+ *
+ * Fixed to the viewport and clipped to the card's width, so leaves drift
+ * past the content while the guest scrolls rather than being pinned to one
+ * spot in a very long page. Animated on transform/opacity only, which the
+ * compositor handles without layout or paint work.
+ * ------------------------------------------------------------------ */
+
+.petal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  margin-inline: auto;
+  max-width: 480px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.petal {
+  position: absolute;
+  top: 0;
+  opacity: 0.5;
+  will-change: transform;
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* The fall and the sway are separate animations on nested elements: the
+   span's duration is set per-leaf inline, and layering a second animation
+   on the same element would mean sharing that one duration. */
+@keyframes petal-fall {
+  from {
+    transform: translateY(-12vh) rotate(0deg);
+  }
+  to {
+    transform: translateY(112vh) rotate(300deg);
+  }
+}
+
+.petal--sway1 svg {
+  animation: petal-sway1 9s ease-in-out infinite alternate;
+}
+
+.petal--sway2 svg {
+  animation: petal-sway2 13s ease-in-out infinite alternate;
+}
+
+@keyframes petal-sway1 {
+  from {
+    transform: translateX(-15px);
+  }
+  to {
+    transform: translateX(15px);
+  }
+}
+
+@keyframes petal-sway2 {
+  from {
+    transform: translateX(12px) rotate(-14deg);
+  }
+  to {
+    transform: translateX(-18px) rotate(14deg);
+  }
+}
+
+/* A guest who asked for stillness gets stillness — not leaves frozen
+   mid-fall, which is what the global reduce-motion rule alone would give. */
+@media (prefers-reduced-motion: reduce) {
+  .petal-layer {
+    display: none;
   }
 }
