@@ -197,7 +197,7 @@ export function GallerySettings({
       {images.length === 0 ? (
         <p className="text-xs text-brown/60">{dict.gallery_emptyState}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image, index) => (
             <div
               key={image.id}
@@ -247,19 +247,19 @@ export function GallerySettings({
                 maxLength={150}
                 disabled={altPendingId === image.id}
                 placeholder={dict.gallery_altPlaceholder}
-                className="rounded-md border border-tan/40 bg-sand/40 px-2 py-1 text-xs text-brown-deep"
+                className="w-full min-w-0 rounded-md border border-tan/40 bg-sand/40 px-2 py-1 text-xs text-brown-deep"
               />
 
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex flex-wrap items-center justify-between gap-1">
                 <button
                   type="button"
                   onClick={() => handleSaveAlt(image.id)}
                   disabled={altPendingId === image.id || altValue(image) === image.alt}
-                  className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep transition hover:bg-sand/60 disabled:opacity-40"
+                  className="shrink-0 rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep transition hover:bg-sand/60 disabled:opacity-40"
                 >
                   {dict.common_save}
                 </button>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => handleMove(index, -1)}
@@ -283,7 +283,7 @@ export function GallerySettings({
                   type="button"
                   onClick={() => handleDelete(image.id)}
                   disabled={deletePending}
-                  className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+                  className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
                 >
                   {dict.common_delete}
                 </button>

@@ -9,6 +9,7 @@ import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import { ADMIN_THEME_COOKIE_NAME, parseAdminTheme } from "@/lib/admin-theme";
 
 import { AdminNav } from "./AdminNav";
+import { AdminMobileMenu } from "./AdminMobileMenu";
 import { LangToggle } from "./LangToggle";
 import { ThemeToggle } from "./ThemeToggle";
 import { LogoutButton } from "./LogoutButton";
@@ -75,18 +76,23 @@ export default async function ProtectedAdminLayout({
     // Stamped server-side so the correct palette is in the very first
     // paint. A client-only toggle would flash the light theme first.
     <div data-admin-theme={theme} className="min-h-screen bg-cream">
-      <header className="sticky top-0 z-10 border-b border-tan/40 bg-sand/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-3">
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+      {/* `relative` so the mobile menu panel can hang off the header. */}
+      <header className="sticky top-0 z-10 relative border-b border-tan/40 bg-sand/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:flex-wrap sm:px-6 sm:py-3">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="min-w-0">
               <p className="truncate font-serif text-base leading-tight text-brown-deep sm:text-lg">
                 {config.groom.shortName} &amp; {config.bride.shortName}
               </p>
-              <p className="text-xs text-brown/60">{config.hashtag}</p>
+              <p className="truncate text-xs text-brown/60">{config.hashtag}</p>
             </div>
-            <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
+            {/* Full nav from `sm` up; below that it lives in the menu. */}
+            <div className="hidden sm:block">
+              <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
+
+          <div className="hidden shrink-0 items-center gap-3 sm:flex">
             <ThemeToggle
               current={theme}
               lightLabel={dict.theme_light}
@@ -95,6 +101,13 @@ export default async function ProtectedAdminLayout({
             <LangToggle current={lang} />
             <LogoutButton dict={dict} />
           </div>
+
+          <AdminMobileMenu
+            dict={dict}
+            lang={lang}
+            theme={theme}
+            pendingWishCount={pendingWishCount}
+          />
         </div>
       </header>
 

@@ -571,45 +571,48 @@ function AturCaraTab({ initialConfig, dict }: { initialConfig: WeddingConfig; di
         {rows.map((row, index) => (
           <div key={index} className="flex flex-wrap items-center gap-2 rounded-md border border-tan/30 p-2">
             <input
-              className={`${inputClass} w-28`}
+              className={`${inputClass} w-24 shrink-0 sm:w-28`}
               value={row.time}
               placeholder={dict.wc_aturCaraTimePlaceholder}
               onChange={(e) => update(index, "time", e.target.value)}
             />
             <input
-              className={`${inputClass} flex-1`}
+              className={`${inputClass} min-w-0 flex-1`}
               value={row.label}
               placeholder={dict.wc_aturCaraLabelPlaceholder}
               onChange={(e) => update(index, "label", e.target.value)}
             />
-            <button
-              type="button"
-              onClick={() => move(index, -1)}
-              disabled={index === 0}
-              aria-label={dict.wc_moveUp}
-              className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={() => move(index, 1)}
-              disabled={index === rows.length - 1}
-              aria-label={dict.wc_moveDown}
-              className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
-            >
-              ↓
-            </button>
-            <button
-              type="button"
-              onClick={() => remove(index)}
-              className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
-            >
-              {dict.common_delete}
-            </button>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => move(index, -1)}
+                disabled={index === 0}
+                aria-label={dict.wc_moveUp}
+                className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => move(index, 1)}
+                disabled={index === rows.length - 1}
+                aria-label={dict.wc_moveDown}
+                className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+              >
+                {dict.common_delete}
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
       <button
         type="button"
         onClick={add}
