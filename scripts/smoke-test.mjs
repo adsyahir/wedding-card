@@ -317,10 +317,26 @@ async function checkAdminApiUnauthorized() {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/*
+ * A per-run synthetic client IP.
+ *
+ * The public endpoints are rate-limited per visitor (3 RSVPs/hour), and a
+ * visitor is identified by a hash of IP + user-agent. Without this, running
+ * the smoke test twice within an hour exhausts the budget and the second
+ * run fails on "Duplicate RSVP" — a confusing false alarm that looks like a
+ * regression. Giving each run its own IP puts it in its own bucket, while
+ * still exercising the real rate-limiting code path.
+ *
+ * `CF-Connecting-IP` is set by Cloudflare in production and cannot be
+ * spoofed by a real client there; it is only honoured here because this
+ * runs against a local dev server.
+ */
+const RUN_IP = `203.0.113.${Math.floor(Math.random() * 254) + 1}`;
+
 async function postJson(path, body) {
   return fetch(BASE_URL + path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "CF-Connecting-IP": RUN_IP },
     body: JSON.stringify(body),
   });
 }
