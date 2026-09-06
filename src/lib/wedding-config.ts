@@ -137,6 +137,56 @@ const contactSchema = z.object({
   phone: phoneSchema,
 });
 
+const MAX_NOTIFICATION_RECIPIENTS = 2;
+
+/**
+ * A sane, deliberately not-RFC-5322-exhaustive email check: this only
+ * gates what an admin can type into the recipients fields, and Mailjet
+ * itself is the real authority on deliverability (an address that passes
+ * this but doesn't exist just bounces silently from Mailjet's side, same
+ * as any other typo). `z.string().email()` is intentionally avoided here —
+ * across zod versions its regex has shifted; a small explicit pattern is
+ * easier to reason about and test.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const notificationEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1)
+  .max(254)
+  .refine((v) => EMAIL_RE.test(v), "email_invalid");
+
+/**
+ * Notification recipients/toggles (`src/lib/notify.ts`,
+ * `src/lib/mailjet.ts`). Deliberately separate from the Mailjet
+ * credentials themselves (`MAILJET_API_KEY`/`MAILJET_API_SECRET`/
+ * `MAILJET_SENDER_EMAIL`/`MAILJET_SENDER_NAME`), which are Cloudflare
+ * secrets, never stored here — see the module comment above and
+ * `src/lib/request.ts`'s `SecretName` union.
+ *
+ * `recipients` is capped at `MAX_NOTIFICATION_RECIPIENTS` (2) and a THIRD
+ * entry is rejected outright (`.max()`), never silently truncated — an
+ * admin who thinks they configured 3 recipients must find out immediately,
+ * not discover months later that the third never got emailed.
+ */
+const notificationsSchema = z.object({
+  enabled: z.boolean(),
+  recipients: z.array(notificationEmailSchema).max(MAX_NOTIFICATION_RECIPIENTS),
+  onRsvp: z.boolean(),
+  onUcapan: z.boolean(),
+});
+
+export type NotificationsConfig = z.infer<typeof notificationsSchema>;
+
+export const DEFAULT_NOTIFICATIONS: NotificationsConfig = {
+  enabled: false,
+  recipients: [],
+  onRsvp: true,
+  onUcapan: true,
+};
+
 export const SECTION_KEYS = [
   "undangan",
   "lokasi",
@@ -210,11 +260,15 @@ export const weddingConfigDocSchema = z.object({
   hashtag: trimmedString(1, 60).optional(),
   doa: trimmedString(1, 1000).optional(),
   sections: sectionsSchema.optional(),
+  notifications: notificationsSchema.optional(),
 });
 
 export type WeddingConfigDoc = z.infer<typeof weddingConfigDocSchema>;
 
-export type ResolvedWeddingConfig = WeddingConfig & { sections: SectionsConfig };
+export type ResolvedWeddingConfig = WeddingConfig & {
+  sections: SectionsConfig;
+  notifications: NotificationsConfig;
+};
 
 /** Turns a Zod error into `{ fieldPath: firstMessage }`, for per-field admin UI errors. */
 export /**
@@ -236,7 +290,11 @@ function flattenWeddingConfigErrors(error: z.ZodError): Record<string, string> {
 }
 
 function defaultResolvedConfig(): ResolvedWeddingConfig {
-  return { ...wedding, sections: { ...DEFAULT_SECTIONS } };
+  return {
+    ...wedding,
+    sections: { ...DEFAULT_SECTIONS },
+    notifications: { ...DEFAULT_NOTIFICATIONS },
+  };
 }
 
 /**
@@ -273,6 +331,7 @@ export function mergeWeddingConfig(
     ...(partial.hashtag !== undefined && { hashtag: partial.hashtag }),
     ...(partial.doa !== undefined && { doa: partial.doa }),
     sections: { ...base.sections, ...partial.sections },
+    ...(partial.notifications !== undefined && { notifications: partial.notifications }),
   };
 }
 

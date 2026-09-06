@@ -16,3 +16,17 @@ ANALYTICS_SALT=replace-with-a-long-random-string
 # random string works for local dev; a real deployment should use a
 # cryptographically random value, e.g. `openssl rand -hex 32`.
 CRON_SECRET=replace-with-a-long-random-string
+
+# Mailjet credentials for the RSVP/ucapan admin email notifications (see
+# src/lib/mailjet.ts, src/lib/notify.ts, and the README's "Mailjet setup"
+# section). Create an API key pair at https://app.mailjet.com/account/apikeys
+# and validate a sender address/domain first — Mailjet rejects sends from an
+# unvalidated `From:`. Left empty here on purpose: with these unset,
+# notifications are a silent no-op (see notify.ts), which is the expected
+# state for local dev and for a fresh clone that hasn't set them up yet.
+MAILJET_API_KEY=
+MAILJET_API_SECRET=
+
+# Must be an email address/domain you've validated in Mailjet's dashboard.
+MAILJET_SENDER_EMAIL=
+MAILJET_SENDER_NAME=

@@ -232,6 +232,61 @@ than force that with fragile custom-worker surgery, this app instead:
 Set `CRON_SECRET` the same way as `ANALYTICS_SALT` — via `.dev.vars`
 locally, and `wrangler secret put CRON_SECRET` in production.
 
+### Email notifications (Mailjet)
+
+The couple/family can get an email whenever a guest submits an RSVP or an
+ucapan (well-wish) — see `src/lib/notify.ts` and `src/lib/mailjet.ts`.
+
+**Setup**:
+
+1. Create a Mailjet account and an API key pair at
+   <https://app.mailjet.com/account/apikeys>.
+2. **Validate a sender address (or a whole domain)** in Mailjet before
+   sending anything — this is not optional. Mailjet refuses to send from a
+   `From:` address that hasn't been validated. Domain validation (adding
+   the DNS records Mailjet gives you) is the more robust option but can
+   take a while to propagate — a single validated sender email is faster
+   to set up if you just want something working today.
+3. Set the four secrets (never in `wrangler.jsonc`, never in the
+   database):
+   ```bash
+   wrangler secret put MAILJET_API_KEY
+   wrangler secret put MAILJET_API_SECRET
+   wrangler secret put MAILJET_SENDER_EMAIL   # must be the validated address/domain above
+   wrangler secret put MAILJET_SENDER_NAME
+   ```
+   For local dev, copy `.dev.vars.example` to `.dev.vars` and fill these
+   four in (leaving them blank is fine — see below).
+4. In `/admin/settings`, open the **Notifikasi** panel: turn notifications
+   on, enter up to two recipient email addresses, choose whether to notify
+   on RSVP/ucapan (or both), and use "Hantar e-mel ujian" to confirm it
+   actually reaches an inbox.
+
+**Design notes**:
+
+- **Never blocks or breaks a guest submission.** The email is sent via
+  `ctx.waitUntil()` strictly AFTER the RSVP/ucapan database write has
+  already succeeded (`src/lib/background.ts`), wrapped in try/catch —
+  Mailjet being slow, down, or misconfigured can never delay or fail a
+  guest's 200 response. A 10-second hard timeout
+  (`AbortSignal.timeout`) keeps a hanging Mailjet request from lingering in
+  the background forever.
+- **Silent no-op when unconfigured.** With any of the four secrets unset,
+  or with the admin toggle off, or with no recipients saved, nothing is
+  sent and nothing is logged as an error — this is the expected state for
+  a fresh clone.
+- **Throttled at 20 emails/hour, globally** (`checkRateLimit`, key
+  `notify:global`) — a spam burst on the public forms can't flood the
+  recipients' inboxes or burn the Mailjet quota. The RSVP/ucapan row is
+  still written every time; only the email is skipped once throttled.
+- Recipients and the on/off/per-event toggles are admin-editable
+  (`notifications` in the `wedding_config` doc,
+  `src/lib/wedding-config.ts`) — capped at 2 recipients, a third is
+  rejected rather than silently dropped. The Mailjet credentials
+  themselves are deployment secrets, deliberately kept out of that
+  admin-editable JSON blob (see the module comment in
+  `src/lib/wedding-config.ts`).
+
 ### Google Analytics (optional)
 
 Set `wedding.gaMeasurementId` in `src/config/wedding.ts` to a real

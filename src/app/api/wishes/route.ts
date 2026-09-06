@@ -1,6 +1,8 @@
 import { getDb } from "@/db";
 import { wishes } from "@/db/schema";
 import { API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
+import { runInBackground } from "@/lib/background";
+import { notifyNewUcapan } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestVisitorHash, isSameOrigin } from "@/lib/request";
 import { isHoneypotTripped, isTooFast } from "@/lib/spam";
@@ -74,19 +76,28 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const db = getDb();
 
-    await db.insert(wishes).values({
-      name,
-      message,
-      // Hardcoded server-side — NEVER taken from the request body. A wish
-      // is only ever created as "pending"; approving it is an admin-only
-      // action in a later phase. Accepting a client-supplied `status` here
-      // would let anyone mass-assign their own wish straight to "approved"
-      // and skip moderation entirely.
-      status: "pending",
-      // Server-set timestamp — a client-supplied time is never trusted.
-      createdAt: new Date(),
-      visitorHash,
-    });
+    const [savedRow] = await db
+      .insert(wishes)
+      .values({
+        name,
+        message,
+        // Hardcoded server-side — NEVER taken from the request body. A wish
+        // is only ever created as "pending"; approving it is an admin-only
+        // action in a later phase. Accepting a client-supplied `status` here
+        // would let anyone mass-assign their own wish straight to "approved"
+        // and skip moderation entirely.
+        status: "pending",
+        // Server-set timestamp — a client-supplied time is never trusted.
+        createdAt: new Date(),
+        visitorHash,
+      })
+      .returning();
+
+    // Fire-and-forget email notification — dispatched via `ctx.waitUntil()`
+    // AFTER the write above has already succeeded. This is a MODERATION
+    // PROMPT, not a "your wish is live" notice: the wish is still `pending`
+    // and not yet public. See `src/lib/notify.ts`.
+    runInBackground(notifyNewUcapan(savedRow));
 
     return jsonOk();
   } catch (error) {

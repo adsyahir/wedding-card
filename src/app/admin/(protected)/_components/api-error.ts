@@ -30,6 +30,10 @@ const CODE_TO_DICT_KEY: Record<string, keyof AdminDict> = {
   invalid_credentials: "errors_invalidCredentials",
   unauthorized: "errors_unauthorized",
   forbidden: "errors_forbidden",
+  no_recipients_configured: "errors_noRecipientsConfigured",
+  mailjet_unconfigured: "errors_mailjetUnconfigured",
+  mailjet_rejected: "errors_mailjetRejected",
+  mailjet_network_error: "errors_mailjetNetworkError",
 };
 
 /**
@@ -61,6 +65,7 @@ const FIELD_CODE_TO_DICT_KEY: Record<string, keyof AdminDict> = {
   url_must_be_https: "fieldErr_urlMustBeHttps",
   url_host_not_allowed: "fieldErr_urlHostNotAllowed",
   phone_invalid: "fieldErr_phoneInvalid",
+  email_invalid: "fieldErr_emailInvalid",
 };
 
 /** Localizes one field-level validation code. */

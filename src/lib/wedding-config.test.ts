@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { wedding } from "@/config/wedding";
 
 import {
+  DEFAULT_NOTIFICATIONS,
   DEFAULT_SECTIONS,
   mergeWeddingConfig,
   mergeWeddingConfigDocs,
@@ -12,7 +13,11 @@ import {
 } from "./wedding-config";
 
 function fileDefaults(): ResolvedWeddingConfig {
-  return { ...wedding, sections: { ...DEFAULT_SECTIONS } };
+  return {
+    ...wedding,
+    sections: { ...DEFAULT_SECTIONS },
+    notifications: { ...DEFAULT_NOTIFICATIONS },
+  };
 }
 
 const validVenue = {
@@ -203,6 +208,81 @@ describe("section-toggle defaults", () => {
       navLokasi: true,
       navHubungi: true,
       navRsvp: true,
+    });
+  });
+});
+
+describe("notifications schema", () => {
+  it("accepts a valid doc with two recipients", () => {
+    const result = weddingConfigDocSchema.safeParse({
+      notifications: {
+        enabled: true,
+        recipients: ["a@example.com", "b@example.com"],
+        onRsvp: true,
+        onUcapan: false,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("lowercases and trims recipient emails", () => {
+    const result = weddingConfigDocSchema.safeParse({
+      notifications: {
+        enabled: true,
+        recipients: ["  Foo@Example.com  "],
+        onRsvp: true,
+        onUcapan: true,
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.notifications?.recipients).toEqual(["foo@example.com"]);
+    }
+  });
+
+  it("rejects a third recipient rather than silently truncating", () => {
+    const result = weddingConfigDocSchema.safeParse({
+      notifications: {
+        enabled: true,
+        recipients: ["a@example.com", "b@example.com", "c@example.com"],
+        onRsvp: true,
+        onUcapan: true,
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an invalid email", () => {
+    const result = weddingConfigDocSchema.safeParse({
+      notifications: {
+        enabled: true,
+        recipients: ["not-an-email"],
+        onRsvp: true,
+        onUcapan: true,
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("defaults to disabled, no recipients, both events on when absent", () => {
+    expect(DEFAULT_NOTIFICATIONS).toEqual({
+      enabled: false,
+      recipients: [],
+      onRsvp: true,
+      onUcapan: true,
+    });
+    expect(fileDefaults().notifications).toEqual(DEFAULT_NOTIFICATIONS);
+  });
+
+  it("replaces the whole notifications object wholesale when merging over file defaults", () => {
+    const merged = mergeWeddingConfig(fileDefaults(), {
+      notifications: { enabled: true, recipients: ["a@example.com"], onRsvp: false, onUcapan: true },
+    });
+    expect(merged.notifications).toEqual({
+      enabled: true,
+      recipients: ["a@example.com"],
+      onRsvp: false,
+      onUcapan: true,
     });
   });
 });

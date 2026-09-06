@@ -288,6 +288,19 @@ const ms = {
   gallery_fileTooLarge: "Saiz fail terlalu besar (had 5 MB).",
   gallery_confirmDelete: "Padam gambar ini? Tindakan ini tidak boleh dibatalkan.",
 
+  // Notification settings (src/app/admin/(protected)/_components/NotificationSettings.tsx)
+  notif_heading: "Notifikasi",
+  notif_secretsNotice:
+    "Kelayakan Mailjet (kunci API, alamat penghantar) ditetapkan sebagai secret pelayan (`wrangler secret put`), bukan dari skrin ini. Jika e-mel ujian gagal dengan mesej \"belum dikonfigurasikan\", itu bermakna secret tersebut belum ditetapkan pada deployment ini.",
+  notif_enable: "Aktifkan notifikasi e-mel",
+  notif_recipientLabel: "Penerima {n}",
+  notif_recipientPlaceholder: "nama@contoh.com",
+  notif_onRsvp: "Hantar apabila RSVP baharu diterima",
+  notif_onUcapan: "Hantar apabila ucapan baharu diterima",
+  notif_testSend: "Hantar e-mel ujian",
+  notif_testSending: "Menghantar…",
+  notif_testSuccess: "E-mel ujian berjaya dihantar.",
+
   // Server error `code` → localized message (src/lib/api.ts's ADMIN_ERROR_CODES,
   // and a few route-specific fixed strings). Used by useAdminAction and the
   // other client mutation helpers to localize a failure without trusting
@@ -310,6 +323,13 @@ const ms = {
   errors_invalidCredentials: "Nama pengguna atau kata laluan tidak sah.",
   errors_unauthorized: "Sesi tamat tempoh. Sila log masuk semula.",
   errors_forbidden: "Tindakan disekat.",
+  fieldErr_emailInvalid: "Alamat e-mel tidak sah",
+  errors_noRecipientsConfigured: "Sila konfigurasikan sekurang-kurangnya satu penerima dan simpan dahulu.",
+  errors_mailjetUnconfigured:
+    "Mailjet belum dikonfigurasikan pada pelayan (secrets hilang). Ini perlu ditetapkan dengan `wrangler secret put`, bukan dari skrin ini.",
+  errors_mailjetRejected:
+    "Mailjet menolak permintaan (contohnya alamat penghantar belum disahkan). Semak dashboard Mailjet anda.",
+  errors_mailjetNetworkError: "Ralat rangkaian semasa menghubungi Mailjet. Sila cuba sebentar lagi.",
 } as const;
 
 const en: Record<keyof typeof ms, string> = {
@@ -528,6 +548,18 @@ const en: Record<keyof typeof ms, string> = {
   gallery_fileTooLarge: "File is too large (5 MB limit).",
   gallery_confirmDelete: "Delete this photo? This action cannot be undone.",
 
+  notif_heading: "Notifications",
+  notif_secretsNotice:
+    "Mailjet credentials (API key, sender address) are set as server secrets (`wrangler secret put`), not from this screen. If the test email fails with an \"unconfigured\" message, those secrets haven't been set on this deployment yet.",
+  notif_enable: "Enable email notifications",
+  notif_recipientLabel: "Recipient {n}",
+  notif_recipientPlaceholder: "name@example.com",
+  notif_onRsvp: "Send when a new RSVP is received",
+  notif_onUcapan: "Send when a new wish is received",
+  notif_testSend: "Send test email",
+  notif_testSending: "Sending…",
+  notif_testSuccess: "Test email sent successfully.",
+
   errors_notFound: "Record not found.",
   errors_invalidInput: "Please review the information you entered.",
   fieldErr_urlInvalid: "Not a valid URL",
@@ -546,6 +578,13 @@ const en: Record<keyof typeof ms, string> = {
   errors_invalidCredentials: "Invalid username or password.",
   errors_unauthorized: "Session expired. Please log in again.",
   errors_forbidden: "Action forbidden.",
+  fieldErr_emailInvalid: "Not a valid email address",
+  errors_noRecipientsConfigured: "Please configure at least one recipient and save first.",
+  errors_mailjetUnconfigured:
+    "Mailjet isn't configured on the server (secrets missing). This needs to be set with `wrangler secret put`, not from this screen.",
+  errors_mailjetRejected:
+    "Mailjet rejected the request (e.g. an unvalidated sender address). Check your Mailjet dashboard.",
+  errors_mailjetNetworkError: "Network error contacting Mailjet. Please try again shortly.",
 };
 
 const DICTS = { ms, en } satisfies Record<AdminLang, Record<string, string>>;

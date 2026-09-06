@@ -6,6 +6,7 @@ import { getStoredWeddingConfigDoc, getWeddingConfig } from "@/lib/wedding-confi
 
 import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
+import { NotificationSettings } from "../_components/NotificationSettings";
 import { WeddingConfigSettings } from "../_components/WeddingConfigSettings";
 
 // Never statically optimized/cached — every request must actually run the
@@ -53,6 +54,8 @@ export default async function AdminSettingsPage() {
       />
 
       <GallerySettings images={galleryImages} dict={dict} lang={lang} />
+
+      <NotificationSettings initialConfig={config.notifications} dict={dict} />
     </div>
   );
 }

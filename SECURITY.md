@@ -73,6 +73,24 @@ below are sized accordingly.
 
 ## Known limitations (stated honestly)
 
+- **RSVP/ucapan notification emails carry guest PII to a third party, on
+  purpose.** When enabled, `src/lib/notify.ts` emails the admin-configured
+  recipients a copy of the guest's **name and phone number** (RSVP) or
+  **name** (ucapan), plus their message/headcount, via Mailjet. That is
+  guest PII leaving this system's D1 database and Cloudflare Worker and
+  landing in Mailjet's infrastructure and then the recipients' own inbox
+  provider — a deliberate, user-requested tradeoff (the couple/family
+  wants to know about a new RSVP immediately), not an oversight. It is
+  off by default (`notifications.enabled: false`) and only ever sends to
+  addresses the admin explicitly configured. Notification volume is capped
+  at 20/hour globally (`checkRateLimit`, key `notify:global`,
+  `src/lib/notify.ts`) so a spam burst on the public forms can't also turn
+  into a PII-leaking flood. The Mailjet API key/secret and the sender
+  identity are Cloudflare secrets set via `wrangler secret put` — never
+  admin-editable, never stored in the database, and never logged (see
+  `src/lib/mailjet.ts`, which excludes them from every error message and
+  log line it writes, even on a failed send).
+
 - **The rate limiter fails open.** If D1 is unreachable, `checkRateLimit`
   logs the error and returns `{ allowed: true }` rather than blocking every
   request (`src/lib/rate-limit.ts`). A broken rate limiter must never be

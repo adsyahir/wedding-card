@@ -3,6 +3,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rsvps } from "@/db/schema";
 import { API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
+import { runInBackground } from "@/lib/background";
+import { notifyNewRsvp } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestVisitorHash, isSameOrigin } from "@/lib/request";
 import { isHoneypotTripped, isTooFast } from "@/lib/spam";
@@ -95,8 +97,10 @@ export async function POST(request: Request): Promise<Response> {
       .where(and(eq(rsvps.phone, phone), isNull(rsvps.deletedAt)))
       .limit(1);
 
+    let savedRow: typeof rsvps.$inferSelect;
+
     if (existing) {
-      await db
+      [savedRow] = await db
         .update(rsvps)
         .set({
           name,
@@ -105,20 +109,30 @@ export async function POST(request: Request): Promise<Response> {
           children,
           message: message ?? null,
         })
-        .where(eq(rsvps.id, existing.id));
+        .where(eq(rsvps.id, existing.id))
+        .returning();
     } else {
-      await db.insert(rsvps).values({
-        name,
-        phone,
-        attending,
-        adults,
-        children,
-        message: message ?? null,
-        // Server-set timestamp — a client-supplied time is never trusted.
-        createdAt: new Date(),
-        visitorHash,
-      });
+      [savedRow] = await db
+        .insert(rsvps)
+        .values({
+          name,
+          phone,
+          attending,
+          adults,
+          children,
+          message: message ?? null,
+          // Server-set timestamp — a client-supplied time is never trusted.
+          createdAt: new Date(),
+          visitorHash,
+        })
+        .returning();
     }
+
+    // Fire-and-forget email notification — dispatched via `ctx.waitUntil()`
+    // AFTER the write above has already succeeded, so a slow/down/
+    // misconfigured Mailjet can never delay or fail this response. See
+    // `src/lib/notify.ts` for why this can never throw or block.
+    runInBackground(notifyNewRsvp(savedRow));
 
     return jsonOk();
   } catch (error) {
