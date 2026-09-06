@@ -92,7 +92,8 @@ below are sized accordingly.
   log line it writes, even on a failed send).
 
 - **The embedded map (when enabled) sends every guest's IP address to
-  Google.** `sections.petaEmbed` (default **off**) puts a keyless Google
+  Google.** `sections.petaEmbed` (default **on**, at the couple's
+  explicit request) puts a keyless Google
   Maps `output=embed` iframe in the Lokasi section/sheet
   (`src/components/invite/{Lokasi,LokasiSheet}.tsx`). No API key or
   billing is involved, but loading that iframe is still a request from the

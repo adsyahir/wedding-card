@@ -208,11 +208,12 @@ export const NAV_KEYS = ["navKalendar", "navLokasi", "navHubungi", "navRsvp"] as
  *    (`KalendarSheet`/`CalendarMonthGrid`). Defaults `true`; turning it off
  *    leaves the date line and the add-to-calendar buttons untouched.
  *  - `petaEmbed` — the embedded Google Maps iframe in Lokasi/LokasiSheet.
- *    Defaults **`false`**, deliberately: embedding Google Maps means Google
- *    receives the IP address of every guest who opens the invitation, a
- *    privacy cost the couple should opt into, not inherit (see
- *    `SECURITY.md`). Also gates whether `frame-src https://www.google.com`
- *    is added to the CSP at all (`src/middleware.ts`).
+ *    Defaults `true` at the couple's explicit request: a map guests can see
+ *    without leaving the card is worth more to them than the privacy cost.
+ *    That cost is real and unchanged — loading the iframe sends every
+ *    guest's IP address to Google (see `SECURITY.md`) — so this is a
+ *    decision recorded, not a default that drifted. Turn it off to fall
+ *    back to the address plus the Maps/Waze buttons.
  */
 export const EXTRA_TOGGLE_KEYS = ["kalendarGrid", "petaEmbed"] as const;
 
@@ -237,7 +238,7 @@ export const DEFAULT_SECTIONS: SectionsConfig = {
   navHubungi: true,
   navRsvp: true,
   kalendarGrid: true,
-  petaEmbed: false,
+  petaEmbed: true,
 };
 
 const sectionsSchema = z

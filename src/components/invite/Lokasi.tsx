@@ -55,7 +55,7 @@ export function Lokasi({ config, showMap }: { config: WeddingConfig; showMap: bo
           {/*
             Keyless embed — no API key, no billing, but Google still sees
             every guest's IP the moment this iframe loads. That's why this
-            is gated on `sections.petaEmbed` (default OFF, see
+            is gated on `sections.petaEmbed` (default ON, see
             src/lib/wedding-config.ts) and only added to the CSP's
             `frame-src` when the toggle is on (src/middleware.ts).
           */}
