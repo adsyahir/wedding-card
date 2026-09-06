@@ -287,6 +287,8 @@ export const weddingConfigDocSchema = z.object({
   rsvpDeadlineDisplay: trimmedString(1, 60).optional(),
   contacts: z.array(contactSchema).max(MAX_CONTACTS).optional(),
   rsvpPaxMode: z.enum(["adultsChildren", "total", "none"]).optional(),
+  siteMode: z.enum(["live", "maintenance", "ended"]).optional(),
+  siteClosedMessage: trimmedString(1, 300).nullable().optional(),
   hashtag: trimmedString(1, 60).optional(),
   doa: trimmedString(1, 1000).optional(),
   sections: sectionsSchema.optional(),
@@ -366,6 +368,10 @@ export function mergeWeddingConfig(
     // resolved config, so an admin's saved pax-mode choice never took
     // effect on the public card. Fixed alongside this change.
     ...(partial.rsvpPaxMode !== undefined && { rsvpPaxMode: partial.rsvpPaxMode }),
+    ...(partial.siteMode !== undefined && { siteMode: partial.siteMode }),
+    ...(partial.siteClosedMessage !== undefined && {
+      siteClosedMessage: partial.siteClosedMessage,
+    }),
     ...(partial.scriptFont !== undefined && { scriptFont: partial.scriptFont }),
     sections: { ...base.sections, ...partial.sections },
     ...(partial.notifications !== undefined && { notifications: partial.notifications }),

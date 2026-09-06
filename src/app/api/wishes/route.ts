@@ -29,7 +29,15 @@ export async function POST(request: Request): Promise<Response> {
   // The admin can close the Ucapan section entirely — that must be a REAL
   // closure, not cosmetic. Reject writes here too, or someone could still
   // POST directly even with the wall/form absent from the DOM.
-  const { sections } = await getWeddingConfig();
+  const config = await getWeddingConfig();
+  const { sections } = config;
+  // A closed invitation is closed on the SERVER, not merely hidden — the
+  // same principle as the section toggles. Without this, someone could
+  // still POST to this endpoint while the card shows a maintenance notice.
+  if (config.siteMode !== "live") {
+    return jsonError(403, API_ERRORS.invalidRequest);
+  }
+
   if (!sections.ucapan) {
     return jsonError(403, API_ERRORS.invalidRequest);
   }

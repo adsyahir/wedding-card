@@ -9,6 +9,7 @@ import {
 } from "@/db/queries/public";
 import { getWeddingConfig } from "@/lib/wedding-config";
 
+import { ClosedNotice } from "@/components/invite/ClosedNotice";
 import { InviteApp } from "@/components/invite/InviteApp";
 
 // This page reads live, per-request data (approved wishes, attendance
@@ -21,6 +22,13 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const config = await getWeddingConfig();
+
+  // Checked before anything else: when the invitation is closed, none of
+  // the guest data is queried at all, rather than fetched and then hidden.
+  if (config.siteMode !== "live") {
+    return <ClosedNotice config={config} />;
+  }
+
   const { sections } = config;
 
   // A hidden section isn't just hidden with CSS — its data isn't even

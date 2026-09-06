@@ -18,6 +18,17 @@ export type WeddingConfig = {
    */
   rsvpPaxMode: "adultsChildren" | "total" | "none";
   /**
+   * Whether the public invitation is open.
+   *  - "live":        normal
+   *  - "maintenance": temporarily closed, come back later
+   *  - "ended":       the wedding has happened
+   * Anything other than "live" replaces the card with a notice AND closes
+   * the public write endpoints — see src/app/page.tsx.
+   */
+  siteMode: "live" | "maintenance" | "ended";
+  /** Optional custom text for the notice; falls back to a default per mode. */
+  siteClosedMessage: string | null;
+  /**
    * Which self-hosted `next/font/google` family drives `--font-script`
    * (the couple's short/full names, the venue name, the hashtag). See
    * `src/app/layout.tsx` (loads all five, sets `data-script-font` on
@@ -71,6 +82,9 @@ export const wedding = {
   presetMusicPath: null,
 
   rsvpPaxMode: "adultsChildren",
+
+  siteMode: "live",
+  siteClosedMessage: null,
 
   scriptFont: "parisienne",
 

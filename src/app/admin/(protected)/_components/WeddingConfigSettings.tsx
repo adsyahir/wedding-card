@@ -693,12 +693,19 @@ function BahagianTab({
   initialConfig,
   dict,
 }: {
-  initialConfig: { sections: SectionsConfig; rsvpPaxMode: WeddingConfig["rsvpPaxMode"] };
+  initialConfig: {
+    sections: SectionsConfig;
+    rsvpPaxMode: WeddingConfig["rsvpPaxMode"];
+    siteMode: WeddingConfig["siteMode"];
+    siteClosedMessage: string | null;
+  };
   dict: AdminDict;
 }) {
   const { save, pending, error, success } = useSectionSave(dict);
   const [sections, setSections] = useState<SectionsConfig>({ ...initialConfig.sections });
   const [rsvpPaxMode, setRsvpPaxMode] = useState(initialConfig.rsvpPaxMode);
+  const [siteMode, setSiteMode] = useState(initialConfig.siteMode);
+  const [siteClosedMessage, setSiteClosedMessage] = useState(initialConfig.siteClosedMessage ?? "");
 
   const SECTION_TOGGLE_LABELS: { key: keyof SectionsConfig; label: string }[] = [
     { key: "undangan", label: dict.wc_sectionUndangan },
@@ -720,11 +727,61 @@ function BahagianTab({
   }
 
   function handleSave() {
-    void save({ sections, rsvpPaxMode });
+    void save({
+      sections,
+      rsvpPaxMode,
+      siteMode,
+      siteClosedMessage: siteClosedMessage.trim() === "" ? null : siteClosedMessage.trim(),
+    });
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {/*
+        Site status sits above the per-section toggles because it overrides
+        all of them: anything other than "live" replaces the whole card with
+        a notice and closes the public write endpoints.
+      */}
+      <div className="rounded-md border border-gold-light/60 bg-sand/40 px-3 py-3">
+        <label
+          htmlFor="site-mode"
+          className="mb-1 block text-sm font-medium text-brown-deep"
+        >
+          {dict.wc_siteModeLabel}
+        </label>
+        <select
+          id="site-mode"
+          value={siteMode}
+          onChange={(event) => setSiteMode(event.target.value as WeddingConfig["siteMode"])}
+          className="w-full rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep"
+        >
+          <option value="live">{dict.wc_siteModeLive}</option>
+          <option value="maintenance">{dict.wc_siteModeMaintenance}</option>
+          <option value="ended">{dict.wc_siteModeEnded}</option>
+        </select>
+
+        {siteMode !== "live" && (
+          <div className="mt-3">
+            <label
+              htmlFor="site-closed-message"
+              className="mb-1 block text-sm font-medium text-brown-deep"
+            >
+              {dict.wc_siteClosedMessageLabel}
+            </label>
+            <textarea
+              id="site-closed-message"
+              value={siteClosedMessage}
+              onChange={(event) => setSiteClosedMessage(event.target.value.slice(0, 300))}
+              rows={2}
+              maxLength={300}
+              placeholder={dict.wc_siteClosedMessagePlaceholder}
+              className="w-full rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep"
+            />
+            <p className="mt-1 text-xs text-red-700">{dict.wc_siteModeWarning}</p>
+          </div>
+        )}
+      </div>
+
       <p className="text-xs text-brown/70">{dict.wc_sectionsNotice}</p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {SECTION_TOGGLE_LABELS.map(({ key, label }) => (

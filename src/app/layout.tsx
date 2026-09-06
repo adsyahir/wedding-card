@@ -84,10 +84,12 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "ms_MY",
       siteName: title,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    // A maintenance or post-event notice should not be what a search
+    // engine has on file for this wedding.
+    robots:
+      config.siteMode === "live"
+        ? { index: true, follow: true }
+        : { index: false, follow: false },
   };
 }
 
