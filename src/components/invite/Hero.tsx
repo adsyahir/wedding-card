@@ -1,4 +1,4 @@
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 
 import { Reveal } from "./Reveal";
 
@@ -29,7 +29,7 @@ function CornerFlourish({ className = "" }: { className?: string }) {
   );
 }
 
-export function Hero({ config }: { config: typeof wedding }) {
+export function Hero({ config }: { config: WeddingConfig }) {
   const [day, month, year] = formatNumeric(config.date);
 
   return (

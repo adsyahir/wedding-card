@@ -1,13 +1,13 @@
 "use client";
 
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
 function whatsappUrl(phone: string): string {
   return `https://wa.me/${phone.replace(/^\+/, "").replace(/\D/g, "")}`;
 }
 
-export function HubungiSheet({ config }: { config: typeof wedding }) {
+export function HubungiSheet({ config }: { config: WeddingConfig }) {
   return (
     <div className="flex flex-col gap-4">
       {config.contacts.map((contact) => (

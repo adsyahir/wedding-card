@@ -1,9 +1,9 @@
 "use client";
 
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
-export function LokasiSheet({ config }: { config: typeof wedding }) {
+export function LokasiSheet({ config }: { config: WeddingConfig }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <p className="font-script text-2xl text-brown-deep">{config.venue.name}</p>

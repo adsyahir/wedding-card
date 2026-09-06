@@ -1,11 +1,11 @@
 "use client";
 
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
 import { buildIcs, toIcsUtcDate } from "./ics";
 
-function buildGoogleCalendarUrl(config: typeof wedding): string {
+function buildGoogleCalendarUrl(config: WeddingConfig): string {
   const title = `Walimatul Urus ${config.groom.shortName} & ${config.bride.shortName}`;
   const location = config.venue.addressLines.length
     ? `${config.venue.name}, ${config.venue.addressLines.join(" ")}`
@@ -23,7 +23,7 @@ function buildGoogleCalendarUrl(config: typeof wedding): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function downloadIcs(config: typeof wedding) {
+function downloadIcs(config: WeddingConfig) {
   const location = config.venue.addressLines.length
     ? `${config.venue.name}, ${config.venue.addressLines.join(" ")}`
     : config.venue.name;
@@ -51,7 +51,7 @@ function downloadIcs(config: typeof wedding) {
   URL.revokeObjectURL(url);
 }
 
-export function KalendarSheet({ config }: { config: typeof wedding }) {
+export function KalendarSheet({ config }: { config: WeddingConfig }) {
   return (
     <div className="flex flex-col gap-4 text-center">
       <p className="font-serif text-lg text-brown-deep">

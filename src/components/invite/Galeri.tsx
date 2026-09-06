@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
 import { Reveal } from "./Reveal";
 
-type GalleryItem = (typeof wedding)["gallery"][number];
+type GalleryItem = WeddingConfig["gallery"][number];
 
 const FOCUSABLE_SELECTOR =
   'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';

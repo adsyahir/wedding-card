@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
+import type { SectionsConfig } from "@/lib/wedding-config";
 import { trackEvent } from "@/lib/track";
 
 import { AturCara } from "./AturCara";
@@ -35,13 +36,15 @@ const SHEET_TITLES: Record<NavKey, string> = {
 
 export function InviteApp({
   config,
+  sections,
   wishes,
   initialCounts,
   musicSrc,
 }: {
-  config: typeof wedding;
+  config: WeddingConfig;
+  sections: SectionsConfig;
   wishes: PublicWish[];
-  initialCounts: { hadir: number; tidakHadir: number };
+  initialCounts: { hadir: number; tidakHadir: number } | null;
   musicSrc: string | null;
 }) {
   const [musicShouldPlay, setMusicShouldPlay] = useState(false);
@@ -55,7 +58,17 @@ export function InviteApp({
   });
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
 
+  // A hidden nav item's sheet must never be reachable, even if something
+  // stale in state points at it (e.g. `navRsvp` toggled off elsewhere).
+  const navEnabled: Record<NavKey, boolean> = {
+    kalendar: sections.navKalendar,
+    lokasi: sections.navLokasi,
+    hubungi: sections.navHubungi,
+    rsvp: sections.navRsvp,
+  };
+
   function handleSelect(key: NavKey) {
+    if (!navEnabled[key]) return;
     activeTriggerRef.current = triggerRefs.current[key];
     setActiveSheet(key);
     if (key === "rsvp") {
@@ -65,11 +78,15 @@ export function InviteApp({
 
   function handleRsvpSuccess({ attending }: { attending: boolean }) {
     setCounts((prev) =>
-      attending
-        ? { ...prev, hadir: prev.hadir + 1 }
-        : { ...prev, tidakHadir: prev.tidakHadir + 1 },
+      prev === null
+        ? prev
+        : attending
+          ? { ...prev, hadir: prev.hadir + 1 }
+          : { ...prev, tidakHadir: prev.tidakHadir + 1 },
     );
   }
+
+  const activeSheetReachable = activeSheet !== null && navEnabled[activeSheet];
 
   return (
     <>
@@ -85,17 +102,20 @@ export function InviteApp({
 
       <div className="mx-auto flex w-full max-w-[480px] flex-col bg-cream pb-24 shadow-xl shadow-brown-deep/5">
         <Hero config={config} />
-        <Undangan config={config} />
-        <Lokasi config={config} />
-        <AturCara config={config} />
-        <Countdown targetIso={config.date} />
-        <Galeri gallery={config.gallery} />
-        <UcapanWall wishes={wishes} />
-        <Kehadiran hadir={counts.hadir} tidakHadir={counts.tidakHadir} />
+        {sections.undangan && <Undangan config={config} />}
+        {sections.lokasi && <Lokasi config={config} />}
+        {sections.aturCara && <AturCara config={config} />}
+        {sections.countdown && <Countdown targetIso={config.date} />}
+        {sections.galeri && <Galeri gallery={config.gallery} />}
+        {sections.ucapan && <UcapanWall wishes={wishes} />}
+        {sections.kehadiran && counts !== null && (
+          <Kehadiran hadir={counts.hadir} tidakHadir={counts.tidakHadir} />
+        )}
         <Footer config={config} />
       </div>
 
       <BottomNav
+        items={navEnabled}
         onSelect={handleSelect}
         registerTriggerRef={(key, el) => {
           triggerRefs.current[key] = el;
@@ -103,7 +123,7 @@ export function InviteApp({
       />
 
       <Sheet
-        open={activeSheet !== null}
+        open={activeSheetReachable}
         onClose={() => setActiveSheet(null)}
         title={activeSheet ? SHEET_TITLES[activeSheet] : ""}
         triggerRef={activeTriggerRef}

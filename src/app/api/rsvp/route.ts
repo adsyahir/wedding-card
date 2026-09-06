@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestVisitorHash, isSameOrigin } from "@/lib/request";
 import { isHoneypotTripped, isTooFast } from "@/lib/spam";
 import { rsvpSchema } from "@/lib/validation";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 // Runs on the Workers runtime under OpenNext (the Next.js default) — do NOT
 // set `export const runtime = "nodejs"`. Force dynamic so this is never
@@ -22,6 +23,14 @@ const RSVP_RATE_WINDOW_SECONDS = 60 * 60; // 1 hour
 // public GET on this route.
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOrigin(request)) {
+    return jsonError(403, API_ERRORS.invalidRequest);
+  }
+
+  // The admin can close RSVP entirely (`sections.navRsvp` off hides the nav
+  // item/sheet on the public page) — that must be a REAL closure, not
+  // cosmetic. Reject writes here too, or someone could still POST directly.
+  const { sections } = await getWeddingConfig();
+  if (!sections.navRsvp) {
     return jsonError(403, API_ERRORS.invalidRequest);
   }
 

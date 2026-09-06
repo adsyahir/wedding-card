@@ -26,9 +26,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Filling in the wedding details
 
-`src/config/wedding.ts` is the single file to edit for the card's actual
-content — nothing else needs to change. It exports one `wedding` object,
-typed by `WeddingConfig`, with:
+`src/config/wedding.ts` is now the **default/fallback** — most of the
+card's content is instead admin-editable from `/admin/settings` (see
+"Admin-editable wedding content" below), which is the live source of truth
+once anything has been saved there. Editing the file is still useful for:
+setting up a fresh clone before an admin exists, and as the value that
+"Kembalikan ke asal" restores. It exports one `wedding` object, typed by
+`WeddingConfig`, with:
 
 - `siteUrl` — the public origin (used for OG tags/absolute URLs); update it
   once a real domain is attached (see "Attach a custom domain" below).
@@ -50,6 +54,60 @@ typed by `WeddingConfig`, with:
 - `doa` — the closing prayer text.
 
 Every field is documented inline in the file itself.
+
+### Admin-editable wedding content
+
+Phase 9a made most of the fields above admin-editable, from a tabbed panel
+at `/admin/settings` (Butiran / Lokasi / Atur Cara / Hubungi / Bahagian,
+alongside the existing Muzik panel):
+
+- **Architecture**: the admin's edits are stored as a single JSON document
+  in the `site_settings` row keyed `wedding_config`
+  (`src/lib/wedding-config.ts`). `getWeddingConfig()` reads that row,
+  validates it with a Zod schema, and deep-merges it over the file
+  defaults in `src/config/wedding.ts` — every field an admin hasn't
+  touched still comes straight from the file.
+- **The card can never break from a bad edit.** If the row is missing,
+  its JSON is malformed, or it fails schema validation, `getWeddingConfig`
+  logs the problem server-side and returns the file defaults unchanged —
+  wrapped in try/catch at every layer. This is deliberately the single
+  most important property of this module (see the tests in
+  `src/lib/wedding-config.test.ts`).
+- **Validated hard**: name/text lengths, `date`/`endTime`/`rsvpDeadline` as
+  parseable ISO 8601 strings, `lat`/`lng` range-checked, and —
+  importantly — `venue.googleMapsUrl`/`venue.wazeUrl` are restricted to
+  `https:` URLs on an allow-list of hosts (`google.com`/`goo.gl`/
+  `maps.app.goo.gl`, `waze.com`). These render as links a guest taps, so a
+  `javascript:` URL (or any non-`https:` scheme, or an unlisted host) is
+  rejected outright, never saved. `aturCara` and `contacts` are capped at
+  30 entries each; contact phone numbers are validated with the same
+  Malaysian normaliser the public RSVP form uses
+  (`normalizeMalaysianPhone`, `src/lib/validation.ts`).
+- **Not admin-editable** (file-only, by design): `siteUrl`,
+  `presetMusicPath`, `gaMeasurementId`, and `gallery` — none of these were
+  in scope, and the first two are infra/security-shaped enough to keep out
+  of a JSON blob edited from a phone.
+- **Section visibility**: the admin can also show/hide individual sections
+  (`undangan`, `lokasi`, `aturCara`, `countdown`, `galeri`, `ucapan`,
+  `kehadiran`) and bottom-nav items (`navKalendar`, `navLokasi`,
+  `navHubungi`, `navRsvp`) from the "Bahagian" tab — all default to
+  visible. A hidden section is absent from the DOM entirely, not merely
+  CSS-hidden, and hiding `kehadiran` skips the `getAttendanceCounts()`
+  query outright. Closing `ucapan` or `navRsvp` also closes the
+  corresponding write endpoint server-side (`POST /api/wishes` /
+  `POST /api/rsvp` both return 403) — the toggle is a real closure, not
+  cosmetic.
+- **Saving**: `POST /api/admin/settings/wedding` (Zod-validated,
+  `requireAdminApi`-guarded, audit-logged) — each settings tab saves only
+  the fields it owns, merged over whatever was already saved. **"Kembalikan
+  ke asal"** (`POST /api/admin/settings/wedding/reset`) deletes the
+  `wedding_config` row outright, so a bad edit is always recoverable
+  without touching the database by hand.
+- The public invite (`src/app/page.tsx`), the root layout's metadata
+  (`src/app/layout.tsx`), and the OG image (`src/app/opengraph-image.tsx`)
+  all resolve their content through `getWeddingConfig()` — never the
+  static `wedding` import — so an admin edit takes effect immediately on
+  the next page load, no redeploy needed.
 
 ### Background music
 

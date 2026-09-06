@@ -60,18 +60,25 @@ const ITEMS: { key: NavKey; label: string; Icon: () => ReactElement }[] = [
 ];
 
 export function BottomNav({
+  items,
   onSelect,
   registerTriggerRef,
 }: {
+  /** Which nav items are enabled (`navKalendar`/`navLokasi`/`navHubungi`/`navRsvp`). A hidden item is absent from the DOM, not merely styled hidden. */
+  items?: Record<NavKey, boolean>;
   onSelect: (key: NavKey) => void;
   registerTriggerRef: (key: NavKey, el: HTMLButtonElement | null) => void;
 }) {
+  const visibleItems = ITEMS.filter(({ key }) => items?.[key] !== false);
+
+  if (visibleItems.length === 0) return null;
+
   return (
     <nav
       aria-label="Navigasi utama"
       className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] justify-around border-t border-gold-light/60 bg-sand/90 pt-2 pb-safe backdrop-blur"
     >
-      {ITEMS.map(({ key, label, Icon }) => (
+      {visibleItems.map(({ key, label, Icon }) => (
         <button
           key={key}
           type="button"

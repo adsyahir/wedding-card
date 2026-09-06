@@ -1,8 +1,8 @@
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 
 import { Reveal } from "./Reveal";
 
-export function Footer({ config }: { config: typeof wedding }) {
+export function Footer({ config }: { config: WeddingConfig }) {
   return (
     <footer className="w-full px-6 pt-12 pb-32 text-center">
       <Reveal className="font-script text-3xl text-brown-deep">{config.hashtag}</Reveal>

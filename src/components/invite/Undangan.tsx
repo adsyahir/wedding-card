@@ -1,9 +1,9 @@
-import type { wedding } from "@/config/wedding";
+import type { WeddingConfig } from "@/config/wedding";
 
 import { Divider } from "./Divider";
 import { Reveal } from "./Reveal";
 
-export function Undangan({ config }: { config: typeof wedding }) {
+export function Undangan({ config }: { config: WeddingConfig }) {
   return (
     <section className="w-full px-6 py-16 text-center">
       <Reveal as="h2" className="font-serif text-2xl tracking-[0.25em] text-brown-deep uppercase">

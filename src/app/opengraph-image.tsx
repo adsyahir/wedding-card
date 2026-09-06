@@ -1,12 +1,25 @@
 import { ImageResponse } from "next/og";
 
-import { wedding } from "@/config/wedding";
+import { wedding as weddingDefaults } from "@/config/wedding";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = `${wedding.groom.shortName} & ${wedding.bride.shortName} — Walimatul Urus`;
+// Reads the admin-resolved config via a Cloudflare/D1 binding, so — like
+// every other page in this app that does the same — it must never be
+// statically prerendered at build time (there is no D1 binding available
+// then, and `getCloudflareContext`'s sync mode throws outside a genuinely
+// dynamic route).
+export const dynamic = "force-dynamic";
+// Next.js's image-metadata convention requires `alt` to be a static string
+// (unlike the default export, it cannot be async) — so this uses the file
+// defaults rather than the admin-resolved config. A stale alt string on a
+// renamed couple is a cosmetic, non-critical gap; the actual rendered image
+// below always reflects the live, admin-saved config.
+export const alt = `${weddingDefaults.groom.shortName} & ${weddingDefaults.bride.shortName} — Walimatul Urus`;
 
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  const wedding = await getWeddingConfig();
   return new ImageResponse(
     (
       <div
