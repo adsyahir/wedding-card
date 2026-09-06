@@ -127,6 +127,28 @@ describe("mergeWeddingConfig (deep-merge over file defaults)", () => {
     expect(merged).toEqual(fileDefaults());
   });
 
+  // Regression guard. `rsvpPaxMode` was validated by the schema but never
+  // copied in here, so an admin could save a headcount mode, get a success
+  // toast, and have the public card silently keep the old one. Validation
+  // passing is not the same as the value arriving — every scalar field
+  // needs a case here.
+  it("merges every scalar field the schema accepts, not just the obvious ones", () => {
+    const merged = mergeWeddingConfig(fileDefaults(), {
+      rsvpPaxMode: "total",
+      scriptFont: "greatVibes",
+      hashtag: "#Merged",
+    });
+    expect(merged.rsvpPaxMode).toBe("total");
+    expect(merged.scriptFont).toBe("greatVibes");
+    expect(merged.hashtag).toBe("#Merged");
+  });
+
+  it("leaves scalar fields at their defaults when the partial omits them", () => {
+    const merged = mergeWeddingConfig(fileDefaults(), {});
+    expect(merged.rsvpPaxMode).toBe(wedding.rsvpPaxMode);
+    expect(merged.scriptFont).toBe(wedding.scriptFont);
+  });
+
   it("merges a partial doc's fields over the defaults, leaving the rest untouched", () => {
     const merged = mergeWeddingConfig(fileDefaults(), {
       groom: { shortName: "Ali", fullName: "Ali bin Abu" },

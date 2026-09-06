@@ -4,7 +4,6 @@ import type { NextRequest } from "next/server";
 import { wedding } from "@/config/wedding";
 import { randomToken } from "@/lib/crypto";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
-import { getWeddingConfig } from "@/lib/wedding-config";
 
 /**
  * Two jobs, deliberately kept separate and small:
@@ -23,7 +22,7 @@ import { getWeddingConfig } from "@/lib/wedding-config";
  * independently.
  */
 
-function buildCsp(nonce: string, mapEmbedEnabled: boolean): string {
+function buildCsp(nonce: string): string {
   const scriptSrc =
     process.env.NODE_ENV !== "production"
       ? // Next.js's dev overlay / Fast Refresh relies on eval() in dev mode;
@@ -62,17 +61,26 @@ function buildCsp(nonce: string, mapEmbedEnabled: boolean): string {
     `form-action 'self'`,
   ];
 
-  // The embedded-map iframe (`Lokasi`/`LokasiSheet`) is gated on the admin
-  // toggle `sections.petaEmbed` (default OFF — see `src/lib/wedding-config.ts`
-  // for why). `frame-src` is added ONLY when that toggle is on, same
-  // principle as the GA sources above being conditional on
-  // `gaMeasurementId` — a deployment that never enables the map embed keeps
-  // the tightest possible CSP. Deliberately does NOT touch
-  // `frame-ancestors`, which stays `'none'` regardless: that directive
-  // controls who may frame THIS site, not what THIS site may frame.
-  if (mapEmbedEnabled) {
-    directives.push(`frame-src https://www.google.com`);
-  }
+  // `frame-src` allows the optional embedded map (`Lokasi`/`LokasiSheet`,
+  // behind the `sections.petaEmbed` admin toggle). It is listed
+  // UNCONDITIONALLY, and that is a deliberate trade.
+  //
+  // Gating it on the toggle would mean reading the admin config — a D1
+  // query — inside middleware, which runs on every single request. That
+  // costs a database round trip per page view, pulls Drizzle and the D1
+  // client into the middleware bundle, and makes every request depend on
+  // `getCloudflareContext()` resolving in an execution context where this
+  // codebase has never relied on it.
+  //
+  // What it buys is close to nothing. `frame-src` restricts what THIS page
+  // may embed — it is not a defence against anyone attacking us. To abuse
+  // it an attacker would first need to inject an iframe into our HTML,
+  // which requires an XSS that the nonce-based `script-src` is there to
+  // prevent; and even then all they could frame is google.com.
+  //
+  // `frame-ancestors 'none'` below is the directive that actually protects
+  // us — it controls who may frame THIS site — and it is untouched.
+  directives.push(`frame-src https://www.google.com`);
 
   directives.push(`frame-ancestors 'none'`, `upgrade-insecure-requests`);
 
@@ -83,9 +91,8 @@ function applySecurityHeaders(
   request: NextRequest,
   response: NextResponse,
   nonce: string,
-  mapEmbedEnabled: boolean,
 ): void {
-  response.headers.set("Content-Security-Policy", buildCsp(nonce, mapEmbedEnabled));
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-Frame-Options", "DENY");
@@ -112,7 +119,7 @@ function applySecurityHeaders(
   }
 }
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const nonce = randomToken(16);
 
   // The nonce is set on the REQUEST headers (not just the response) so
@@ -127,25 +134,19 @@ export async function middleware(request: NextRequest) {
   const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
   const isLoginPage = pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 
-  // Only the public invite page ("/") can ever render the map embed, so
-  // this is the only path worth the extra D1 read. `getWeddingConfig()`
-  // already never throws (see its own doc comment) — any failure here
-  // degrades to `false`, i.e. the tighter CSP with no `frame-src`, exactly
-  // like every other place that config helper is used.
-  const mapEmbedEnabled = pathname === "/" ? (await getWeddingConfig()).sections.petaEmbed : false;
 
   if (isAdminPage && !isLoginPage) {
     const hasSessionCookie = request.cookies.has(SESSION_COOKIE_NAME);
     if (!hasSessionCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       const response = NextResponse.redirect(loginUrl);
-      applySecurityHeaders(request, response, nonce, mapEmbedEnabled);
+      applySecurityHeaders(request, response, nonce);
       return response;
     }
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  applySecurityHeaders(request, response, nonce, mapEmbedEnabled);
+  applySecurityHeaders(request, response, nonce);
   return response;
 }
 
