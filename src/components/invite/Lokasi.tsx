@@ -50,15 +50,16 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
       </Reveal>
 
       <Reveal delay={0.1} className="mx-auto mt-8 max-w-md">
-{/*
-          The venue name is the one thing a guest MUST be able to read — a
-          guest who can't decipher it can't find the wedding. Deliberately
-          not the script face (and so not affected by the admin's font
-          choice): script letterforms are hard work for older readers,
-          which is most of the family. Sans, matching the address lines
-          below it, so the whole block reads as one legible unit.
+        {/*
+          Script face here, by choice — this is the decorative display of the
+          venue on the card itself, and it follows the admin's font pick.
+
+          The Lokasi *sheet* deliberately keeps a plain sans version (see
+          LokasiSheet.tsx). That is the one a guest opens when they are
+          actually trying to find the place, so a legible copy of the venue
+          name is always one tap away whatever font is chosen here.
         */}
-        <p className="text-xl font-medium text-brown-deep">{config.venue.name}</p>
+        <p className="font-script text-3xl text-brown-deep">{config.venue.name}</p>
         <address className="mt-3 text-base leading-7 text-brown not-italic">
           {config.venue.addressLines.map((line) => (
             <span key={line} className="block">
