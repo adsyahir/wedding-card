@@ -109,7 +109,17 @@ async function buildRsvpEmail(
   const ucapanUrl = `${origin}/admin/ucapan`;
   const pax = paxRows(config.rsvpPaxMode, rsvp);
   const attendanceLabel = rsvp.attending ? "Hadir" : "Tidak hadir";
-  const message = rsvp.message ?? "-";
+
+  /*
+   * Omitted when empty rather than printed as "-". The public form does
+   * not currently collect a personal message at all (see RsvpForm: the
+   * standalone field was removed and folded into the ucapan), so the row
+   * was always a dash: a label for something nobody was asked, sitting
+   * next to real answers. The API still accepts `message`, so this stays
+   * conditional rather than deleted, and the row reappears by itself if
+   * the field ever comes back.
+   */
+  const message = rsvp.message?.trim() ?? "";
 
   // Flagged in the subject so the family can see at a glance that this one
   // also needs moderating, without opening it.
@@ -122,7 +132,7 @@ async function buildRsvpEmail(
     `Kehadiran: ${attendanceLabel}`,
     ...pax.map((row) => `${row.label}: ${row.value}`),
     `Telefon: ${rsvp.phone}`,
-    `Mesej peribadi: ${message}`,
+    ...(message ? [`Mesej peribadi: ${message}`] : []),
     ...(wish
       ? [
           "",
@@ -148,7 +158,11 @@ async function buildRsvpEmail(
         )
         .join("\n      ")}
       <tr><td><strong>Telefon</strong></td><td>${escapeHtml(rsvp.phone)}</td></tr>
-      <tr><td><strong>Mesej peribadi</strong></td><td>${escapeHtml(message)}</td></tr>
+      ${
+        message
+          ? `<tr><td><strong>Mesej peribadi</strong></td><td>${escapeHtml(message)}</td></tr>`
+          : ""
+      }
     </table>
     ${
       wish
