@@ -1,3 +1,4 @@
+import { SiteCredit } from "@/components/SiteCredit";
 import type { Metadata } from "next";
 
 import { countPendingWishes } from "@/db/queries/admin";
@@ -87,6 +88,10 @@ export default async function ProtectedAdminLayout({
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">{children}</main>
+
+      <footer className="mx-auto max-w-5xl px-4 pt-2 pb-8 sm:px-6">
+        <SiteCredit />
+      </footer>
     </div>
   );
 }
