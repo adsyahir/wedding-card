@@ -36,7 +36,7 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="min-h-screen w-full bg-sand">
+    <main className="min-h-screen w-full">
       <InviteApp
         config={config}
         sections={sections}
