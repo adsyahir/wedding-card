@@ -136,7 +136,9 @@ const ms = {
   rsvp_colDate: "Tarikh",
   rsvp_emptyState: "Tiada rekod RSVP dijumpai.",
   rsvp_deleteAction: "Padam",
-  rsvp_deleteConfirm: "Sahkan padam?",
+  rsvp_deleteTitle: "Padam RSVP ini?",
+  rsvp_confirmDelete:
+    "Padam RSVP daripada {name}? Ia akan hilang daripada senarai ini dan tidak lagi dikira dalam jumlah kehadiran.",
 
   // RSVP CSV export (src/app/api/admin/rsvp/export/route.ts headers)
   rsvpExport_colName: "Nama",
@@ -443,7 +445,9 @@ const en: Record<keyof typeof ms, string> = {
   rsvp_colDate: "Date",
   rsvp_emptyState: "No RSVP records found.",
   rsvp_deleteAction: "Delete",
-  rsvp_deleteConfirm: "Confirm delete?",
+  rsvp_deleteTitle: "Delete this RSVP?",
+  rsvp_confirmDelete:
+    "Delete the RSVP from {name}? It will disappear from this list and stop counting towards the headcount.",
 
   rsvpExport_colName: "Name",
   rsvpExport_colPhone: "Phone",

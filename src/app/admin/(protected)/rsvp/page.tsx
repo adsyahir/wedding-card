@@ -210,7 +210,7 @@ export default async function AdminRsvpPage({
                     {formatDateTime(row.createdAt, lang)}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <RsvpDeleteButton id={row.id} dict={dict} />
+                    <RsvpDeleteButton id={row.id} name={row.name} dict={dict} />
                   </td>
                 </tr>
               ))
