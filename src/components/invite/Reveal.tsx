@@ -7,6 +7,21 @@ import type { ElementType, ReactNode } from "react";
  * Fade + small translate-y reveal, triggered once when the element scrolls
  * into view. Respects `prefers-reduced-motion` by skipping the transform
  * (and shortening the transition) entirely.
+ *
+ * TWO ROBUSTNESS NOTES, both learned the hard way:
+ *
+ * 1. `data-reveal` pairs with a `<noscript>` rule in the root layout that
+ *    forces these elements visible. The server-rendered HTML carries an
+ *    inline `opacity:0`, so without that override a guest whose JavaScript
+ *    fails to load — a flaky connection, a locked-down in-app browser —
+ *    would see a blank invitation. This card gets forwarded around
+ *    WhatsApp to relatives on all sorts of devices; a blank card is the
+ *    worst failure it could have.
+ *
+ * 2. `amount` is deliberately low (0.15, not 0.3). A tall section on a
+ *    short phone screen may never have 30% of itself visible at once, in
+ *    which case the reveal would never fire and the content would stay
+ *    invisible while the guest scrolled straight past it.
  */
 export function Reveal({
   children,
@@ -24,10 +39,11 @@ export function Reveal({
 
   return (
     <MotionComponent
+      data-reveal=""
       className={className}
       initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay, ease: "easeOut" }}
     >
       {children}

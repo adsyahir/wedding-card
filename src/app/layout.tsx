@@ -60,6 +60,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ms"
       className={`h-full antialiased ${script.variable} ${serif.variable} ${sans.variable}`}
     >
+      <head>
+        {/* Reveal-on-scroll elements are server-rendered with an inline
+            opacity:0 that only JavaScript clears. If JS never runs, force
+            them visible so the invitation is still readable — content
+            must never depend on scripts to be seen. */}
+        <noscript>
+          <style>{`[data-reveal]{opacity:1 !important;transform:none !important}`}</style>
+        </noscript>
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

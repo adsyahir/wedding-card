@@ -6,6 +6,15 @@ import { useState } from "react";
 import type { WeddingConfig } from "@/config/wedding";
 import type { SectionsConfig } from "@/lib/wedding-config";
 import { csrfHeaders } from "@/lib/csrf-client";
+import {
+  formatMalayTime,
+  isoToParts,
+  malayDayName,
+  malayDisplayDate,
+  malayFullPreview,
+  partsToIso,
+} from "@/lib/datetime-my";
+
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 import { localizeApiError, localizeFieldErrors } from "./api-error";
@@ -255,12 +264,17 @@ function ButiranTab({
   const [salam, setSalam] = useState(initialConfig.salam);
   const [honorifics, setHonorifics] = useState(initialConfig.honorifics);
   const [invitationBody, setInvitationBody] = useState(initialConfig.invitationBody.join("\n\n"));
-  const [date, setDate] = useState(initialConfig.date);
-  const [dayNameMs, setDayNameMs] = useState(initialConfig.dayNameMs);
-  const [displayDate, setDisplayDate] = useState(initialConfig.displayDate);
-  const [endTime, setEndTime] = useState(initialConfig.endTime);
-  const [rsvpDeadline, setRsvpDeadline] = useState(initialConfig.rsvpDeadline);
-  const [rsvpDeadlineDisplay, setRsvpDeadlineDisplay] = useState(initialConfig.rsvpDeadlineDisplay);
+  // The config stores ISO strings plus separate human display strings. The
+  // admin edits four native pickers instead, and every stored field is
+  // DERIVED from them on save — so the day name and display date can never
+  // drift out of sync with the actual date (they previously could).
+  const initialStart = isoToParts(initialConfig.date);
+  const initialEnd = isoToParts(initialConfig.endTime);
+  const initialDeadline = isoToParts(initialConfig.rsvpDeadline);
+  const [eventDate, setEventDate] = useState(initialStart.date);
+  const [startTime, setStartTime] = useState(initialStart.time);
+  const [endTimeOfDay, setEndTimeOfDay] = useState(initialEnd.time);
+  const [deadlineDate, setDeadlineDate] = useState(initialDeadline.date);
   const [hashtag, setHashtag] = useState(initialConfig.hashtag);
   const [doa, setDoa] = useState(initialConfig.doa);
 
@@ -276,12 +290,12 @@ function ButiranTab({
         .split(/\n\s*\n/)
         .map((p) => p.trim())
         .filter(Boolean),
-      date,
-      dayNameMs,
-      displayDate,
-      endTime,
-      rsvpDeadline,
-      rsvpDeadlineDisplay,
+      date: partsToIso(eventDate, startTime),
+      dayNameMs: malayDayName(eventDate),
+      displayDate: malayDisplayDate(eventDate),
+      endTime: partsToIso(eventDate, endTimeOfDay),
+      rsvpDeadline: partsToIso(deadlineDate, "23:59", "59"),
+      rsvpDeadlineDisplay: malayDisplayDate(deadlineDate),
       hashtag,
       doa,
     });
@@ -308,28 +322,51 @@ function ButiranTab({
         <Field label={dict.wc_brideFull} error={fieldErrors["bride.fullName"]}>
           <input className={inputClass} value={brideFull} onChange={(e) => setBrideFull(e.target.value)} />
         </Field>
-        <Field label={dict.wc_dateIso} error={fieldErrors.date}>
-          <input className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field label={dict.wc_dayName} error={fieldErrors.dayNameMs}>
-          <input className={inputClass} value={dayNameMs} onChange={(e) => setDayNameMs(e.target.value)} />
-        </Field>
-        <Field label={dict.wc_displayDate} error={fieldErrors.displayDate}>
-          <input className={inputClass} value={displayDate} onChange={(e) => setDisplayDate(e.target.value)} />
-        </Field>
-        <Field label={dict.wc_endTime} error={fieldErrors.endTime}>
-          <input className={inputClass} value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-        </Field>
-        <Field label={dict.wc_rsvpDeadline} error={fieldErrors.rsvpDeadline}>
-          <input className={inputClass} value={rsvpDeadline} onChange={(e) => setRsvpDeadline(e.target.value)} />
-        </Field>
-        <Field label={dict.wc_rsvpDeadlineDisplay} error={fieldErrors.rsvpDeadlineDisplay}>
+        <Field label={dict.wc_eventDate} error={fieldErrors.date || fieldErrors.dayNameMs || fieldErrors.displayDate}>
           <input
+            type="date"
             className={inputClass}
-            value={rsvpDeadlineDisplay}
-            onChange={(e) => setRsvpDeadlineDisplay(e.target.value)}
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
           />
         </Field>
+        <Field label={dict.wc_startTime}>
+          <input
+            type="time"
+            className={inputClass}
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+        </Field>
+        <Field label={dict.wc_endTimeOfDay} error={fieldErrors.endTime}>
+          <input
+            type="time"
+            className={inputClass}
+            value={endTimeOfDay}
+            onChange={(e) => setEndTimeOfDay(e.target.value)}
+          />
+        </Field>
+        <Field label={dict.wc_rsvpDeadlineDate} error={fieldErrors.rsvpDeadline || fieldErrors.rsvpDeadlineDisplay}>
+          <input
+            type="date"
+            className={inputClass}
+            value={deadlineDate}
+            onChange={(e) => setDeadlineDate(e.target.value)}
+          />
+        </Field>
+      </div>
+
+      {/* Live preview of everything derived from the pickers above, so the
+          admin can see exactly what the card will say before saving. */}
+      <div className="rounded-md border border-gold-light/60 bg-sand/50 px-3 py-2 text-sm text-brown">
+        <div className="font-medium text-brown-deep">{dict.wc_previewHeading}</div>
+        <div>{malayFullPreview(eventDate, startTime) || "\u2014"}</div>
+        <div className="text-brown/70">
+          {dict.wc_previewEnds}: {formatMalayTime(endTimeOfDay) || "\u2014"}
+        </div>
+        <div className="text-brown/70">
+          {dict.wc_previewDeadline}: {malayDisplayDate(deadlineDate) || "\u2014"}
+        </div>
       </div>
 
       <Field label={dict.wc_hostsLine} error={fieldErrors["hosts.line"]}>
