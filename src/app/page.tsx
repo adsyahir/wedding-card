@@ -1,7 +1,12 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 import { wedding } from "@/config/wedding";
-import { getActiveMusicSrc, getApprovedWishes, getAttendanceCounts } from "@/db/queries/public";
+import {
+  getActiveMusicSrc,
+  getApprovedWishes,
+  getAttendanceCounts,
+  getGalleryImages,
+} from "@/db/queries/public";
 import { getWeddingConfig } from "@/lib/wedding-config";
 
 import { InviteApp } from "@/components/invite/InviteApp";
@@ -21,10 +26,13 @@ export default async function Home() {
   // A hidden section isn't just hidden with CSS — its data isn't even
   // fetched. In particular, `getAttendanceCounts()` must not run at all
   // when `kehadiran` is off.
-  const [wishes, counts, musicSrc] = await Promise.all([
+  const [wishes, counts, musicSrc, gallery] = await Promise.all([
     sections.ucapan ? getApprovedWishes() : Promise.resolve([]),
     sections.kehadiran ? getAttendanceCounts() : Promise.resolve(null),
     getActiveMusicSrc(),
+    // A hidden `galeri` section isn't just hidden with CSS — its data
+    // isn't even fetched (same rule as `kehadiran`/`ucapan` above).
+    sections.galeri ? getGalleryImages() : Promise.resolve([]),
   ]);
 
   return (
@@ -35,6 +43,7 @@ export default async function Home() {
         wishes={wishes}
         initialCounts={counts}
         musicSrc={musicSrc}
+        gallery={gallery}
       />
       {/*
         Rendered ONLY here, on the public invite page — never in the

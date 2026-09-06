@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, count, desc, eq, isNull, or, sql, sum } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
+import { galleryImages, musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
 import { ACTIVE_MUSIC_TRACK_KEY } from "@/db/queries/public";
 
 /**
@@ -473,4 +473,137 @@ export async function findMusicTrackById(id: string): Promise<MusicTrackForAdmin
     .where(eq(musicTracks.id, id))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * Gallery-management queries backing `/admin/settings`
+ * (`src/app/admin/(protected)/settings/page.tsx`) and the
+ * `/api/admin/gallery/*` routes.
+ *
+ * SECURITY: `gallery_images.r2_key` is the internal R2 storage key — the
+ * public streaming route (`src/app/api/gallery/[id]/route.ts`) resolves it
+ * server-side via `src/db/queries/public.ts#getGalleryImageForStream`,
+ * intentionally a SEPARATE function from the ones below. Nothing in this
+ * file that reaches a JSON response or the settings page's props may
+ * select `r2Key`.
+ */
+
+export type GalleryImageRow = {
+  id: string;
+  filename: string | null;
+  mime: string | null;
+  sizeBytes: number | null;
+  alt: string;
+  sortOrder: number;
+  uploadedAt: string;
+};
+
+const GALLERY_IMAGE_LIST_COLUMNS = {
+  id: galleryImages.id,
+  filename: galleryImages.filename,
+  mime: galleryImages.mime,
+  sizeBytes: galleryImages.sizeBytes,
+  alt: galleryImages.alt,
+  sortOrder: galleryImages.sortOrder,
+  uploadedAt: galleryImages.uploadedAt,
+} as const;
+
+function toGalleryImageRow(row: {
+  id: string;
+  filename: string | null;
+  mime: string | null;
+  sizeBytes: number | null;
+  alt: string;
+  sortOrder: number;
+  uploadedAt: Date;
+}): GalleryImageRow {
+  return {
+    id: row.id,
+    filename: row.filename,
+    mime: row.mime,
+    sizeBytes: row.sizeBytes,
+    alt: row.alt,
+    sortOrder: row.sortOrder,
+    uploadedAt: row.uploadedAt.toISOString(),
+  };
+}
+
+/** Every gallery image, ordered for display, for the settings page's grid. Never selects `r2Key`. */
+export async function listGalleryImagesForAdmin(): Promise<GalleryImageRow[]> {
+  const db = getDb();
+  const rows = await db
+    .select(GALLERY_IMAGE_LIST_COLUMNS)
+    .from(galleryImages)
+    .orderBy(asc(galleryImages.sortOrder));
+  return rows.map(toGalleryImageRow);
+}
+
+export async function countGalleryImages(): Promise<number> {
+  const db = getDb();
+  const [row] = await db.select({ n: count() }).from(galleryImages);
+  return row?.n ?? 0;
+}
+
+/** The current max `sortOrder`, or `null` if the gallery is empty (new uploads go at max + 1). */
+export async function getMaxGallerySortOrder(): Promise<number | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ maxOrder: sql<number | null>`max(${galleryImages.sortOrder})` })
+    .from(galleryImages);
+  return row?.maxOrder ?? null;
+}
+
+export type GalleryImageForAdmin = {
+  id: string;
+  r2Key: string;
+  sortOrder: number;
+};
+
+/**
+ * Existence check for the update/delete/reorder routes — looked up BEFORE
+ * the write, same IDOR-guarding reason as `findActiveRsvpById`/
+ * `findWishById`. Also the ONLY place in this file that returns `r2Key`:
+ * the delete route needs it to remove the R2 object, but the row is used
+ * internally by the route handler and never serialized straight into a
+ * JSON response.
+ */
+export async function findGalleryImageById(id: string): Promise<GalleryImageForAdmin | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: galleryImages.id, r2Key: galleryImages.r2Key, sortOrder: galleryImages.sortOrder })
+    .from(galleryImages)
+    .where(eq(galleryImages.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Every gallery image id currently in the table — used to validate a reorder request's set of ids. */
+export async function listGalleryImageIds(): Promise<string[]> {
+  const db = getDb();
+  const rows = await db.select({ id: galleryImages.id }).from(galleryImages);
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Validates that `requestedIds` is a full reordering of `currentIds` — the
+ * exact same SET, no additions and no omissions (duplicates in the request
+ * are also rejected, since a duplicate id can't map to a single sortOrder
+ * meaningfully). Pure and D1-free so it's unit-testable on its own (see
+ * `src/db/queries/admin.test.ts`).
+ *
+ * This is what stops a partial or foreign list corrupting the ordering: a
+ * caller that omits an id would silently strand it at whatever sortOrder it
+ * last had, and a caller that includes an id from nowhere (or a
+ * since-deleted row) has no row to write a sortOrder onto.
+ */
+export function isValidGalleryReorder(currentIds: string[], requestedIds: string[]): boolean {
+  if (currentIds.length !== requestedIds.length) return false;
+  const currentSet = new Set(currentIds);
+  const seen = new Set<string>();
+  for (const id of requestedIds) {
+    if (!currentSet.has(id)) return false;
+    if (seen.has(id)) return false;
+    seen.add(id);
+  }
+  return true;
 }

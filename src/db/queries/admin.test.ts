@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolvePagination, resolveSort } from "./admin";
+import { isValidGalleryReorder, resolvePagination, resolveSort } from "./admin";
 
 describe("resolveSort", () => {
   it("defaults to createdAt/desc when nothing is supplied", () => {
@@ -73,5 +73,39 @@ describe("resolvePagination", () => {
 
   it("floors a fractional page/perPage", () => {
     expect(resolvePagination({ page: 2.9, perPage: 10.9 })).toEqual({ page: 2, perPage: 10 });
+  });
+});
+
+describe("isValidGalleryReorder", () => {
+  it("accepts a full reordering of the same set", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["c", "a", "b"])).toBe(true);
+  });
+
+  it("accepts the identity ordering", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "b", "c"])).toBe(true);
+  });
+
+  it("accepts an empty gallery reordered to an empty list", () => {
+    expect(isValidGalleryReorder([], [])).toBe(true);
+  });
+
+  it("rejects a list missing an id (omission)", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "b"])).toBe(false);
+  });
+
+  it("rejects a list with an extra foreign id (addition)", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "b", "c", "z"])).toBe(false);
+  });
+
+  it("rejects a list containing an id not in the current set at all", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "b", "z"])).toBe(false);
+  });
+
+  it("rejects a list with a duplicated id", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "a", "b"])).toBe(false);
+  });
+
+  it("rejects when lengths differ even if every requested id is valid", () => {
+    expect(isValidGalleryReorder(["a", "b", "c"], ["a", "b", "c", "a"])).toBe(false);
   });
 });

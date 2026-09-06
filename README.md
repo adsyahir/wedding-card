@@ -49,8 +49,11 @@ setting up a fresh clone before an admin exists, and as the value that
 - `contacts` — the "hubungi kami" contact list.
 - `hashtag` — the couple's wedding hashtag.
 - `gallery` — photo entries (`{ src, alt }`); ships with placeholder SVGs
-  under `public/images/gallery/` — replace `src` with real photos (any
-  raster format) when available.
+  under `public/images/gallery/` — this is now the **fallback only**: once
+  an admin uploads at least one photo from `/admin/settings`, the public
+  card renders the admin-managed gallery instead (see "Admin-managed
+  gallery" below). Replace `src` with real photos (any raster format) if
+  you'd rather keep the gallery file-only.
 - `doa` — the closing prayer text.
 
 Every field is documented inline in the file itself.
@@ -84,9 +87,11 @@ alongside the existing Muzik panel):
   Malaysian normaliser the public RSVP form uses
   (`normalizeMalaysianPhone`, `src/lib/validation.ts`).
 - **Not admin-editable** (file-only, by design): `siteUrl`,
-  `presetMusicPath`, `gaMeasurementId`, and `gallery` — none of these were
-  in scope, and the first two are infra/security-shaped enough to keep out
-  of a JSON blob edited from a phone.
+  `presetMusicPath`, and `gaMeasurementId` — the first two are
+  infra/security-shaped enough to keep out of a JSON blob edited from a
+  phone. `gallery` is a partial exception: the field itself stays
+  file-only, but it's now just the fallback for the DB-backed,
+  admin-managed gallery — see "Admin-managed gallery" below.
 - **Section visibility**: the admin can also show/hide individual sections
   (`undangan`, `lokasi`, `aturCara`, `countdown`, `galeri`, `ucapan`,
   `kehadiran`) and bottom-nav items (`navKalendar`, `navLokasi`,
@@ -137,6 +142,37 @@ bundled, the settings page warns about it explicitly, and the invite still
 renders cleanly with no player rather than a broken one. The active track
 also can't be deleted out from under the invite — `/admin/settings` refuses
 that (409) until a different track is selected first.
+
+### Admin-managed gallery
+
+Phase 9b made the "Galeri" section admin-managed, mirroring the background
+music upload flow above:
+
+- From `/admin/settings`, an admin can upload a JPEG/PNG/WebP (up to 5 MB,
+  up to 30 photos), edit each photo's alt text, reorder them with simple
+  up/down buttons (no drag-and-drop), and delete them (with a confirmation
+  step).
+- Uploads are validated by **magic bytes only** (`src/lib/image.ts`) —
+  never by the client-declared `Content-Type` or filename. SVG is
+  deliberately never accepted, even though browsers render it as an image:
+  an SVG document can embed `<script>`, which would be a stored-XSS vector
+  once served inline. Files are stored in the `ASSETS_BUCKET` R2 bucket
+  under a server-generated key; the original filename is kept only for
+  display.
+- The public invite streams each photo from `/api/gallery/<image-id>`
+  (`src/app/api/gallery/[id]/route.ts`), which resolves the R2 key
+  server-side from the database row — the id in the URL is never a storage
+  path — and serves it with a hardcoded, whitelisted `Content-Type`,
+  `X-Content-Type-Options: nosniff`, and `Content-Disposition: inline`.
+- `getGalleryImages()` (`src/db/queries/public.ts`) resolves what the
+  public card actually renders: the admin-uploaded photos ordered by their
+  saved position, or — on any failure, or when nothing has been uploaded
+  yet — the file config's `wedding.gallery` (the bundled placeholders), so
+  a fresh install still looks right.
+- Reordering validates that the submitted id list is exactly the same SET
+  of ids already in the table (`isValidGalleryReorder`,
+  `src/db/queries/admin.ts`) — no additions, no omissions — before writing
+  anything, so a partial or foreign list can never corrupt the ordering.
 
 ### Analytics
 

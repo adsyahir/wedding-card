@@ -1,10 +1,10 @@
 import "server-only";
 
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull } from "drizzle-orm";
 
 import { wedding } from "@/config/wedding";
 import { getDb } from "@/db";
-import { musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
+import { galleryImages, musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
 
 /**
  * Read-only queries for data rendered on the public invitation page.
@@ -140,6 +140,67 @@ export async function getMusicTrackForStream(id: string): Promise<MusicTrackForS
     .select({ source: musicTracks.source, r2Key: musicTracks.r2Key, mime: musicTracks.mime })
     .from(musicTracks)
     .where(eq(musicTracks.id, id))
+    .limit(1);
+
+  return row ?? null;
+}
+
+export type PublicGalleryItem = {
+  src: string;
+  alt: string;
+};
+
+/** Narrows a raw selected row down to the public gallery shape (`/api/gallery/<id>` URL, never the R2 key). */
+function toPublicGalleryItem(row: { id: string; alt: string }): PublicGalleryItem {
+  return { src: `/api/gallery/${row.id}`, alt: row.alt };
+}
+
+/**
+ * Resolves the gallery images rendered on the public invite (`Galeri`
+ * component): admin-uploaded photos, ordered by `sortOrder`, mapped to
+ * `{ src: "/api/gallery/<id>", alt }`. Falls back to `wedding.gallery`
+ * (the bundled placeholder SVGs) from the config file on any failure OR
+ * when the table is empty — so a fresh install still looks right before
+ * any admin has uploaded a photo.
+ */
+export async function getGalleryImages(): Promise<PublicGalleryItem[]> {
+  try {
+    const db = getDb();
+    const rows = await db
+      .select({ id: galleryImages.id, alt: galleryImages.alt })
+      .from(galleryImages)
+      .orderBy(asc(galleryImages.sortOrder));
+
+    if (rows.length === 0) return wedding.gallery;
+
+    return rows.map(toPublicGalleryItem);
+  } catch (error) {
+    console.error("getGalleryImages failed, falling back to the file config gallery", error);
+    return wedding.gallery;
+  }
+}
+
+export type GalleryImageForStream = {
+  r2Key: string;
+  mime: string | null;
+};
+
+/**
+ * Looked up by the public `/api/gallery/[id]` streaming route
+ * (`src/app/api/gallery/[id]/route.ts`) to resolve an id to its R2 key and
+ * stored mime type.
+ *
+ * Unlike every other function in this file, this one deliberately does NOT
+ * swallow errors into a safe fallback — same reasoning as
+ * `getMusicTrackForStream`: the streaming route needs to tell "id not
+ * found" (404) apart from "the database is unreachable" (500).
+ */
+export async function getGalleryImageForStream(id: string): Promise<GalleryImageForStream | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ r2Key: galleryImages.r2Key, mime: galleryImages.mime })
+    .from(galleryImages)
+    .where(eq(galleryImages.id, id))
     .limit(1);
 
   return row ?? null;

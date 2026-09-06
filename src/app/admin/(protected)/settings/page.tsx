@@ -1,8 +1,9 @@
 import { wedding } from "@/config/wedding";
-import { getActiveMusicSetting, listMusicTracks } from "@/db/queries/admin";
+import { getActiveMusicSetting, listGalleryImagesForAdmin, listMusicTracks } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
 import { getStoredWeddingConfigDoc, getWeddingConfig } from "@/lib/wedding-config";
 
+import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
 import { WeddingConfigSettings } from "../_components/WeddingConfigSettings";
 
@@ -20,11 +21,12 @@ export default async function AdminSettingsPage() {
   // the layout's call alone.
   await requireAdmin();
 
-  const [tracks, activeSetting, config, storedDoc] = await Promise.all([
+  const [tracks, activeSetting, config, storedDoc, galleryImages] = await Promise.all([
     listMusicTracks(),
     getActiveMusicSetting(),
     getWeddingConfig(),
     getStoredWeddingConfigDoc(),
+    listGalleryImagesForAdmin(),
   ]);
 
   // Mirrors `getActiveMusicSrc`'s own resolution (src/db/queries/public.ts):
@@ -43,6 +45,8 @@ export default async function AdminSettingsPage() {
         activeValue={activeValue}
         presetMusicPath={wedding.presetMusicPath}
       />
+
+      <GallerySettings images={galleryImages} />
     </div>
   );
 }

@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { WeddingConfig } from "@/config/wedding";
+import type { PublicGalleryItem } from "@/db/queries/public";
 import { trackEvent } from "@/lib/track";
 
 import { Reveal } from "./Reveal";
 
-type GalleryItem = WeddingConfig["gallery"][number];
+type GalleryItem = PublicGalleryItem;
 
 const FOCUSABLE_SELECTOR =
   'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -148,10 +148,20 @@ export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
             onClick={() => open(index)}
             className="relative aspect-square overflow-hidden rounded-lg bg-sand"
           >
+            {/*
+              `unoptimized`: uploaded images have unknown/arbitrary
+              dimensions and are served from `/api/gallery/<id>`, not a
+              static asset — the Cloudflare image-optimization binding
+              isn't configured (out of scope here), so `next/image` would
+              otherwise fail to resize them. The fixed `aspect-square` +
+              `object-cover` container above is what actually prevents
+              layout shift, independent of this flag.
+            */}
             <Image
               src={item.src}
               alt={item.alt}
               fill
+              unoptimized
               sizes="(max-width: 480px) 33vw, 160px"
               className="object-cover"
             />
@@ -196,6 +206,7 @@ export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
               src={active.src}
               alt={active.alt}
               fill
+              unoptimized
               sizes="480px"
               className="object-contain"
               priority

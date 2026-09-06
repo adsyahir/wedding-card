@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import type { WeddingConfig } from "@/config/wedding";
+import type { PublicGalleryItem } from "@/db/queries/public";
 import type { SectionsConfig } from "@/lib/wedding-config";
 import { trackEvent } from "@/lib/track";
 
@@ -40,12 +41,14 @@ export function InviteApp({
   wishes,
   initialCounts,
   musicSrc,
+  gallery,
 }: {
   config: WeddingConfig;
   sections: SectionsConfig;
   wishes: PublicWish[];
   initialCounts: { hadir: number; tidakHadir: number } | null;
   musicSrc: string | null;
+  gallery: PublicGalleryItem[];
 }) {
   const [musicShouldPlay, setMusicShouldPlay] = useState(false);
   const [activeSheet, setActiveSheet] = useState<NavKey | null>(null);
@@ -106,7 +109,7 @@ export function InviteApp({
         {sections.lokasi && <Lokasi config={config} />}
         {sections.aturCara && <AturCara config={config} />}
         {sections.countdown && <Countdown targetIso={config.date} />}
-        {sections.galeri && <Galeri gallery={config.gallery} />}
+        {sections.galeri && <Galeri gallery={gallery} />}
         {sections.ucapan && <UcapanWall wishes={wishes} />}
         {sections.kehadiran && counts !== null && (
           <Kehadiran hadir={counts.hadir} tidakHadir={counts.tidakHadir} />

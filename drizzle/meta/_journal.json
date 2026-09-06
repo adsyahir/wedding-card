@@ -8,6 +8,13 @@
       "when": 1788610236151,
       "tag": "0000_confused_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788676241279,
+      "tag": "0001_acoustic_kid_colt",
+      "breakpoints": true
     }
   ]
 }

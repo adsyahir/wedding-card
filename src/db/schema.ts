@@ -183,3 +183,24 @@ export const musicTracks = sqliteTable("music_tracks", {
   uploadedAt: integer("uploaded_at", { mode: "timestamp" }).notNull(),
   uploadedBy: text("uploaded_by"),
 });
+
+// No visitorHash, no IP — same rule as everywhere else in this schema (see
+// the header comment above). These are admin-uploaded photos, not
+// visitor-submitted content.
+export const galleryImages = sqliteTable(
+  "gallery_images",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    r2Key: text("r2_key").notNull(),
+    filename: text("filename"),
+    mime: text("mime").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    alt: text("alt").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    uploadedAt: integer("uploaded_at", { mode: "timestamp" }).notNull(),
+    uploadedBy: text("uploaded_by"),
+  },
+  (table) => [index("gallery_images_sort_order_idx").on(table.sortOrder)],
+);

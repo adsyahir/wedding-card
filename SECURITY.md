@@ -57,6 +57,11 @@ below are sized accordingly.
   sniffing the actual file's magic bytes (`src/lib/audio.ts`), never by the
   client-declared `Content-Type` or filename; size is capped and checked
   against the real decoded byte length, not a trusted `Content-Length`.
+  Gallery photo uploads (`src/lib/image.ts`) follow the identical pattern —
+  magic-byte sniffing only, double size cap — with one extra rule: SVG is
+  never accepted, even though it's technically an image format, because an
+  SVG document can carry `<script>` and would be a stored-XSS vector if
+  ever served inline.
 - **CSV injection** — the RSVP export escapes any cell starting with
   `=`, `+`, `-`, `@`, tab, or CR with a leading `'`, so a guest named
   `=HYPERLINK(...)` can't execute a formula when the caterer opens the
