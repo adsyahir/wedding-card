@@ -339,9 +339,37 @@ export async function getWeddingConfig(): Promise<ResolvedWeddingConfig> {
 
     return resolveWeddingConfigFromRaw(row?.value, fileDefaults);
   } catch (error) {
-    console.error("getWeddingConfig failed, falling back to file defaults", error);
+    // No D1 binding is available during `next build`'s static generation
+    // pass (e.g. prerendering /_not-found). That is expected, and the file
+    // defaults are exactly the right answer — so log it as a one-line
+    // notice rather than dumping a stack trace that looks like a crash in
+    // the build output. A build log full of scary-but-fine stack traces
+    // trains everyone to stop reading build logs.
+    if (isMissingBindingError(error)) {
+      console.info(
+        "getWeddingConfig: no D1 binding (build-time render); using file defaults",
+      );
+    } else {
+      console.error("getWeddingConfig failed, falling back to file defaults", error);
+    }
     return fileDefaults;
   }
+}
+
+/**
+ * True when the failure is "there is no Cloudflare binding here", which is
+ * the normal situation during build-time static generation, as opposed to a
+ * genuine runtime database fault that deserves a full stack trace.
+ */
+function isMissingBindingError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("getCloudflareContext") ||
+    message.includes("Cannot read properties of undefined") ||
+    message.includes("no binding") ||
+    message.includes("DB is not defined") ||
+    message.includes("open-next")
+  );
 }
 
 export type SaveWeddingConfigResult =
