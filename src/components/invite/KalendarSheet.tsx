@@ -1,5 +1,6 @@
 "use client";
 
+import { AppleCalendarIcon, GoogleCalendarIcon } from "./BrandIcons";
 import type { WeddingConfig } from "@/config/wedding";
 import { isoToParts } from "@/lib/datetime-my";
 import { trackEvent } from "@/lib/track";
@@ -76,14 +77,15 @@ export function KalendarSheet({
 
       {showGrid && eventDate && <CalendarMonthGrid event={eventDate} />}
 
-      <div className="mt-2 flex flex-col gap-3">
+      <div className="mt-2 flex gap-3">
         <a
           href={buildGoogleCalendarUrl(config)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("calendar_add")}
-          className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
+          <GoogleCalendarIcon />
           Google Calendar
         </a>
         <button
@@ -92,8 +94,9 @@ export function KalendarSheet({
             trackEvent("calendar_add");
             downloadIcs(config);
           }}
-          className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-sand px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
+          <AppleCalendarIcon />
           Apple Calendar
         </button>
       </div>

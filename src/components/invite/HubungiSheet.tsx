@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneIcon, WhatsAppIcon } from "./BrandIcons";
 import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
@@ -23,8 +24,9 @@ export function HubungiSheet({ config }: { config: WeddingConfig }) {
             <a
               href={`tel:${contact.phone}`}
               onClick={() => trackEvent("contact_click")}
-              className="inline-flex flex-1 items-center justify-center rounded-full border border-goldenrod bg-tan px-4 py-2 text-sm font-medium text-brown-deep"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-4 py-2 text-sm font-medium text-brown-deep"
             >
+              <PhoneIcon size={16} />
               Telefon
             </a>
             <a
@@ -32,8 +34,9 @@ export function HubungiSheet({ config }: { config: WeddingConfig }) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent("contact_click")}
-              className="inline-flex flex-1 items-center justify-center rounded-full border border-goldenrod bg-cream px-4 py-2 text-sm font-medium text-brown-deep"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-cream px-4 py-2 text-sm font-medium text-brown-deep"
             >
+              <WhatsAppIcon size={16} />
               WhatsApp
             </a>
           </div>

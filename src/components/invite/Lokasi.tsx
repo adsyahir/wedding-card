@@ -1,36 +1,10 @@
+import { GoogleMapsIcon, WazeIcon } from "./BrandIcons";
 import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
 import { Reveal } from "./Reveal";
 
-function MapPinIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none">
-      <path
-        d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
 
-function WazeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none">
-      <path
-        d="M4 14c0-5 3.5-9 8-9s8 4 8 9-3.5 6-8 6c-1.5 0-2.6-.3-3.5-.8"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path d="M6 18.5 4 21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="10" cy="13" r="1" fill="currentColor" />
-      <circle cx="14" cy="13" r="1" fill="currentColor" />
-    </svg>
-  );
-}
 
 /**
  * The Lokasi section on the page: venue name, address, and the two
@@ -80,7 +54,7 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
           onClick={() => trackEvent("maps_click")}
           className="inline-flex items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
-          <MapPinIcon />
+          <GoogleMapsIcon />
           Google Maps
         </a>
         <a

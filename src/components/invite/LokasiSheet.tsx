@@ -1,5 +1,6 @@
 "use client";
 
+import { GoogleMapsIcon, WazeIcon } from "./BrandIcons";
 import { buildMapEmbedUrl } from "@/lib/map-embed";
 import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
@@ -27,14 +28,17 @@ export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMa
         />
       )}
 
-      <div className="mt-2 flex w-full flex-col gap-3">
+      {/* Side by side: two short labels stacked full-width read as a list of
+          steps rather than a choice between two equivalent apps. */}
+      <div className="mt-2 flex w-full gap-3">
         <a
           href={config.venue.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("maps_click")}
-          className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
+          <GoogleMapsIcon />
           Google Maps
         </a>
         <a
@@ -42,8 +46,9 @@ export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMa
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("waze_click")}
-          className="inline-flex items-center justify-center rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-sand px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
+          <WazeIcon />
           Waze
         </a>
       </div>
