@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { ReactNode } from "react";
 
 import type { WeddingConfig } from "@/config/wedding";
 import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "@/lib/script-font";
@@ -26,6 +27,17 @@ type ApiResponse =
 
 const TABS = ["butiran", "lokasi", "aturcara", "hubungi", "bahagian"] as const;
 type Tab = (typeof TABS)[number];
+
+/**
+ * Panels that live in this same tab strip but own their own data and API
+ * routes (Galeri, Muzik, Notifikasi). They used to be rendered BELOW the
+ * tabs on the settings page, which meant they appeared on every tab at
+ * once — the tab strip looked like it only governed the five config tabs
+ * while three more panels sat under all of them permanently. Passing them
+ * in here gives the page one tab strip with one selection, which is what
+ * the strip already looked like it was promising.
+ */
+export type ExtraSettingsTab = { id: string; label: string; content: ReactNode };
 
 /**
  * Posts one slice of the wedding config JSON doc to
@@ -162,13 +174,15 @@ export function WeddingConfigSettings({
   initialConfig,
   isOverridden,
   dict,
+  extraTabs = [],
 }: {
   initialConfig: WeddingConfig & { sections: SectionsConfig };
   isOverridden: boolean;
   dict: AdminDict;
+  extraTabs?: ExtraSettingsTab[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("butiran");
+  const [tab, setTab] = useState<string>("butiran");
   const [resetPending, setResetPending] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
@@ -232,20 +246,23 @@ export function WeddingConfigSettings({
       )}
 
       <div role="tablist" aria-label={dict.wc_tabsAriaLabel} className="flex flex-wrap gap-2">
-        {TABS.map((t) => (
+        {[
+          ...TABS.map((t) => ({ id: t as string, label: TAB_LABELS[t] })),
+          ...extraTabs.map(({ id, label }) => ({ id, label })),
+        ].map(({ id, label }) => (
           <button
-            key={t}
+            key={id}
             type="button"
             role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
             className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
-              tab === t
+              tab === id
                 ? "border-goldenrod bg-tan text-brown-deep"
                 : "border-tan/40 bg-cream text-brown-deep"
             }`}
           >
-            {TAB_LABELS[t]}
+            {label}
           </button>
         ))}
       </div>
@@ -255,6 +272,7 @@ export function WeddingConfigSettings({
       {tab === "aturcara" && <AturCaraTab initialConfig={initialConfig} dict={dict} />}
       {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
       {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
+      {extraTabs.find((t) => t.id === tab)?.content}
     </section>
   );
 }

@@ -129,7 +129,7 @@ export function MusicPlayer({ src, play }: { src: string | null; play: boolean }
         aria-label={muted ? "Hidupkan muzik" : "Matikan muzik"}
         aria-pressed={!muted}
         className="fixed right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-goldenrod/60 bg-sand/90 text-brown-deep shadow-md backdrop-blur"
-        style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
+        style={{ top: "calc(45rem + env(safe-area-inset-top))" }}
       >
         {muted ? <SpeakerOffIcon /> : <SpeakerOnIcon />}
       </button>

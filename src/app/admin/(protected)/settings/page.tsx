@@ -14,8 +14,11 @@ import { WeddingConfigSettings } from "../_components/WeddingConfigSettings";
 export const dynamic = "force-dynamic";
 
 /**
- * `/admin/settings` — "Kandungan Kad Jemputan" (the admin-editable wedding
- * config, tabbed) and "Muzik Latar" (background music).
+ * `/admin/settings` — one tab strip over every settings panel.
+ *
+ * Galeri, Muzik and Notifikasi are passed in as extra tabs rather than
+ * rendered underneath: as siblings below the strip they showed on every
+ * tab at once, which made the tabs look broken.
  */
 export default async function AdminSettingsPage() {
   // Defense in depth: the `(protected)` layout already calls `requireAdmin()`,
@@ -43,19 +46,36 @@ export default async function AdminSettingsPage() {
     <div className="flex flex-col gap-8">
       <h1 className="font-serif text-2xl text-brown-deep">{dict.settings_heading}</h1>
 
-      <WeddingConfigSettings initialConfig={config} isOverridden={isOverridden} dict={dict} />
-
-      <MusicSettings
-        tracks={tracks}
-        activeValue={activeValue}
-        presetMusicPath={wedding.presetMusicPath}
+      <WeddingConfigSettings
+        initialConfig={config}
+        isOverridden={isOverridden}
         dict={dict}
-        lang={lang}
+        extraTabs={[
+          {
+            id: "galeri",
+            label: dict.gallery_heading,
+            content: <GallerySettings images={galleryImages} dict={dict} lang={lang} />,
+          },
+          {
+            id: "muzik",
+            label: dict.music_heading,
+            content: (
+              <MusicSettings
+                tracks={tracks}
+                activeValue={activeValue}
+                presetMusicPath={wedding.presetMusicPath}
+                dict={dict}
+                lang={lang}
+              />
+            ),
+          },
+          {
+            id: "notifikasi",
+            label: dict.notif_heading,
+            content: <NotificationSettings initialConfig={config.notifications} dict={dict} />,
+          },
+        ]}
       />
-
-      <GallerySettings images={galleryImages} dict={dict} lang={lang} />
-
-      <NotificationSettings initialConfig={config.notifications} dict={dict} />
     </div>
   );
 }
