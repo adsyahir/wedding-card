@@ -1,43 +1,19 @@
 import type { WeddingConfig } from "@/config/wedding";
 
+import { BotanicalCorner } from "./Botanical";
 import { Reveal } from "./Reveal";
-
-function CornerFlourish({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      width="88"
-      height="88"
-      role="presentation"
-      aria-hidden="true"
-      className={`text-goldenrod/25 ${className}`}
-    >
-      <path
-        d="M6 6 C 40 6, 40 30, 26 34 C 46 30, 54 46, 54 60"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-      <path
-        d="M6 6 C 6 40, 30 40, 34 26 C 30 46, 46 54, 60 54"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-      <circle cx="6" cy="6" r="3.5" fill="currentColor" />
-    </svg>
-  );
-}
 
 export function Hero({ config }: { config: WeddingConfig }) {
   const [day, month, year] = formatNumeric(config.date);
 
   return (
     <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
-      <CornerFlourish className="absolute top-4 left-4" />
-      <CornerFlourish className="absolute top-4 right-4 -scale-x-100" />
-      <CornerFlourish className="absolute bottom-4 left-4 -scale-y-100" />
-      <CornerFlourish className="absolute bottom-4 right-4 -scale-x-100 -scale-y-100" />
+      {/* Sized generously and bled slightly off the edges: at 88px these
+          read as stray marks on a phone rather than as framing. */}
+      <BotanicalCorner className="pointer-events-none absolute -top-2 -left-3" />
+      <BotanicalCorner className="pointer-events-none absolute -top-2 -right-3 -scale-x-100" />
+      <BotanicalCorner className="pointer-events-none absolute -bottom-2 -left-3 -scale-y-100" />
+      <BotanicalCorner className="pointer-events-none absolute -right-3 -bottom-2 -scale-x-100 -scale-y-100" />
 
       <Reveal className="flex flex-col items-center gap-6">
         <p className="text-xs font-medium tracking-[0.35em] text-brown uppercase">

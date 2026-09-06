@@ -103,7 +103,7 @@ export function InviteApp({
 
       <MusicPlayer src={musicSrc} play={musicShouldPlay} />
 
-      <div className="invite-card mx-auto flex w-full max-w-[480px] flex-col bg-cream pb-24">
+      <div className="invite-card relative mx-auto flex w-full max-w-[480px] flex-col pb-24">
         <Hero config={config} />
         {sections.undangan && <Undangan config={config} />}
         {sections.lokasi && <Lokasi config={config} />}

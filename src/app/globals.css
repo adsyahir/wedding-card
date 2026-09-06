@@ -6,6 +6,8 @@
   --color-tan: #C9A473;
   --color-goldenrod: #C9A227;
   --color-gold-light: #D8B978;
+  --color-sage: #9CA383;
+  --color-sage-light: #BFC3A8;
   --color-brown: #6B4F2A;
   --color-brown-deep: #3E2C18;
 
@@ -66,12 +68,38 @@ body > * {
  * reads as a printed card with an edge, not a floating div.
  */
 .invite-card {
+  /*
+   * On a phone the card fills the viewport edge to edge, so anything
+   * painted on the page behind it is invisible to almost every guest.
+   * The warmth and grain therefore live HERE, on the card itself — this
+   * is the only surface that is always on screen.
+   */
+  background-color: var(--color-cream);
+  background-image:
+    radial-gradient(ellipse 80% 30% at 50% 0%, #FFFDF9 0%, transparent 60%),
+    radial-gradient(ellipse 100% 40% at 50% 100%, #F5EEE1 0%, transparent 70%);
   box-shadow:
     0 1px 2px rgba(62, 44, 24, 0.04),
     0 8px 24px rgba(62, 44, 24, 0.06),
     0 24px 64px rgba(62, 44, 24, 0.05);
   border-left: 1px solid rgba(216, 185, 120, 0.28);
   border-right: 1px solid rgba(216, 185, 120, 0.28);
+}
+
+/* Paper grain on the card itself, same reasoning as the background above. */
+.invite-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.invite-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* On a phone the card fills the width, so side borders would just be noise. */
