@@ -1,6 +1,7 @@
 import { wedding } from "@/config/wedding";
 import { getActiveMusicSetting, listGalleryImagesForAdmin, listMusicTracks } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import { getStoredWeddingConfigDoc, getWeddingConfig } from "@/lib/wedding-config";
 
 import { GallerySettings } from "../_components/GallerySettings";
@@ -21,6 +22,9 @@ export default async function AdminSettingsPage() {
   // the layout's call alone.
   await requireAdmin();
 
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
+
   const [tracks, activeSetting, config, storedDoc, galleryImages] = await Promise.all([
     listMusicTracks(),
     getActiveMusicSetting(),
@@ -36,17 +40,19 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-serif text-2xl text-brown-deep">Tetapan</h1>
+      <h1 className="font-serif text-2xl text-brown-deep">{dict.settings_heading}</h1>
 
-      <WeddingConfigSettings initialConfig={config} isOverridden={isOverridden} />
+      <WeddingConfigSettings initialConfig={config} isOverridden={isOverridden} dict={dict} />
 
       <MusicSettings
         tracks={tracks}
         activeValue={activeValue}
         presetMusicPath={wedding.presetMusicPath}
+        dict={dict}
+        lang={lang}
       />
 
-      <GallerySettings images={galleryImages} />
+      <GallerySettings images={galleryImages} dict={dict} lang={lang} />
     </div>
   );
 }

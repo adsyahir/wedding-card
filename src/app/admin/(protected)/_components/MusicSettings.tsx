@@ -5,7 +5,9 @@ import { useRef, useState } from "react";
 
 import { MAX_AUDIO_BYTES } from "@/lib/audio";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { AdminDict, AdminLang } from "@/lib/i18n/admin-dict";
 
+import { localizeApiError } from "./api-error";
 import { formatDateTime } from "./format";
 import { useAdminAction } from "./useAdminAction";
 
@@ -26,7 +28,7 @@ function formatBytes(n: number | null): string {
   return `${(n / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-type UploadResponse = { ok: true; id: string } | { ok: false; error: string };
+type UploadResponse = { ok: true; id: string } | { ok: false; error: string; code?: string };
 
 /**
  * The "Muzik Latar" panel on `/admin/settings`
@@ -43,14 +45,18 @@ export function MusicSettings({
   tracks,
   activeValue,
   presetMusicPath,
+  dict,
+  lang,
 }: {
   tracks: MusicTrackForSettings[];
   activeValue: string;
   presetMusicPath: string | null;
+  dict: AdminDict;
+  lang: AdminLang;
 }) {
   const router = useRouter();
-  const { run: runSelect, pending: selectPending, error: selectError } = useAdminAction();
-  const { run: runDelete, pending: deletePending, error: deleteError } = useAdminAction();
+  const { run: runSelect, pending: selectPending, error: selectError } = useAdminAction(dict);
+  const { run: runDelete, pending: deletePending, error: deleteError } = useAdminAction(dict);
 
   const [selected, setSelected] = useState(activeValue);
   const [label, setLabel] = useState("");
@@ -66,7 +72,7 @@ export function MusicSettings({
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Padam trek muzik ini? Tindakan ini tidak boleh dibatalkan.")) return;
+    if (!window.confirm(dict.music_confirmDelete)) return;
     await runDelete("/api/admin/music/delete", { id });
   }
 
@@ -76,13 +82,13 @@ export function MusicSettings({
 
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setUploadError("Sila pilih fail audio.");
+      setUploadError(dict.music_selectAudioFile);
       return;
     }
     // Fast client-side feedback only — the server-side check on the
     // actually-decoded bytes in the upload route is the real authority.
     if (file.size > MAX_AUDIO_BYTES) {
-      setUploadError("Saiz fail terlalu besar (had 8 MB).");
+      setUploadError(dict.music_fileTooLarge);
       return;
     }
 
@@ -101,7 +107,7 @@ export function MusicSettings({
       const data = (await response.json().catch(() => null)) as UploadResponse | null;
 
       if (!response.ok || !data?.ok) {
-        setUploadError((data && !data.ok && data.error) || "Ralat tidak dijangka. Sila cuba lagi.");
+        setUploadError(localizeApiError(dict, data && !data.ok ? data : null));
         return;
       }
 
@@ -109,7 +115,7 @@ export function MusicSettings({
       if (fileInputRef.current) fileInputRef.current.value = "";
       router.refresh();
     } catch {
-      setUploadError("Ralat rangkaian. Sila cuba lagi.");
+      setUploadError(dict.common_networkError);
     } finally {
       setUploadPending(false);
     }
@@ -117,7 +123,7 @@ export function MusicSettings({
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-4">
-      <h2 className="font-serif text-xl text-brown-deep">Muzik Latar</h2>
+      <h2 className="font-serif text-xl text-brown-deep">{dict.music_heading}</h2>
 
       <div className="flex flex-col gap-3">
         <label className="flex items-center gap-2 text-sm text-brown-deep">
@@ -128,7 +134,7 @@ export function MusicSettings({
             onChange={() => handleSelect("none")}
             disabled={selectPending}
           />
-          <span>Tiada muzik</span>
+          <span>{dict.music_noMusic}</span>
         </label>
 
         <div className="flex flex-col gap-1">
@@ -140,7 +146,7 @@ export function MusicSettings({
               onChange={() => handleSelect("preset")}
               disabled={selectPending}
             />
-            <span>Lagu lalai</span>
+            <span>{dict.music_defaultSong}</span>
           </label>
           {presetMusicPath ? (
             <audio
@@ -150,15 +156,12 @@ export function MusicSettings({
               className="ml-6 h-8 max-w-xs"
             />
           ) : (
-            <p className="ml-6 text-xs text-red-700">
-              Tiada fail lagu lalai dibundel (`presetMusicPath` kosong dalam{" "}
-              <code>src/config/wedding.ts</code>). Jika dipilih, tiada muzik akan dimainkan.
-            </p>
+            <p className="ml-6 text-xs text-red-700">{dict.music_noPresetWarning}</p>
           )}
         </div>
 
         {tracks.length === 0 ? (
-          <p className="ml-6 text-xs text-brown/60">Belum ada trek dimuat naik.</p>
+          <p className="ml-6 text-xs text-brown/60">{dict.music_noTracksUploaded}</p>
         ) : (
           tracks.map((track) => {
             const isActive = selected === track.id;
@@ -177,20 +180,16 @@ export function MusicSettings({
                   </label>
                   <span className="text-xs text-brown/60">
                     {track.filename ?? "-"} · {formatBytes(track.sizeBytes)} ·{" "}
-                    {formatDateTime(track.uploadedAt)}
+                    {formatDateTime(track.uploadedAt, lang)}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleDelete(track.id)}
                     disabled={isActive || deletePending}
-                    title={
-                      isActive
-                        ? "Tidak boleh memadam trek yang sedang aktif — tukar muzik dahulu"
-                        : undefined
-                    }
+                    title={isActive ? dict.music_deleteActiveTitle : undefined}
                     className="ml-auto rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
                   >
-                    Padam
+                    {dict.common_delete}
                   </button>
                 </div>
                 <audio
@@ -212,10 +211,10 @@ export function MusicSettings({
       )}
 
       <form onSubmit={handleUpload} className="flex flex-col gap-2 border-t border-tan/30 pt-4">
-        <p className="text-sm font-medium text-brown-deep">Muat naik trek baharu</p>
+        <p className="text-sm font-medium text-brown-deep">{dict.music_uploadHeading}</p>
 
         <label htmlFor="music-label" className="text-xs text-brown/60">
-          Label (pilihan — lalai kepada nama fail)
+          {dict.music_labelFieldLabel}
         </label>
         <input
           id="music-label"
@@ -224,7 +223,7 @@ export function MusicSettings({
           onChange={(event) => setLabel(event.target.value)}
           maxLength={60}
           disabled={uploadPending}
-          placeholder="cth. Lagu Cinta"
+          placeholder={dict.music_labelPlaceholder}
           className="rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep"
         />
 
@@ -241,7 +240,7 @@ export function MusicSettings({
           disabled={uploadPending}
           className="self-start rounded-md bg-goldenrod px-3 py-1.5 text-sm font-medium text-cream transition hover:bg-brown disabled:opacity-50"
         >
-          {uploadPending ? "Memuat naik..." : "Muat Naik"}
+          {uploadPending ? dict.common_uploading : dict.common_upload}
         </button>
 
         {uploadError && (

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { API_ERRORS, jsonError, jsonOk } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, jsonOk } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 import {
   CSRF_COOKIE_NAME,
@@ -31,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!token) {
     // Guarded by requireAdminApi, so this should be unreachable in
     // practice, but fail safe rather than throwing.
-    return jsonError(401, API_ERRORS.invalidRequest);
+    return jsonError(401, API_ERRORS.invalidRequest, undefined, ADMIN_ERROR_CODES.invalidRequest);
   }
 
   await revokeSession(token);

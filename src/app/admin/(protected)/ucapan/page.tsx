@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { listWishes, type WishStatus } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang, interpolate } from "@/lib/i18n/admin";
 
 import { formatDateTime } from "../_components/format";
 import { WishActions } from "../_components/WishActions";
@@ -15,12 +16,6 @@ type SearchParams = Record<string, string | string[] | undefined>;
 function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
-
-const TABS: { status: WishStatus; label: string }[] = [
-  { status: "pending", label: "Menunggu" },
-  { status: "approved", label: "Diluluskan" },
-  { status: "rejected", label: "Ditolak" },
-];
 
 function isWishStatus(value: string | undefined): value is WishStatus {
   return value === "pending" || value === "approved" || value === "rejected";
@@ -39,6 +34,15 @@ export default async function AdminUcapanPage({
   // Defense in depth — see the comment on the layout for why this call is
   // required here too, not just there.
   await requireAdmin();
+
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
+
+  const TABS: { status: WishStatus; label: string }[] = [
+    { status: "pending", label: dict.ucapan_tabPending },
+    { status: "approved", label: dict.ucapan_tabApproved },
+    { status: "rejected", label: dict.ucapan_tabRejected },
+  ];
 
   const sp = await searchParams;
   const statusParam = first(sp.status);
@@ -62,11 +66,12 @@ export default async function AdminUcapanPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-serif text-2xl text-brown-deep">Ucapan</h1>
+      <h1 className="font-serif text-2xl text-brown-deep">{dict.ucapan_heading}</h1>
 
       <p className="rounded-lg border border-tan/30 bg-sand/40 px-3 py-2 text-sm text-brown/70">
-        Hanya ucapan berstatus <span className="font-medium text-brown-deep">Diluluskan</span> dipaparkan
-        di laman jemputan awam. Ucapan yang menunggu semakan tidak kelihatan kepada tetamu.
+        {dict.ucapan_noticeBefore}{" "}
+        <span className="font-medium text-brown-deep">{dict.ucapan_noticeStatus}</span>{" "}
+        {dict.ucapan_noticeAfter}
       </p>
 
       <nav className="flex items-center gap-1 border-b border-tan/30">
@@ -89,11 +94,11 @@ export default async function AdminUcapanPage({
         })}
       </nav>
 
-      <p className="text-sm text-brown/60">{total} rekod</p>
+      <p className="text-sm text-brown/60">{interpolate(dict.ucapan_recordCount, { n: total })}</p>
 
       {rows.length === 0 ? (
         <p className="rounded-xl border border-tan/30 bg-sand/40 px-4 py-8 text-center text-sm text-brown/60">
-          Tiada ucapan dalam kategori ini.
+          {dict.ucapan_emptyState}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -106,11 +111,14 @@ export default async function AdminUcapanPage({
                 <p className="font-medium text-brown-deep">{wish.name}</p>
                 <p className="mt-1 text-sm text-brown/80">{wish.message}</p>
                 <p className="mt-1 text-xs text-brown/50">
-                  Dihantar {formatDateTime(wish.createdAt)}
-                  {wish.moderatedAt && ` · Disemak ${formatDateTime(wish.moderatedAt)}`}
+                  {interpolate(dict.ucapan_sentAt, { date: formatDateTime(wish.createdAt, lang) })}
+                  {wish.moderatedAt &&
+                    interpolate(dict.ucapan_reviewedAt, {
+                      date: formatDateTime(wish.moderatedAt, lang),
+                    })}
                 </p>
               </div>
-              <WishActions id={wish.id} status={wish.status} />
+              <WishActions id={wish.id} status={wish.status} dict={dict} />
             </li>
           ))}
         </ul>
@@ -122,17 +130,15 @@ export default async function AdminUcapanPage({
           aria-disabled={currentPage <= 1}
           className={currentPage <= 1 ? "pointer-events-none opacity-40" : "underline"}
         >
-          &larr; Sebelum
+          {dict.common_prev}
         </Link>
-        <span>
-          Muka {currentPage} / {totalPages}
-        </span>
+        <span>{interpolate(dict.common_pageLabel, { page: currentPage, total: totalPages })}</span>
         <Link
           href={pageHref(Math.min(totalPages, currentPage + 1))}
           aria-disabled={currentPage >= totalPages}
           className={currentPage >= totalPages ? "pointer-events-none opacity-40" : "underline"}
         >
-          Seterusnya &rarr;
+          {dict.common_next}
         </Link>
       </div>
     </div>

@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import { countPendingWishes } from "@/db/queries/admin";
 import { wedding } from "@/config/wedding";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
 import { AdminNav } from "./AdminNav";
+import { LangToggle } from "./LangToggle";
 import { LogoutButton } from "./LogoutButton";
 
 // Never statically optimized/cached — every request must actually run the
@@ -30,6 +32,13 @@ export const metadata: Metadata = {
  * in depth — never rely on the layout's call alone) — see
  * `src/app/admin/(protected)/page.tsx`, `.../rsvp/page.tsx`,
  * `.../ucapan/page.tsx`.
+ *
+ * Also reads the admin's language preference (`wc_admin_lang` cookie, see
+ * `src/lib/i18n/admin.ts`) and resolves the dictionary ONCE here, passing
+ * it down as a plain prop to every client component in the shell — the
+ * pages under `children` each read the same cookie independently and
+ * resolve their own dict, since a layout can't hand props to the page it
+ * wraps.
  */
 export default async function ProtectedAdminLayout({
   children,
@@ -37,6 +46,9 @@ export default async function ProtectedAdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
+
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
 
   // Best-effort — a stats query failing must never take down the entire
   // dashboard shell. Falls back to 0 (no badge) rather than throwing.
@@ -58,9 +70,12 @@ export default async function ProtectedAdminLayout({
               </p>
               <p className="text-xs text-brown/60">{wedding.hashtag}</p>
             </div>
-            <AdminNav pendingWishCount={pendingWishCount} />
+            <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-3">
+            <LangToggle current={lang} />
+            <LogoutButton dict={dict} />
+          </div>
         </div>
       </header>
 

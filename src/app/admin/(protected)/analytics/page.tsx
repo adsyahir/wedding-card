@@ -19,6 +19,8 @@ import {
 } from "@/db/queries/analytics";
 import { backfillMissingDailyStats } from "@/lib/analytics-rollup";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
+import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 import { StatCard } from "../_components/StatCard";
 import { VisitsChart } from "./VisitsChart";
@@ -28,12 +30,6 @@ import { VisitsChart } from "./VisitsChart";
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
-
-const RANGE_OPTIONS: { value: RangeDays; label: string }[] = [
-  { value: 7, label: "7 hari" },
-  { value: 30, label: "30 hari" },
-  { value: 90, label: "90 hari" },
-];
 
 function rangeHref(range: RangeDays): string {
   return range === 30 ? "/admin/analytics" : `/admin/analytics?range=${range}`;
@@ -83,12 +79,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-const DEVICE_LABELS: Record<string, string> = {
-  mobile: "Mudah alih",
-  tablet: "Tablet",
-  desktop: "Desktop",
-};
-
 /**
  * `/admin/analytics` — traffic and engagement dashboard for the invite.
  *
@@ -114,6 +104,21 @@ export default async function AdminAnalyticsPage({
   // Defense in depth — see the comment on the layout for why this call is
   // required here too, not just there.
   await requireAdmin();
+
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
+
+  const RANGE_OPTIONS: { value: RangeDays; label: string }[] = [
+    { value: 7, label: dict.analytics_range7 },
+    { value: 30, label: dict.analytics_range30 },
+    { value: 90, label: dict.analytics_range90 },
+  ];
+
+  const DEVICE_LABELS: Record<string, string> = {
+    mobile: dict.analytics_deviceMobile,
+    tablet: dict.analytics_deviceTablet,
+    desktop: dict.analytics_deviceDesktop,
+  };
 
   const sp = await searchParams;
   const rangeDays = resolveRangeDays(sp.range);
@@ -153,7 +158,7 @@ export default async function AdminAnalyticsPage({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-2xl text-brown-deep">Analitik</h1>
+        <h1 className="font-serif text-2xl text-brown-deep">{dict.analytics_heading}</h1>
         <div className="flex gap-1 rounded-lg border border-tan/40 bg-sand/40 p-1">
           {RANGE_OPTIONS.map((option) => (
             <Link
@@ -173,30 +178,32 @@ export default async function AdminAnalyticsPage({
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Jumlah Lawatan" value={totals.views} />
-        <StatCard label="Pelawat Unik" value={totals.uniques} emphasize />
-        <StatCard label="RSVP Dibuka" value={funnel.rsvpOpen} />
-        <StatCard label="RSVP Dihantar" value={funnel.rsvpSubmit} />
+        <StatCard label={dict.analytics_statViews} value={totals.views} />
+        <StatCard label={dict.analytics_statUniques} value={totals.uniques} emphasize />
+        <StatCard label={dict.analytics_statRsvpOpen} value={funnel.rsvpOpen} />
+        <StatCard label={dict.analytics_statRsvpSubmit} value={funnel.rsvpSubmit} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-serif text-xl text-brown-deep">Lawatan mengikut hari</h2>
-        <VisitsChart data={chartData} />
+        <h2 className="font-serif text-xl text-brown-deep">{dict.analytics_chartHeading}</h2>
+        <VisitsChart data={chartData} dict={dict} />
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Panel title="Negara teratas">
-          <BreakdownList rows={topCountries} emptyLabel="Tiada data negara lagi." />
+        <Panel title={dict.analytics_panelCountries}>
+          <BreakdownList rows={topCountries} emptyLabel={dict.analytics_emptyCountries} />
         </Panel>
-        <Panel title="Bandar teratas">
-          <BreakdownList rows={topCities} emptyLabel="Tiada data bandar lagi." />
+        <Panel title={dict.analytics_panelCities}>
+          <BreakdownList rows={topCities} emptyLabel={dict.analytics_emptyCities} />
         </Panel>
       </section>
 
       <section>
-        <Panel title="Sumber rujukan (referrer)">
+        <Panel title={dict.analytics_panelReferrer}>
           {referrerBreakdown.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-brown/60">Tiada data rujukan lagi.</p>
+            <p className="px-4 py-6 text-center text-sm text-brown/60">
+              {dict.analytics_emptyReferrer}
+            </p>
           ) : (
             <ul className="flex flex-col divide-y divide-tan/20">
               {referrerBreakdown.map((row) => {
@@ -220,47 +227,57 @@ export default async function AdminAnalyticsPage({
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Panel title="Peranti">
+        <Panel title={dict.analytics_panelDevice}>
           <BreakdownList
             rows={deviceBreakdown}
-            emptyLabel="Tiada data peranti lagi."
+            emptyLabel={dict.analytics_emptyDevice}
             formatKey={(key) => DEVICE_LABELS[key] ?? key}
           />
         </Panel>
-        <Panel title="Sistem operasi">
-          <BreakdownList rows={osBreakdown} emptyLabel="Tiada data sistem operasi lagi." />
+        <Panel title={dict.analytics_panelOs}>
+          <BreakdownList rows={osBreakdown} emptyLabel={dict.analytics_emptyOs} />
         </Panel>
-        <Panel title="Pelayar">
-          <BreakdownList rows={browserBreakdown} emptyLabel="Tiada data pelayar lagi." />
+        <Panel title={dict.analytics_panelBrowser}>
+          <BreakdownList rows={browserBreakdown} emptyLabel={dict.analytics_emptyBrowser} />
         </Panel>
       </section>
 
       <section>
-        <Panel title="Corong penglibatan RSVP">
-          <div className="flex flex-col divide-y divide-tan/20">
-            <div className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="text-brown-deep">Lawatan</span>
-              <span className="tabular-nums text-brown/70">{funnel.views}</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="text-brown-deep">RSVP dibuka</span>
-              <span className="tabular-nums text-brown/70">
-                {funnel.rsvpOpen}{" "}
-                <span className="text-brown/40">({percentage(funnel.rsvpOpen, funnel.views)})</span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="text-brown-deep">RSVP dihantar</span>
-              <span className="tabular-nums text-brown/70">
-                {funnel.rsvpSubmit}{" "}
-                <span className="text-brown/40">
-                  ({percentage(funnel.rsvpSubmit, funnel.rsvpOpen)})
-                </span>
-              </span>
-            </div>
-          </div>
+        <Panel title={dict.analytics_panelFunnel}>
+          <FunnelRows dict={dict} funnel={funnel} />
         </Panel>
       </section>
+    </div>
+  );
+}
+
+function FunnelRows({
+  dict,
+  funnel,
+}: {
+  dict: AdminDict;
+  funnel: { views: number; rsvpOpen: number; rsvpSubmit: number };
+}) {
+  return (
+    <div className="flex flex-col divide-y divide-tan/20">
+      <div className="flex items-center justify-between px-4 py-3 text-sm">
+        <span className="text-brown-deep">{dict.analytics_funnelViews}</span>
+        <span className="tabular-nums text-brown/70">{funnel.views}</span>
+      </div>
+      <div className="flex items-center justify-between px-4 py-3 text-sm">
+        <span className="text-brown-deep">{dict.analytics_funnelRsvpOpen}</span>
+        <span className="tabular-nums text-brown/70">
+          {funnel.rsvpOpen}{" "}
+          <span className="text-brown/40">({percentage(funnel.rsvpOpen, funnel.views)})</span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between px-4 py-3 text-sm">
+        <span className="text-brown-deep">{dict.analytics_funnelRsvpSubmit}</span>
+        <span className="tabular-nums text-brown/70">
+          {funnel.rsvpSubmit}{" "}
+          <span className="text-brown/40">({percentage(funnel.rsvpSubmit, funnel.rsvpOpen)})</span>
+        </span>
+      </div>
     </div>
   );
 }

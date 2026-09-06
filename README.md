@@ -264,6 +264,24 @@ and writes the row to the **local** D1 database via `wrangler d1 execute`.
 - `npm run seed:admin -- --force` allows overwriting an existing username
   (the script refuses to do this by default).
 
+### Admin dashboard language (BM / EN)
+
+The admin dashboard chrome (nav, headings, buttons, tables, toasts, the
+login page, everything under `/admin/settings`) can be switched between
+Bahasa Melayu and English with the "BM / EN" control in the dashboard
+header. This is stored per-browser in a `wc_admin_lang` cookie (`ms` or
+`en`, default `ms`), not a database column — several family members may
+share one admin login, and a cookie gives each of them their own language
+on their own device, with no migration needed. See
+`src/lib/i18n/admin.ts`/`admin-dict.ts` for the dictionary and
+`src/app/admin/(protected)/LangToggle.tsx` for the control itself.
+
+This toggle only affects the admin dashboard. **The public invitation page
+always renders in Bahasa Melayu** and is completely unaffected by this
+cookie — it's a Malay wedding card, and the content the admin types into
+`/admin/settings` (names, addresses, itinerary, ...) is the couple's own
+data, not UI chrome, so it is never translated either.
+
 ### Local database
 
 Local development already runs entirely on **SQLite**. `next dev` serves the

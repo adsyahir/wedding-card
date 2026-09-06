@@ -94,14 +94,17 @@ export async function requireAdminApi(request: Request): Promise<RequireAdminApi
 }
 
 function unauthorizedResponse(): Response {
-  return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+  // `code` lets the admin client localize this via src/lib/i18n/admin.ts
+  // regardless of the (English) `error` string below, which is never
+  // shown as-is once a code is present — see useAdminAction.
+  return new Response(JSON.stringify({ ok: false, error: "Unauthorized", code: "unauthorized" }), {
     status: 401,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
 function forbiddenResponse(): Response {
-  return new Response(JSON.stringify({ ok: false, error: "Forbidden" }), {
+  return new Response(JSON.stringify({ ok: false, error: "Forbidden", code: "forbidden" }), {
     status: 403,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });

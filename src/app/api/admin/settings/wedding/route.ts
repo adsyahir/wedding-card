@@ -1,4 +1,4 @@
-import { API_ERRORS, jsonError, jsonOk, readJsonBody } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, jsonOk, readJsonBody } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 import { saveWeddingConfig } from "@/lib/wedding-config";
 
@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!guard.ok) return guard.response;
 
   const body = await readJsonBody(request, 64 * 1024);
-  if (!body.ok) return jsonError(body.status, body.error);
+  if (!body.ok) return jsonError(body.status, body.error, undefined, ADMIN_ERROR_CODES.invalidRequest);
 
   const result = await saveWeddingConfig(body.data, guard.session.adminUserId);
   if (!result.ok) {
@@ -31,11 +31,16 @@ export async function POST(request: Request): Promise<Response> {
     // `fieldErrors` means the failure was a DB error, not a validation
     // one (`saveWeddingConfig` never throws) — report that generically.
     if (!hasFieldErrors) {
-      return jsonError(500, API_ERRORS.serverError);
+      return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
     }
 
     return new Response(
-      JSON.stringify({ ok: false, error: API_ERRORS.invalidInput, fieldErrors: result.fieldErrors }),
+      JSON.stringify({
+        ok: false,
+        error: API_ERRORS.invalidInput,
+        code: ADMIN_ERROR_CODES.invalidInput,
+        fieldErrors: result.fieldErrors,
+      }),
       {
         status: 400,
         headers: {

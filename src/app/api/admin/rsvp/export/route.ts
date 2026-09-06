@@ -1,15 +1,14 @@
 import { getAllRsvpsForExport } from "@/db/queries/admin";
-import { API_ERRORS, jsonError } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
+import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
 // `export const runtime = "nodejs"`. Force dynamic: never statically
 // optimized/cached — a cached copy of the guest list would be a direct
 // data leak.
 export const dynamic = "force-dynamic";
-
-const CSV_HEADERS = ["Nama", "Telefon", "Kehadiran", "Dewasa", "Kanak-Kanak", "Pesanan", "Tarikh"];
 
 /**
  * Formats a timestamp as `DD/MM/YYYY HH:mm` in Malaysia time. The raw ISO
@@ -46,14 +45,25 @@ export async function GET(request: Request): Promise<Response> {
   if (!guard.ok) return guard.response;
 
   try {
+    const dict = getAdminDict(await getAdminLang());
+    const csvHeaders = [
+      dict.rsvpExport_colName,
+      dict.rsvpExport_colPhone,
+      dict.rsvpExport_colAttending,
+      dict.rsvpExport_colAdults,
+      dict.rsvpExport_colChildren,
+      dict.rsvpExport_colMessage,
+      dict.rsvpExport_colDate,
+    ];
+
     const rows = await getAllRsvpsForExport();
 
     const csv = toCsv(
-      CSV_HEADERS,
+      csvHeaders,
       rows.map((row) => [
         row.name,
         row.phone,
-        row.attending ? "Hadir" : "Tidak Hadir",
+        row.attending ? dict.rsvpExport_hadir : dict.rsvpExport_tidakHadir,
         row.adults,
         row.children,
         row.message,
@@ -80,6 +90,6 @@ export async function GET(request: Request): Promise<Response> {
     });
   } catch (error) {
     console.error("GET /api/admin/rsvp/export: failed", error);
-    return jsonError(500, API_ERRORS.serverError);
+    return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
   }
 }

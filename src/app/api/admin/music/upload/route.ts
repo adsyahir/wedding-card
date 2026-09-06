@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getDb } from "@/db";
 import { musicTracks } from "@/db/schema";
-import { API_ERRORS, jsonError } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError } from "@/lib/api";
 import { MAX_AUDIO_BYTES, sniffAudioType } from "@/lib/audio";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 
@@ -56,14 +56,14 @@ export async function POST(request: Request): Promise<Response> {
 
   const contentType = request.headers.get("Content-Type") ?? "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
-    return jsonError(400, API_ERRORS.invalidRequest);
+    return jsonError(400, API_ERRORS.invalidRequest, undefined, ADMIN_ERROR_CODES.invalidRequest);
   }
 
   const contentLengthHeader = request.headers.get("Content-Length");
   if (contentLengthHeader) {
     const contentLength = Number(contentLengthHeader);
     if (Number.isFinite(contentLength) && contentLength > MAX_AUDIO_BYTES + CONTENT_LENGTH_SLACK_BYTES) {
-      return jsonError(413, API_ERRORS.payloadTooLarge);
+      return jsonError(413, API_ERRORS.payloadTooLarge, undefined, ADMIN_ERROR_CODES.payloadTooLarge);
     }
   }
 
@@ -72,12 +72,12 @@ export async function POST(request: Request): Promise<Response> {
     form = await request.formData();
   } catch (error) {
     console.error("POST /api/admin/music/upload: formData() failed", error);
-    return jsonError(400, API_ERRORS.invalidRequest);
+    return jsonError(400, API_ERRORS.invalidRequest, undefined, ADMIN_ERROR_CODES.invalidRequest);
   }
 
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return jsonError(400, API_ERRORS.invalidInput);
+    return jsonError(400, API_ERRORS.invalidInput, undefined, ADMIN_ERROR_CODES.invalidInput);
   }
 
   // The declared MIME type and filename are read ONLY for display
@@ -88,13 +88,13 @@ export async function POST(request: Request): Promise<Response> {
   // Second, authoritative size check: this runs on the actual decoded
   // bytes, so a missing or lying Content-Length header cannot bypass it.
   if (buffer.byteLength > MAX_AUDIO_BYTES) {
-    return jsonError(413, API_ERRORS.payloadTooLarge);
+    return jsonError(413, API_ERRORS.payloadTooLarge, undefined, ADMIN_ERROR_CODES.payloadTooLarge);
   }
 
   const bytes = new Uint8Array(buffer);
   const mime = sniffAudioType(bytes);
   if (!mime) {
-    return jsonError(400, API_ERRORS.unsupportedMediaType);
+    return jsonError(400, API_ERRORS.unsupportedMediaType, undefined, ADMIN_ERROR_CODES.unsupportedMediaType);
   }
 
   const sanitizedFilename = sanitizeFilename(file.name ?? "");
@@ -104,7 +104,7 @@ export async function POST(request: Request): Promise<Response> {
   if (typeof labelField === "string" && labelField.trim().length > 0) {
     const parsedLabel = labelSchema.safeParse(labelField);
     if (!parsedLabel.success) {
-      return jsonError(400, API_ERRORS.invalidInput);
+      return jsonError(400, API_ERRORS.invalidInput, undefined, ADMIN_ERROR_CODES.invalidInput);
     }
     label = parsedLabel.data;
   } else {
@@ -123,7 +123,7 @@ export async function POST(request: Request): Promise<Response> {
     await bucket.put(r2Key, bytes, { httpMetadata: { contentType: mime } });
   } catch (error) {
     console.error("POST /api/admin/music/upload: R2 put failed", error);
-    return jsonError(500, API_ERRORS.serverError);
+    return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
   }
 
   let insertedId: string;
@@ -163,7 +163,7 @@ export async function POST(request: Request): Promise<Response> {
         cleanupError,
       );
     }
-    return jsonError(500, API_ERRORS.serverError);
+    return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
   }
 
   await logAudit({

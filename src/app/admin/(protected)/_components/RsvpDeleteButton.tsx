@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import type { AdminDict } from "@/lib/i18n/admin-dict";
+
 import { useAdminAction } from "./useAdminAction";
 
 /**
@@ -9,8 +11,8 @@ import { useAdminAction } from "./useAdminAction";
  * single-click delete for guest PII) — clicking "Padam" reveals a
  * "Sahkan?" / "Batal" pair rather than acting immediately.
  */
-export function RsvpDeleteButton({ id }: { id: string }) {
-  const { run, pending, error } = useAdminAction();
+export function RsvpDeleteButton({ id, dict }: { id: string; dict: AdminDict }) {
+  const { run, pending, error } = useAdminAction(dict);
   const [confirming, setConfirming] = useState(false);
 
   async function handleConfirm() {
@@ -28,7 +30,7 @@ export function RsvpDeleteButton({ id }: { id: string }) {
             disabled={pending}
             className="font-semibold text-red-700 underline disabled:opacity-50"
           >
-            Sahkan padam?
+            {dict.rsvp_deleteConfirm}
           </button>
           <button
             type="button"
@@ -36,7 +38,7 @@ export function RsvpDeleteButton({ id }: { id: string }) {
             disabled={pending}
             className="text-brown/60 underline disabled:opacity-50"
           >
-            Batal
+            {dict.common_cancel}
           </button>
         </div>
         {error && (
@@ -54,7 +56,7 @@ export function RsvpDeleteButton({ id }: { id: string }) {
       onClick={() => setConfirming(true)}
       className="text-xs text-brown/60 underline hover:text-red-700"
     >
-      Padam
+      {dict.rsvp_deleteAction}
     </button>
   );
 }

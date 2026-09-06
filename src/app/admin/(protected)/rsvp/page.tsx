@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { listRsvps, resolveSort, type RsvpSortField } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang, interpolate } from "@/lib/i18n/admin";
 
 import { formatDateTime } from "../_components/format";
 import { RsvpDeleteButton } from "../_components/RsvpDeleteButton";
@@ -44,6 +45,9 @@ export default async function AdminRsvpPage({
   // Defense in depth — see the comment on the layout for why this call is
   // required here too, not just there.
   await requireAdmin();
+
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
 
   const sp = await searchParams;
   const q = first(sp.q)?.trim() ?? "";
@@ -92,12 +96,12 @@ export default async function AdminRsvpPage({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-2xl text-brown-deep">RSVP</h1>
+        <h1 className="font-serif text-2xl text-brown-deep">{dict.rsvp_heading}</h1>
         <a
           href="/api/admin/rsvp/export"
           className="rounded-lg bg-goldenrod px-4 py-2 text-sm font-medium text-cream transition hover:bg-brown"
         >
-          Muat Turun CSV
+          {dict.rsvp_downloadCsv}
         </a>
       </div>
 
@@ -106,7 +110,7 @@ export default async function AdminRsvpPage({
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Cari nama atau telefon…"
+          placeholder={dict.rsvp_searchPlaceholder}
           className="min-w-[14rem] flex-1 rounded-lg border border-tan/50 bg-cream px-3 py-2 text-sm text-brown-deep outline-none focus-visible:border-goldenrod"
         />
         <select
@@ -114,9 +118,9 @@ export default async function AdminRsvpPage({
           defaultValue={attendingParam ?? ""}
           className="rounded-lg border border-tan/50 bg-cream px-3 py-2 text-sm text-brown-deep outline-none focus-visible:border-goldenrod"
         >
-          <option value="">Semua</option>
-          <option value="hadir">Hadir</option>
-          <option value="tidak">Tidak Hadir</option>
+          <option value="">{dict.rsvp_filterAll}</option>
+          <option value="hadir">{dict.rsvp_filterHadir}</option>
+          <option value="tidak">{dict.rsvp_filterTidak}</option>
         </select>
         <input type="hidden" name="sort" value={activeSort} />
         <input type="hidden" name="direction" value={activeDirection} />
@@ -124,11 +128,11 @@ export default async function AdminRsvpPage({
           type="submit"
           className="rounded-lg border border-tan/50 bg-sand/60 px-4 py-2 text-sm font-medium text-brown-deep transition hover:bg-tan/30"
         >
-          Tapis
+          {dict.rsvp_filterSubmit}
         </button>
       </form>
 
-      <p className="text-sm text-brown/60">{total} rekod</p>
+      <p className="text-sm text-brown/60">{interpolate(dict.rsvp_recordCount, { n: total })}</p>
 
       <div className="overflow-x-auto rounded-xl border border-tan/30">
         <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
@@ -136,21 +140,24 @@ export default async function AdminRsvpPage({
             <tr className="border-b border-tan/30 bg-sand/60 text-brown-deep">
               <th className="px-3 py-2 font-medium">
                 <Link href={sortHref("name")} className="hover:underline">
-                  Nama{sortIndicator("name")}
+                  {dict.rsvp_colName}
+                  {sortIndicator("name")}
                 </Link>
               </th>
-              <th className="px-3 py-2 font-medium">Telefon</th>
-              <th className="px-3 py-2 font-medium">Kehadiran</th>
+              <th className="px-3 py-2 font-medium">{dict.rsvp_colPhone}</th>
+              <th className="px-3 py-2 font-medium">{dict.rsvp_colAttending}</th>
               <th className="px-3 py-2 font-medium">
                 <Link href={sortHref("adults")} className="hover:underline">
-                  Dewasa{sortIndicator("adults")}
+                  {dict.rsvp_colAdults}
+                  {sortIndicator("adults")}
                 </Link>
               </th>
-              <th className="px-3 py-2 font-medium">Kanak-Kanak</th>
-              <th className="px-3 py-2 font-medium">Pesanan</th>
+              <th className="px-3 py-2 font-medium">{dict.rsvp_colChildren}</th>
+              <th className="px-3 py-2 font-medium">{dict.rsvp_colMessage}</th>
               <th className="px-3 py-2 font-medium">
                 <Link href={sortHref("createdAt")} className="hover:underline">
-                  Tarikh{sortIndicator("createdAt")}
+                  {dict.rsvp_colDate}
+                  {sortIndicator("createdAt")}
                 </Link>
               </th>
               <th className="px-3 py-2 font-medium" />
@@ -160,7 +167,7 @@ export default async function AdminRsvpPage({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-3 py-8 text-center text-brown/60">
-                  Tiada rekod RSVP dijumpai.
+                  {dict.rsvp_emptyState}
                 </td>
               </tr>
             ) : (
@@ -180,15 +187,17 @@ export default async function AdminRsvpPage({
                           : "rounded-full bg-tan/20 px-2 py-0.5 text-xs font-medium text-brown/70"
                       }
                     >
-                      {row.attending ? "Hadir" : "Tidak Hadir"}
+                      {row.attending ? dict.rsvp_filterHadir : dict.rsvp_filterTidak}
                     </span>
                   </td>
                   <td className="px-3 py-2">{row.adults}</td>
                   <td className="px-3 py-2">{row.children}</td>
                   <td className="max-w-[16rem] px-3 py-2 text-brown/80">{row.message ?? "—"}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {formatDateTime(row.createdAt, lang)}
+                  </td>
                   <td className="px-3 py-2 text-right">
-                    <RsvpDeleteButton id={row.id} />
+                    <RsvpDeleteButton id={row.id} dict={dict} />
                   </td>
                 </tr>
               ))
@@ -203,17 +212,15 @@ export default async function AdminRsvpPage({
           aria-disabled={currentPage <= 1}
           className={currentPage <= 1 ? "pointer-events-none opacity-40" : "underline"}
         >
-          &larr; Sebelum
+          {dict.common_prev}
         </Link>
-        <span>
-          Muka {currentPage} / {totalPages}
-        </span>
+        <span>{interpolate(dict.common_pageLabel, { page: currentPage, total: totalPages })}</span>
         <Link
           href={pageHref(Math.min(totalPages, currentPage + 1))}
           aria-disabled={currentPage >= totalPages}
           className={currentPage >= totalPages ? "pointer-events-none opacity-40" : "underline"}
         >
-          Seterusnya &rarr;
+          {dict.common_next}
         </Link>
       </div>
     </div>

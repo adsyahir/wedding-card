@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { findGalleryImageById } from "@/db/queries/admin";
 import { galleryImages } from "@/db/schema";
-import { API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
@@ -30,17 +30,17 @@ export async function POST(request: Request): Promise<Response> {
   if (!guard.ok) return guard.response;
 
   const body = await readJsonBody(request);
-  if (!body.ok) return jsonError(body.status, body.error);
+  if (!body.ok) return jsonError(body.status, body.error, undefined, ADMIN_ERROR_CODES.invalidRequest);
 
   const parsed = bodySchema.safeParse(toRecord(body.data));
-  if (!parsed.success) return jsonError(400, API_ERRORS.invalidInput);
+  if (!parsed.success) return jsonError(400, API_ERRORS.invalidInput, undefined, ADMIN_ERROR_CODES.invalidInput);
 
   const { id, alt } = parsed.data;
 
   try {
     const image = await findGalleryImageById(id);
     if (!image) {
-      return jsonError(404, API_ERRORS.notFound);
+      return jsonError(404, API_ERRORS.notFound, undefined, ADMIN_ERROR_CODES.notFound);
     }
 
     const db = getDb();
@@ -56,6 +56,6 @@ export async function POST(request: Request): Promise<Response> {
     return jsonOk();
   } catch (error) {
     console.error("POST /api/admin/gallery/update: failed", error);
-    return jsonError(500, API_ERRORS.serverError);
+    return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
   }
 }

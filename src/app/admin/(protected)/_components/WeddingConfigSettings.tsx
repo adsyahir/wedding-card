@@ -6,27 +6,31 @@ import { useState } from "react";
 import type { WeddingConfig } from "@/config/wedding";
 import type { SectionsConfig } from "@/lib/wedding-config";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { AdminDict } from "@/lib/i18n/admin-dict";
 
-type ApiResponse = { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string> };
+import { localizeApiError } from "./api-error";
+
+type ApiResponse =
+  | { ok: true }
+  | { ok: false; error: string; code?: string; fieldErrors?: Record<string, string> };
 
 const TABS = ["butiran", "lokasi", "aturcara", "hubungi", "bahagian"] as const;
 type Tab = (typeof TABS)[number];
-
-const TAB_LABELS: Record<Tab, string> = {
-  butiran: "Butiran",
-  lokasi: "Lokasi",
-  aturcara: "Atur Cara",
-  hubungi: "Hubungi",
-  bahagian: "Bahagian",
-};
 
 /**
  * Posts one slice of the wedding config JSON doc to
  * `POST /api/admin/settings/wedding` (see `src/lib/wedding-config.ts` for
  * the merge-on-save semantics: each tab only ever sends the fields it
- * owns). Returns per-field Malay error messages on validation failure.
+ * owns). Returns per-field error messages on validation failure — these
+ * come straight from the Zod schema in `src/lib/wedding-config.ts` and are
+ * NOT localized (see the README / task notes: they're a large, fixed set
+ * of Malay-ish messages out of scope for this pass), only the top-level
+ * `error` summary is.
  */
-async function saveSlice(slice: unknown): Promise<{ ok: true } | { ok: false; error: string; fieldErrors: Record<string, string> }> {
+async function saveSlice(
+  dict: AdminDict,
+  slice: unknown,
+): Promise<{ ok: true } | { ok: false; error: string; fieldErrors: Record<string, string> }> {
   try {
     const response = await fetch("/api/admin/settings/wedding", {
       method: "POST",
@@ -37,13 +41,13 @@ async function saveSlice(slice: unknown): Promise<{ ok: true } | { ok: false; er
     if (!response.ok || !data?.ok) {
       return {
         ok: false,
-        error: (data && !data.ok && data.error) || "Ralat tidak dijangka. Sila cuba lagi.",
+        error: localizeApiError(dict, data && !data.ok ? data : null),
         fieldErrors: (data && !data.ok && data.fieldErrors) || {},
       };
     }
     return { ok: true };
   } catch {
-    return { ok: false, error: "Ralat rangkaian. Sila cuba lagi.", fieldErrors: {} };
+    return { ok: false, error: dict.common_networkError, fieldErrors: {} };
   }
 }
 
@@ -73,11 +77,13 @@ const inputClass =
   "rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep";
 
 function SaveBar({
+  dict,
   pending,
   error,
   success,
   onSave,
 }: {
+  dict: AdminDict;
   pending: boolean;
   error: string | null;
   success: boolean;
@@ -91,9 +97,9 @@ function SaveBar({
         disabled={pending}
         className="rounded-md bg-goldenrod px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-brown disabled:opacity-50"
       >
-        {pending ? "Menyimpan..." : "Simpan"}
+        {pending ? dict.common_saving : dict.common_save}
       </button>
-      {success && <span className="text-xs text-green-700">Berjaya disimpan.</span>}
+      {success && <span className="text-xs text-green-700">{dict.common_saved}</span>}
       {error && (
         <span role="alert" className="text-xs text-red-700">
           {error}
@@ -103,7 +109,7 @@ function SaveBar({
   );
 }
 
-function useSectionSave() {
+function useSectionSave(dict: AdminDict) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +121,7 @@ function useSectionSave() {
     setError(null);
     setSuccess(false);
     setFieldErrors({});
-    const result = await saveSlice(slice);
+    const result = await saveSlice(dict, slice);
     setPending(false);
     if (!result.ok) {
       setError(result.error);
@@ -133,21 +139,27 @@ function useSectionSave() {
 export function WeddingConfigSettings({
   initialConfig,
   isOverridden,
+  dict,
 }: {
   initialConfig: WeddingConfig & { sections: SectionsConfig };
   isOverridden: boolean;
+  dict: AdminDict;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("butiran");
   const [resetPending, setResetPending] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
+  const TAB_LABELS: Record<Tab, string> = {
+    butiran: dict.wc_tabButiran,
+    lokasi: dict.wc_tabLokasi,
+    aturcara: dict.wc_tabAturCara,
+    hubungi: dict.wc_tabHubungi,
+    bahagian: dict.wc_tabBahagian,
+  };
+
   async function handleReset() {
-    if (
-      !window.confirm(
-        "Kembalikan semua tetapan kad jemputan kepada nilai asal fail (src/config/wedding.ts)? Tindakan ini tidak boleh dibatalkan.",
-      )
-    ) {
+    if (!window.confirm(dict.wc_resetConfirm)) {
       return;
     }
     setResetPending(true);
@@ -160,12 +172,12 @@ export function WeddingConfigSettings({
       });
       const data = (await response.json().catch(() => null)) as ApiResponse | null;
       if (!response.ok || !data?.ok) {
-        setResetError((data && !data.ok && data.error) || "Ralat tidak dijangka. Sila cuba lagi.");
+        setResetError(localizeApiError(dict, data && !data.ok ? data : null));
         return;
       }
       router.refresh();
     } catch {
-      setResetError("Ralat rangkaian. Sila cuba lagi.");
+      setResetError(dict.common_networkError);
     } finally {
       setResetPending(false);
     }
@@ -174,11 +186,11 @@ export function WeddingConfigSettings({
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-serif text-xl text-brown-deep">Kandungan Kad Jemputan</h2>
+        <h2 className="font-serif text-xl text-brown-deep">{dict.wc_heading}</h2>
         <div className="flex items-center gap-2">
           {isOverridden && (
             <span className="rounded-full bg-tan/40 px-2 py-0.5 text-xs text-brown-deep">
-              Menggunakan tetapan admin
+              {dict.wc_overriddenBadge}
             </span>
           )}
           <button
@@ -187,7 +199,7 @@ export function WeddingConfigSettings({
             disabled={resetPending}
             className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
           >
-            {resetPending ? "Memulihkan..." : "Kembalikan ke asal"}
+            {resetPending ? dict.wc_resetting : dict.wc_resetButton}
           </button>
         </div>
       </div>
@@ -197,7 +209,7 @@ export function WeddingConfigSettings({
         </p>
       )}
 
-      <div role="tablist" aria-label="Tetapan kad jemputan" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label={dict.wc_tabsAriaLabel} className="flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button
             key={t}
@@ -216,17 +228,23 @@ export function WeddingConfigSettings({
         ))}
       </div>
 
-      {tab === "butiran" && <ButiranTab initialConfig={initialConfig} />}
-      {tab === "lokasi" && <LokasiTab initialConfig={initialConfig} />}
-      {tab === "aturcara" && <AturCaraTab initialConfig={initialConfig} />}
-      {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} />}
-      {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} />}
+      {tab === "butiran" && <ButiranTab initialConfig={initialConfig} dict={dict} />}
+      {tab === "lokasi" && <LokasiTab initialConfig={initialConfig} dict={dict} />}
+      {tab === "aturcara" && <AturCaraTab initialConfig={initialConfig} dict={dict} />}
+      {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
+      {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
     </section>
   );
 }
 
-function ButiranTab({ initialConfig }: { initialConfig: WeddingConfig }) {
-  const { save, pending, error, success, fieldErrors } = useSectionSave();
+function ButiranTab({
+  initialConfig,
+  dict,
+}: {
+  initialConfig: WeddingConfig;
+  dict: AdminDict;
+}) {
+  const { save, pending, error, success, fieldErrors } = useSectionSave(dict);
   const [eventType, setEventType] = useState(initialConfig.eventType);
   const [groomShort, setGroomShort] = useState(initialConfig.groom.shortName);
   const [groomFull, setGroomFull] = useState(initialConfig.groom.fullName);
@@ -272,40 +290,40 @@ function ButiranTab({ initialConfig }: { initialConfig: WeddingConfig }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Jenis Majlis" error={fieldErrors.eventType}>
+        <Field label={dict.wc_eventType} error={fieldErrors.eventType}>
           <input className={inputClass} value={eventType} onChange={(e) => setEventType(e.target.value)} />
         </Field>
-        <Field label="Hashtag" error={fieldErrors.hashtag}>
+        <Field label={dict.wc_hashtag} error={fieldErrors.hashtag}>
           <input className={inputClass} value={hashtag} onChange={(e) => setHashtag(e.target.value)} />
         </Field>
-        <Field label="Nama Pendek Pengantin Lelaki" error={fieldErrors["groom.shortName"]}>
+        <Field label={dict.wc_groomShort} error={fieldErrors["groom.shortName"]}>
           <input className={inputClass} value={groomShort} onChange={(e) => setGroomShort(e.target.value)} />
         </Field>
-        <Field label="Nama Penuh Pengantin Lelaki" error={fieldErrors["groom.fullName"]}>
+        <Field label={dict.wc_groomFull} error={fieldErrors["groom.fullName"]}>
           <input className={inputClass} value={groomFull} onChange={(e) => setGroomFull(e.target.value)} />
         </Field>
-        <Field label="Nama Pendek Pengantin Perempuan" error={fieldErrors["bride.shortName"]}>
+        <Field label={dict.wc_brideShort} error={fieldErrors["bride.shortName"]}>
           <input className={inputClass} value={brideShort} onChange={(e) => setBrideShort(e.target.value)} />
         </Field>
-        <Field label="Nama Penuh Pengantin Perempuan" error={fieldErrors["bride.fullName"]}>
+        <Field label={dict.wc_brideFull} error={fieldErrors["bride.fullName"]}>
           <input className={inputClass} value={brideFull} onChange={(e) => setBrideFull(e.target.value)} />
         </Field>
-        <Field label="Tarikh &amp; Masa Akad (ISO 8601)" error={fieldErrors.date}>
+        <Field label={dict.wc_dateIso} error={fieldErrors.date}>
           <input className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field label="Nama Hari (cth. Ahad)" error={fieldErrors.dayNameMs}>
+        <Field label={dict.wc_dayName} error={fieldErrors.dayNameMs}>
           <input className={inputClass} value={dayNameMs} onChange={(e) => setDayNameMs(e.target.value)} />
         </Field>
-        <Field label="Tarikh Paparan (cth. 01 November 2026)" error={fieldErrors.displayDate}>
+        <Field label={dict.wc_displayDate} error={fieldErrors.displayDate}>
           <input className={inputClass} value={displayDate} onChange={(e) => setDisplayDate(e.target.value)} />
         </Field>
-        <Field label="Masa Tamat (ISO 8601)" error={fieldErrors.endTime}>
+        <Field label={dict.wc_endTime} error={fieldErrors.endTime}>
           <input className={inputClass} value={endTime} onChange={(e) => setEndTime(e.target.value)} />
         </Field>
-        <Field label="Tarikh Tutup RSVP (ISO 8601)" error={fieldErrors.rsvpDeadline}>
+        <Field label={dict.wc_rsvpDeadline} error={fieldErrors.rsvpDeadline}>
           <input className={inputClass} value={rsvpDeadline} onChange={(e) => setRsvpDeadline(e.target.value)} />
         </Field>
-        <Field label="Tarikh Tutup RSVP (Paparan)" error={fieldErrors.rsvpDeadlineDisplay}>
+        <Field label={dict.wc_rsvpDeadlineDisplay} error={fieldErrors.rsvpDeadlineDisplay}>
           <input
             className={inputClass}
             value={rsvpDeadlineDisplay}
@@ -314,10 +332,10 @@ function ButiranTab({ initialConfig }: { initialConfig: WeddingConfig }) {
         </Field>
       </div>
 
-      <Field label="Baris Tuan Rumah" error={fieldErrors["hosts.line"]}>
+      <Field label={dict.wc_hostsLine} error={fieldErrors["hosts.line"]}>
         <input className={inputClass} value={hostsLine} onChange={(e) => setHostsLine(e.target.value)} />
       </Field>
-      <Field label="Nama Ibu Bapa (satu baris setiap satu)" error={fieldErrors["hosts.names"]}>
+      <Field label={dict.wc_hostsNames} error={fieldErrors["hosts.names"]}>
         <textarea
           className={inputClass}
           rows={3}
@@ -325,13 +343,13 @@ function ButiranTab({ initialConfig }: { initialConfig: WeddingConfig }) {
           onChange={(e) => setHostsNames(e.target.value)}
         />
       </Field>
-      <Field label="Salam" error={fieldErrors.salam}>
+      <Field label={dict.wc_salam} error={fieldErrors.salam}>
         <textarea className={inputClass} rows={2} value={salam} onChange={(e) => setSalam(e.target.value)} />
       </Field>
-      <Field label="Gelaran Jemputan" error={fieldErrors.honorifics}>
+      <Field label={dict.wc_honorifics} error={fieldErrors.honorifics}>
         <input className={inputClass} value={honorifics} onChange={(e) => setHonorifics(e.target.value)} />
       </Field>
-      <Field label="Teks Jemputan (perenggan dipisah baris kosong)" error={fieldErrors.invitationBody}>
+      <Field label={dict.wc_invitationBody} error={fieldErrors.invitationBody}>
         <textarea
           className={inputClass}
           rows={4}
@@ -339,17 +357,17 @@ function ButiranTab({ initialConfig }: { initialConfig: WeddingConfig }) {
           onChange={(e) => setInvitationBody(e.target.value)}
         />
       </Field>
-      <Field label="Doa Penutup" error={fieldErrors.doa}>
+      <Field label={dict.wc_doa} error={fieldErrors.doa}>
         <textarea className={inputClass} rows={3} value={doa} onChange={(e) => setDoa(e.target.value)} />
       </Field>
 
-      <SaveBar pending={pending} error={error} success={success} onSave={handleSave} />
+      <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
   );
 }
 
-function LokasiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
-  const { save, pending, error, success, fieldErrors } = useSectionSave();
+function LokasiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict: AdminDict }) {
+  const { save, pending, error, success, fieldErrors } = useSectionSave(dict);
   const [name, setName] = useState(initialConfig.venue.name);
   const [addressLines, setAddressLines] = useState(initialConfig.venue.addressLines.join("\n"));
   const [lat, setLat] = useState(String(initialConfig.venue.lat));
@@ -375,10 +393,10 @@ function LokasiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Nama Tempat" error={fieldErrors["venue.name"]}>
+      <Field label={dict.wc_venueName} error={fieldErrors["venue.name"]}>
         <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
-      <Field label="Alamat (satu baris setiap satu)" error={fieldErrors["venue.addressLines"]}>
+      <Field label={dict.wc_venueAddress} error={fieldErrors["venue.addressLines"]}>
         <textarea
           className={inputClass}
           rows={3}
@@ -387,29 +405,29 @@ function LokasiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
         />
       </Field>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Latitud" error={fieldErrors["venue.lat"]}>
+        <Field label={dict.wc_venueLat} error={fieldErrors["venue.lat"]}>
           <input className={inputClass} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" />
         </Field>
-        <Field label="Longitud" error={fieldErrors["venue.lng"]}>
+        <Field label={dict.wc_venueLng} error={fieldErrors["venue.lng"]}>
           <input className={inputClass} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" />
         </Field>
       </div>
-      <Field label="Pautan Google Maps (https, google.com/goo.gl)" error={fieldErrors["venue.googleMapsUrl"]}>
+      <Field label={dict.wc_venueGmaps} error={fieldErrors["venue.googleMapsUrl"]}>
         <input className={inputClass} value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} />
       </Field>
-      <Field label="Pautan Waze (https, waze.com)" error={fieldErrors["venue.wazeUrl"]}>
+      <Field label={dict.wc_venueWaze} error={fieldErrors["venue.wazeUrl"]}>
         <input className={inputClass} value={wazeUrl} onChange={(e) => setWazeUrl(e.target.value)} />
       </Field>
 
-      <SaveBar pending={pending} error={error} success={success} onSave={handleSave} />
+      <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
   );
 }
 
 type AturCaraRow = { time: string; label: string };
 
-function AturCaraTab({ initialConfig }: { initialConfig: WeddingConfig }) {
-  const { save, pending, error, success, fieldErrors } = useSectionSave();
+function AturCaraTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict: AdminDict }) {
+  const { save, pending, error, success, fieldErrors } = useSectionSave(dict);
   const [rows, setRows] = useState<AturCaraRow[]>(initialConfig.aturCara.map((r) => ({ ...r })));
 
   function update(index: number, field: keyof AturCaraRow, value: string) {
@@ -452,19 +470,20 @@ function AturCaraTab({ initialConfig }: { initialConfig: WeddingConfig }) {
             <input
               className={`${inputClass} w-28`}
               value={row.time}
-              placeholder="Masa"
+              placeholder={dict.wc_aturCaraTimePlaceholder}
               onChange={(e) => update(index, "time", e.target.value)}
             />
             <input
               className={`${inputClass} flex-1`}
               value={row.label}
-              placeholder="Perkara"
+              placeholder={dict.wc_aturCaraLabelPlaceholder}
               onChange={(e) => update(index, "label", e.target.value)}
             />
             <button
               type="button"
               onClick={() => move(index, -1)}
               disabled={index === 0}
+              aria-label={dict.wc_moveUp}
               className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
             >
               ↑
@@ -473,6 +492,7 @@ function AturCaraTab({ initialConfig }: { initialConfig: WeddingConfig }) {
               type="button"
               onClick={() => move(index, 1)}
               disabled={index === rows.length - 1}
+              aria-label={dict.wc_moveDown}
               className="rounded-md border border-tan/40 px-2 py-1 text-xs text-brown-deep disabled:opacity-30"
             >
               ↓
@@ -482,7 +502,7 @@ function AturCaraTab({ initialConfig }: { initialConfig: WeddingConfig }) {
               onClick={() => remove(index)}
               className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
             >
-              Padam
+              {dict.common_delete}
             </button>
           </div>
         ))}
@@ -493,18 +513,18 @@ function AturCaraTab({ initialConfig }: { initialConfig: WeddingConfig }) {
         disabled={rows.length >= 30}
         className="self-start rounded-md border border-tan/40 px-3 py-1.5 text-sm text-brown-deep disabled:opacity-40"
       >
-        + Tambah Baris
+        {dict.wc_addRow}
       </button>
 
-      <SaveBar pending={pending} error={error} success={success} onSave={handleSave} />
+      <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
   );
 }
 
 type ContactRow = { name: string; role: string; phone: string };
 
-function HubungiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
-  const { save, pending, error, success, fieldErrors } = useSectionSave();
+function HubungiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict: AdminDict }) {
+  const { save, pending, error, success, fieldErrors } = useSectionSave(dict);
   const [rows, setRows] = useState<ContactRow[]>(initialConfig.contacts.map((r) => ({ ...r })));
 
   function update(index: number, field: keyof ContactRow, value: string) {
@@ -537,19 +557,19 @@ function HubungiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
             <input
               className={`${inputClass} flex-1`}
               value={row.name}
-              placeholder="Nama"
+              placeholder={dict.wc_contactNamePlaceholder}
               onChange={(e) => update(index, "name", e.target.value)}
             />
             <input
               className={`${inputClass} flex-1`}
               value={row.role}
-              placeholder="Peranan"
+              placeholder={dict.wc_contactRolePlaceholder}
               onChange={(e) => update(index, "role", e.target.value)}
             />
             <input
               className={`${inputClass} w-40`}
               value={row.phone}
-              placeholder="Telefon"
+              placeholder={dict.wc_contactPhonePlaceholder}
               onChange={(e) => update(index, "phone", e.target.value)}
             />
             <button
@@ -557,7 +577,7 @@ function HubungiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
               onClick={() => remove(index)}
               className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
             >
-              Padam
+              {dict.common_delete}
             </button>
           </div>
         ))}
@@ -568,31 +588,37 @@ function HubungiTab({ initialConfig }: { initialConfig: WeddingConfig }) {
         disabled={rows.length >= 30}
         className="self-start rounded-md border border-tan/40 px-3 py-1.5 text-sm text-brown-deep disabled:opacity-40"
       >
-        + Tambah Kenalan
+        {dict.wc_addContact}
       </button>
 
-      <SaveBar pending={pending} error={error} success={success} onSave={handleSave} />
+      <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
   );
 }
 
-const SECTION_TOGGLE_LABELS: { key: keyof SectionsConfig; label: string }[] = [
-  { key: "undangan", label: "Bahagian Undangan" },
-  { key: "lokasi", label: "Bahagian Lokasi" },
-  { key: "aturCara", label: "Bahagian Atur Cara" },
-  { key: "countdown", label: "Bahagian Menghitung Hari" },
-  { key: "galeri", label: "Bahagian Galeri" },
-  { key: "ucapan", label: "Bahagian Ucapan (dinding + borang)" },
-  { key: "kehadiran", label: "Bahagian Kehadiran (tallies)" },
-  { key: "navKalendar", label: "Nav: Kalendar" },
-  { key: "navLokasi", label: "Nav: Lokasi" },
-  { key: "navHubungi", label: "Nav: Hubungi" },
-  { key: "navRsvp", label: "Nav: RSVP (juga menutup penghantaran RSVP)" },
-];
-
-function BahagianTab({ initialConfig }: { initialConfig: { sections: SectionsConfig } }) {
-  const { save, pending, error, success } = useSectionSave();
+function BahagianTab({
+  initialConfig,
+  dict,
+}: {
+  initialConfig: { sections: SectionsConfig };
+  dict: AdminDict;
+}) {
+  const { save, pending, error, success } = useSectionSave(dict);
   const [sections, setSections] = useState<SectionsConfig>({ ...initialConfig.sections });
+
+  const SECTION_TOGGLE_LABELS: { key: keyof SectionsConfig; label: string }[] = [
+    { key: "undangan", label: dict.wc_sectionUndangan },
+    { key: "lokasi", label: dict.wc_sectionLokasi },
+    { key: "aturCara", label: dict.wc_sectionAturCara },
+    { key: "countdown", label: dict.wc_sectionCountdown },
+    { key: "galeri", label: dict.wc_sectionGaleri },
+    { key: "ucapan", label: dict.wc_sectionUcapan },
+    { key: "kehadiran", label: dict.wc_sectionKehadiran },
+    { key: "navKalendar", label: dict.wc_navKalendar },
+    { key: "navLokasi", label: dict.wc_navLokasi },
+    { key: "navHubungi", label: dict.wc_navHubungi },
+    { key: "navRsvp", label: dict.wc_navRsvp },
+  ];
 
   function toggle(key: keyof SectionsConfig) {
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -604,10 +630,7 @@ function BahagianTab({ initialConfig }: { initialConfig: { sections: SectionsCon
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-brown/70">
-        Menutup bahagian &quot;RSVP&quot; atau &quot;Ucapan&quot; juga menyekat penghantaran borang
-        berkaitan di pelayan — bukan sekadar menyembunyikannya.
-      </p>
+      <p className="text-xs text-brown/70">{dict.wc_sectionsNotice}</p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {SECTION_TOGGLE_LABELS.map(({ key, label }) => (
           <label key={key} className="flex items-center gap-2 text-sm text-brown-deep">
@@ -617,7 +640,7 @@ function BahagianTab({ initialConfig }: { initialConfig: { sections: SectionsCon
         ))}
       </div>
 
-      <SaveBar pending={pending} error={error} success={success} onSave={handleSave} />
+      <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
   );
 }

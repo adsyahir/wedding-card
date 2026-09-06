@@ -48,10 +48,42 @@ export function jsonOk(): Response {
 /**
  * `{ ok: false, error }` at the given status, with the same no-store/nosniff
  * headers. Pass `extraHeaders` for things like `Retry-After`.
+ *
+ * `code` is an OPTIONAL, additive, stable machine-readable error code (see
+ * `ADMIN_ERROR_CODES` below) — admin routes pass one so the admin UI can
+ * localize the failure via `src/lib/i18n/admin.ts` instead of showing the
+ * server's Malay `error` string to an English-reading admin. The PUBLIC
+ * routes (`/api/rsvp`, `/api/wishes`, `/api/track`) never pass one, so
+ * their response shape is completely unchanged: `{ ok: false, error }`,
+ * still Malay, for Malay-speaking guests.
  */
-export function jsonError(status: number, message: string, extraHeaders?: HeadersInit): Response {
-  return jsonResponse(status, { ok: false, error: message }, extraHeaders);
+export function jsonError(
+  status: number,
+  message: string,
+  extraHeaders?: HeadersInit,
+  code?: string,
+): Response {
+  const body: Record<string, unknown> = { ok: false, error: message };
+  if (code) body.code = code;
+  return jsonResponse(status, body, extraHeaders);
 }
+
+/**
+ * Stable machine-readable codes for the fixed `API_ERRORS` messages above,
+ * for admin routes to pass as `jsonError`'s `code` argument. Route-specific
+ * one-off messages (e.g. the gallery-full / active-track-conflict errors)
+ * get their own ad-hoc code defined next to the message, following the
+ * same naming style.
+ */
+export const ADMIN_ERROR_CODES = {
+  invalidRequest: "invalid_request",
+  invalidInput: "invalid_input",
+  tooManyRequests: "too_many_requests",
+  serverError: "server_error",
+  notFound: "not_found",
+  unsupportedMediaType: "unsupported_media_type",
+  payloadTooLarge: "payload_too_large",
+} as const;
 
 /**
  * Narrows an arbitrary JSON value down to a plain object for safe property

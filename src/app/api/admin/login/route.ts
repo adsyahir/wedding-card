@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { getDb } from "@/db";
 import { adminUsers } from "@/db/schema";
-import { API_ERRORS, jsonError, readJsonBody, toRecord } from "@/lib/api";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, readJsonBody, toRecord } from "@/lib/api";
 import { logAudit } from "@/lib/auth";
 import { verifyDummyPassword, verifyPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -51,7 +51,7 @@ function noStore(status: number, body: unknown, extraHeaders?: HeadersInit): Res
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOrigin(request)) {
-    return jsonError(403, API_ERRORS.invalidRequest);
+    return jsonError(403, API_ERRORS.invalidRequest, undefined, ADMIN_ERROR_CODES.invalidRequest);
   }
 
   // Rate limit BEFORE looking up the admin_users/sessions tables, keyed on
@@ -64,19 +64,17 @@ export async function POST(request: Request): Promise<Response> {
     LOGIN_RATE_WINDOW_SECONDS,
   );
   if (!rateLimit.allowed) {
-    return jsonError(429, API_ERRORS.tooManyRequests, {
-      "Retry-After": String(rateLimit.retryAfterSeconds),
-    });
+    return jsonError(429, API_ERRORS.tooManyRequests, { "Retry-After": String(rateLimit.retryAfterSeconds) }, ADMIN_ERROR_CODES.tooManyRequests);
   }
 
   const body = await readJsonBody(request);
   if (!body.ok) {
-    return jsonError(body.status, body.error);
+    return jsonError(body.status, body.error, undefined, ADMIN_ERROR_CODES.invalidRequest);
   }
 
   const parsed = loginSchema.safeParse(toRecord(body.data));
   if (!parsed.success) {
-    return jsonError(400, API_ERRORS.invalidInput);
+    return jsonError(400, API_ERRORS.invalidInput, undefined, ADMIN_ERROR_CODES.invalidInput);
   }
 
   const { username, password } = parsed.data;
@@ -94,7 +92,7 @@ export async function POST(request: Request): Promise<Response> {
     // making it impossible to enumerate valid usernames via timing.
     if (!user) {
       await verifyDummyPassword(password);
-      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR });
+      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR, code: "invalid_credentials" });
     }
 
     // Locked account: do the same PBKDF2-equivalent work (never skip it —
@@ -102,7 +100,7 @@ export async function POST(request: Request): Promise<Response> {
     // and never reveal that the account is locked.
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
       await verifyDummyPassword(password);
-      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR });
+      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR, code: "invalid_credentials" });
     }
 
     const valid = await verifyPassword(password, {
@@ -121,7 +119,7 @@ export async function POST(request: Request): Promise<Response> {
         .set({ failedAttempts, lockedUntil })
         .where(eq(adminUsers.id, user.id));
 
-      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR });
+      return noStore(401, { ok: false, error: GENERIC_LOGIN_ERROR, code: "invalid_credentials" });
     }
 
     // Success: reset the failure counter/lockout, record the login, create
@@ -152,6 +150,6 @@ export async function POST(request: Request): Promise<Response> {
     return noStore(200, { ok: true });
   } catch (error) {
     console.error("POST /api/admin/login: failed", error);
-    return jsonError(500, API_ERRORS.serverError);
+    return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);
   }
 }

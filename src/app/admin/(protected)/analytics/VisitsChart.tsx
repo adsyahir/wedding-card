@@ -2,6 +2,9 @@
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { interpolate } from "@/lib/i18n/admin-dict";
+import type { AdminDict } from "@/lib/i18n/admin-dict";
+
 export type ChartPoint = { day: string; views: number; uniques: number };
 
 /**
@@ -14,13 +17,13 @@ export type ChartPoint = { day: string; views: number; uniques: number };
  * an axis with no data drawn across it reads as a bug, not "no traffic
  * yet".
  */
-export function VisitsChart({ data }: { data: ChartPoint[] }) {
+export function VisitsChart({ data, dict }: { data: ChartPoint[]; dict: AdminDict }) {
   const hasData = data.some((point) => point.views > 0 || point.uniques > 0);
 
   if (!hasData) {
     return (
       <p className="rounded-xl border border-tan/30 bg-sand/40 px-4 py-12 text-center text-sm text-brown/60">
-        Tiada data lawatan lagi untuk tempoh ini.
+        {dict.analytics_chartEmpty}
       </p>
     );
   }
@@ -44,12 +47,14 @@ export function VisitsChart({ data }: { data: ChartPoint[] }) {
               border: "1px solid #C9A473",
               background: "#FAF6EF",
             }}
-            labelFormatter={(label) => `Hari: ${label}`}
+            labelFormatter={(label) =>
+              interpolate(dict.analytics_chartTooltipDay, { day: label == null ? "" : String(label) })
+            }
           />
           <Line
             type="monotone"
             dataKey="views"
-            name="Lawatan"
+            name={dict.analytics_chartSeriesViews}
             stroke="#C9A227"
             strokeWidth={2}
             dot={false}
@@ -57,7 +62,7 @@ export function VisitsChart({ data }: { data: ChartPoint[] }) {
           <Line
             type="monotone"
             dataKey="uniques"
-            name="Pelawat unik"
+            name={dict.analytics_chartSeriesUniques}
             stroke="#3E2C18"
             strokeWidth={2}
             dot={false}

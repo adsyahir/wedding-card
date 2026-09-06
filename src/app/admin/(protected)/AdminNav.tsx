@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/admin", label: "Ringkasan" },
-  { href: "/admin/rsvp", label: "RSVP" },
-  { href: "/admin/ucapan", label: "Ucapan" },
-  { href: "/admin/analytics", label: "Analitik" },
-  { href: "/admin/settings", label: "Tetapan" },
-] as const;
+import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 /**
  * The admin shell's nav. Client-only because highlighting the active link
@@ -17,12 +11,26 @@ const LINKS = [
  * navigation still works with JS disabled, only the active-state styling
  * would be missing.
  */
-export function AdminNav({ pendingWishCount }: { pendingWishCount: number }) {
+export function AdminNav({
+  pendingWishCount,
+  dict,
+}: {
+  pendingWishCount: number;
+  dict: AdminDict;
+}) {
   const pathname = usePathname();
+
+  const links = [
+    { href: "/admin", label: dict.nav_ringkasan },
+    { href: "/admin/rsvp", label: dict.nav_rsvp },
+    { href: "/admin/ucapan", label: dict.nav_ucapan },
+    { href: "/admin/analytics", label: dict.nav_analitik },
+    { href: "/admin/settings", label: dict.nav_tetapan },
+  ] as const;
 
   return (
     <nav className="flex items-center gap-1">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const isActive =
           link.href === "/admin" ? pathname === "/admin" : pathname?.startsWith(link.href);
 

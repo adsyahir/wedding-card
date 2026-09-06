@@ -1,5 +1,7 @@
 "use client";
 
+import type { AdminDict } from "@/lib/i18n/admin-dict";
+
 import { useAdminAction } from "./useAdminAction";
 
 type WishStatus = "pending" | "approved" | "rejected";
@@ -14,15 +16,23 @@ const buttonBase =
  * "approved", so there's no soft-delete story here the way there is for
  * RSVPs).
  */
-export function WishActions({ id, status }: { id: string; status: WishStatus }) {
-  const { run, pending, error } = useAdminAction();
+export function WishActions({
+  id,
+  status,
+  dict,
+}: {
+  id: string;
+  status: WishStatus;
+  dict: AdminDict;
+}) {
+  const { run, pending, error } = useAdminAction(dict);
 
   async function moderate(next: "approved" | "rejected") {
     await run("/api/admin/wishes/moderate", { id, status: next });
   }
 
   async function remove() {
-    if (!window.confirm("Padam ucapan ini? Tindakan ini tidak boleh dibatalkan.")) return;
+    if (!window.confirm(dict.wishActions_confirmDelete)) return;
     await run("/api/admin/wishes/delete", { id });
   }
 
@@ -36,7 +46,7 @@ export function WishActions({ id, status }: { id: string; status: WishStatus }) 
             disabled={pending}
             className={`${buttonBase} bg-goldenrod text-cream hover:bg-brown`}
           >
-            Luluskan
+            {dict.wishActions_approve}
           </button>
           <button
             type="button"
@@ -44,7 +54,7 @@ export function WishActions({ id, status }: { id: string; status: WishStatus }) 
             disabled={pending}
             className={`${buttonBase} border border-tan/50 bg-cream text-brown-deep hover:bg-tan/20`}
           >
-            Tolak
+            {dict.wishActions_reject}
           </button>
         </>
       ) : (
@@ -54,7 +64,7 @@ export function WishActions({ id, status }: { id: string; status: WishStatus }) 
           disabled={pending}
           className={`${buttonBase} border border-red-200 text-red-700 hover:bg-red-50`}
         >
-          Padam
+          {dict.wishActions_delete}
         </button>
       )}
       {error && (

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getDashboardStats, listPendingWishesPreview } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
 import { formatDateTime } from "./_components/format";
 import { StatCard } from "./_components/StatCard";
@@ -18,9 +19,12 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminHomePage() {
   // Defense in depth: the `(protected)` layout already calls `requireAdmin()`,
-  // but every page under it calls it again independently — never rely on the
-  // layout's call alone.
+  // but every page under it calls it again independently — never rely on
+  // the layout's call alone.
   await requireAdmin();
+
+  const lang = await getAdminLang();
+  const dict = getAdminDict(lang);
 
   const [stats, pendingPreview] = await Promise.all([
     getDashboardStats(),
@@ -30,15 +34,15 @@ export default async function AdminHomePage() {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h1 className="font-serif text-2xl text-brown-deep mb-4">Ringkasan</h1>
+        <h1 className="font-serif text-2xl text-brown-deep mb-4">{dict.dashboard_heading}</h1>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard label="Hadir" value={stats.rsvpHadir} />
-          <StatCard label="Tidak Hadir" value={stats.rsvpTidakHadir} />
-          <StatCard label="Jumlah Dewasa" value={stats.totalDewasa} />
-          <StatCard label="Jumlah Kanak-Kanak" value={stats.totalKanakKanak} />
-          <StatCard label="Jumlah Pax" value={stats.totalPax} emphasize />
+          <StatCard label={dict.dashboard_statHadir} value={stats.rsvpHadir} />
+          <StatCard label={dict.dashboard_statTidakHadir} value={stats.rsvpTidakHadir} />
+          <StatCard label={dict.dashboard_statJumlahDewasa} value={stats.totalDewasa} />
+          <StatCard label={dict.dashboard_statJumlahKanakKanak} value={stats.totalKanakKanak} />
+          <StatCard label={dict.dashboard_statJumlahPax} value={stats.totalPax} emphasize />
           <StatCard
-            label="Ucapan Menunggu"
+            label={dict.dashboard_statUcapanMenunggu}
             value={stats.wishesPending}
             emphasize={stats.wishesPending > 0}
           />
@@ -47,15 +51,15 @@ export default async function AdminHomePage() {
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-serif text-xl text-brown-deep">Ucapan terkini menunggu semakan</h2>
+          <h2 className="font-serif text-xl text-brown-deep">{dict.dashboard_recentWishesHeading}</h2>
           <Link href="/admin/ucapan" className="text-sm text-goldenrod underline">
-            Lihat semua
+            {dict.dashboard_viewAll}
           </Link>
         </div>
 
         {pendingPreview.length === 0 ? (
           <p className="rounded-xl border border-tan/30 bg-sand/40 px-4 py-6 text-center text-sm text-brown/60">
-            Tiada ucapan menunggu semakan.
+            {dict.dashboard_emptyPending}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
@@ -67,9 +71,11 @@ export default async function AdminHomePage() {
                 <div>
                   <p className="font-medium text-brown-deep">{wish.name}</p>
                   <p className="mt-1 text-sm text-brown/80">{wish.message}</p>
-                  <p className="mt-1 text-xs text-brown/50">{formatDateTime(wish.createdAt)}</p>
+                  <p className="mt-1 text-xs text-brown/50">
+                    {formatDateTime(wish.createdAt, lang)}
+                  </p>
                 </div>
-                <WishActions id={wish.id} status={wish.status} />
+                <WishActions id={wish.id} status={wish.status} dict={dict} />
               </li>
             ))}
           </ul>

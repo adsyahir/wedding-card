@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import type { AdminDict } from "@/lib/i18n/admin-dict";
+import { localizeApiError } from "@/app/admin/(protected)/_components/api-error";
+
 /**
  * Client component: a plain controlled form that POSTs to
  * `/api/admin/login` and shows one generic error message on failure.
@@ -12,7 +15,7 @@ import { useState } from "react";
  * from. Using a cookie instead of `sessionStorage` is what makes the token
  * available in any tab, not just the one that was open at login.
  */
-export function LoginForm() {
+export function LoginForm({ dict }: { dict: AdminDict }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +35,7 @@ export function LoginForm() {
 
       const data = (await response.json().catch(() => null)) as
         | { ok: true }
-        | { ok: false; error: string }
+        | { ok: false; error: string; code?: string }
         | null;
 
       if (response.ok && data?.ok) {
@@ -40,9 +43,9 @@ export function LoginForm() {
         return;
       }
 
-      setError(data && !data.ok ? data.error : "Ralat tidak dijangka. Sila cuba lagi.");
+      setError(localizeApiError(dict, data && !data.ok ? data : null));
     } catch {
-      setError("Ralat rangkaian. Sila cuba lagi.");
+      setError(dict.common_networkError);
     } finally {
       setSubmitting(false);
     }
@@ -52,7 +55,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="username" className="text-sm text-brown-deep">
-          Nama Pengguna
+          {dict.login_usernameLabel}
         </label>
         <input
           id="username"
@@ -69,7 +72,7 @@ export function LoginForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="password" className="text-sm text-brown-deep">
-          Kata Laluan
+          {dict.login_passwordLabel}
         </label>
         <input
           id="password"
@@ -95,7 +98,7 @@ export function LoginForm() {
         disabled={submitting}
         className="mt-2 rounded-lg bg-goldenrod px-4 py-2 font-medium text-cream transition hover:bg-brown disabled:opacity-60"
       >
-        {submitting ? "Log Masuk…" : "Log Masuk"}
+        {submitting ? dict.login_submitting : dict.login_submit}
       </button>
     </form>
   );
