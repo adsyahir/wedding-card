@@ -32,7 +32,17 @@ function WazeIcon() {
   );
 }
 
-export function Lokasi({ config, showMap }: { config: WeddingConfig; showMap: boolean }) {
+/**
+ * The Lokasi section on the page: venue name, address, and the two
+ * navigation buttons.
+ *
+ * Deliberately NO embedded map here. The map lives only in the Lokasi
+ * bottom sheet (`LokasiSheet`) — an iframe sitting in the middle of the
+ * scroll interrupts the card's flow, and it costs every guest a request to
+ * Google on page load whether or not they ever wanted directions. In the
+ * sheet it loads only when someone actually taps Lokasi.
+ */
+export function Lokasi({ config }: { config: WeddingConfig }) {
   return (
     <section className="w-full px-6 py-16 text-center">
       <Reveal as="h2" className="font-serif text-2xl tracking-[0.25em] text-brown-deep uppercase">
@@ -49,25 +59,6 @@ export function Lokasi({ config, showMap }: { config: WeddingConfig; showMap: bo
           ))}
         </address>
       </Reveal>
-
-      {showMap && (
-        <Reveal delay={0.15} className="mx-auto mt-6 max-w-md">
-          {/*
-            Keyless embed — no API key, no billing, but Google still sees
-            every guest's IP the moment this iframe loads. That's why this
-            is gated on `sections.petaEmbed` (default ON, see
-            src/lib/wedding-config.ts) and only added to the CSP's
-            `frame-src` when the toggle is on (src/middleware.ts).
-          */}
-          <iframe
-            src={`https://www.google.com/maps?q=${config.venue.lat},${config.venue.lng}&z=15&output=embed`}
-            title={`Peta lokasi: ${config.venue.name}`}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="aspect-[4/3] w-full rounded-lg border-0"
-          />
-        </Reveal>
-      )}
 
       <Reveal
         delay={0.2}

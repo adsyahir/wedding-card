@@ -108,7 +108,7 @@ export function InviteApp({
         <Petals />
         <Hero config={config} />
         {sections.undangan && <Undangan config={config} />}
-        {sections.lokasi && <Lokasi config={config} showMap={sections.petaEmbed} />}
+        {sections.lokasi && <Lokasi config={config} />}
         {sections.aturCara && <AturCara config={config} />}
         {sections.countdown && <Countdown targetIso={config.date} />}
         {sections.galeri && <Galeri gallery={gallery} />}
