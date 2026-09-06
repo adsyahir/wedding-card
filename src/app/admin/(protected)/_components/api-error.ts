@@ -48,3 +48,37 @@ export function localizeApiError(
   }
   return (data && data.error) || dict.common_unexpectedError;
 }
+
+/**
+ * Per-field validation codes emitted by the wedding-config schema (see
+ * `src/lib/wedding-config.ts`). Zod's own default messages are raw
+ * internals ("Invalid input: expected string, received undefined") that
+ * help nobody in either language, so anything not in this table collapses
+ * to a single generic "invalid value" string.
+ */
+const FIELD_CODE_TO_DICT_KEY: Record<string, keyof AdminDict> = {
+  url_invalid: "fieldErr_urlInvalid",
+  url_must_be_https: "fieldErr_urlMustBeHttps",
+  url_host_not_allowed: "fieldErr_urlHostNotAllowed",
+  phone_invalid: "fieldErr_phoneInvalid",
+};
+
+/** Localizes one field-level validation code. */
+export function localizeFieldError(dict: AdminDict, code: string | undefined): string | undefined {
+  if (!code) return undefined;
+  const key = FIELD_CODE_TO_DICT_KEY[code];
+  return key ? dict[key] : dict.fieldErr_generic;
+}
+
+/** Localizes a whole `fieldErrors` record in one pass. */
+export function localizeFieldErrors(
+  dict: AdminDict,
+  fieldErrors: Record<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [field, code] of Object.entries(fieldErrors)) {
+    const localized = localizeFieldError(dict, code);
+    if (localized) out[field] = localized;
+  }
+  return out;
+}

@@ -75,19 +75,19 @@ function httpsUrlOnHosts(allowedHosts: readonly string[]) {
       try {
         url = new URL(value);
       } catch {
-        ctx.addIssue({ code: "custom", message: "URL tidak sah" });
+        ctx.addIssue({ code: "custom", message: "url_invalid" });
         return;
       }
 
       if (url.protocol !== "https:") {
-        ctx.addIssue({ code: "custom", message: "URL mesti menggunakan https:" });
+        ctx.addIssue({ code: "custom", message: "url_must_be_https" });
         return;
       }
 
       const host = url.hostname.toLowerCase();
       const allowed = allowedHosts.some((h) => host === h || host.endsWith(`.${h}`));
       if (!allowed) {
-        ctx.addIssue({ code: "custom", message: "Hos URL tidak dibenarkan" });
+        ctx.addIssue({ code: "custom", message: "url_host_not_allowed" });
       }
     });
 }
@@ -98,7 +98,7 @@ const phoneSchema = z
   .transform((val, ctx) => {
     const normalized = normalizeMalaysianPhone(val);
     if (!normalized) {
-      ctx.addIssue({ code: "custom", message: "Nombor telefon Malaysia tidak sah" });
+      ctx.addIssue({ code: "custom", message: "phone_invalid" });
       return z.NEVER;
     }
     return normalized;
@@ -217,7 +217,16 @@ export type WeddingConfigDoc = z.infer<typeof weddingConfigDocSchema>;
 export type ResolvedWeddingConfig = WeddingConfig & { sections: SectionsConfig };
 
 /** Turns a Zod error into `{ fieldPath: firstMessage }`, for per-field admin UI errors. */
-export function flattenWeddingConfigErrors(error: z.ZodError): Record<string, string> {
+export /**
+ * Field errors are emitted as STABLE MACHINE CODES, not prose. The admin
+ * dashboard is bilingual (see src/lib/i18n), so a Malay string baked in
+ * here could never be shown in English — and Zod's own default messages
+ * ("Invalid input: expected string, received undefined") are raw internals
+ * that are unhelpful in either language. The client maps each code to a
+ * localized string via `localizeFieldError`, falling back to a generic
+ * "invalid value" message for any code it does not recognise.
+ */
+function flattenWeddingConfigErrors(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};
   for (const issue of error.issues) {
     const path = issue.path.join(".") || "_root";

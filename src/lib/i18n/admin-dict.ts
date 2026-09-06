@@ -294,6 +294,11 @@ const ms = {
   // the server's (Malay) `error` string directly.
   errors_notFound: "Rekod tidak dijumpai.",
   errors_invalidInput: "Sila semak semula maklumat yang dimasukkan.",
+  fieldErr_urlInvalid: "URL tidak sah",
+  fieldErr_urlMustBeHttps: "URL mesti menggunakan https:",
+  fieldErr_urlHostNotAllowed: "Hos URL tidak dibenarkan",
+  fieldErr_phoneInvalid: "Nombor telefon Malaysia tidak sah",
+  fieldErr_generic: "Nilai tidak sah",
   errors_invalidRequest: "Permintaan tidak sah.",
   errors_serverError: "Maaf, berlaku ralat. Sila cuba sebentar lagi.",
   errors_unsupportedMediaType: "Format fail tidak disokong.",
@@ -525,6 +530,11 @@ const en: Record<keyof typeof ms, string> = {
 
   errors_notFound: "Record not found.",
   errors_invalidInput: "Please review the information you entered.",
+  fieldErr_urlInvalid: "Not a valid URL",
+  fieldErr_urlMustBeHttps: "URL must use https:",
+  fieldErr_urlHostNotAllowed: "URL host is not allowed",
+  fieldErr_phoneInvalid: "Not a valid Malaysian phone number",
+  fieldErr_generic: "Invalid value",
   errors_invalidRequest: "Invalid request.",
   errors_serverError: "Sorry, an error occurred. Please try again shortly.",
   errors_unsupportedMediaType: "Unsupported file format.",

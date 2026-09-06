@@ -8,7 +8,7 @@ import type { SectionsConfig } from "@/lib/wedding-config";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
-import { localizeApiError } from "./api-error";
+import { localizeApiError, localizeFieldErrors } from "./api-error";
 
 type ApiResponse =
   | { ok: true }
@@ -125,7 +125,7 @@ function useSectionSave(dict: AdminDict) {
     setPending(false);
     if (!result.ok) {
       setError(result.error);
-      setFieldErrors(result.fieldErrors);
+      setFieldErrors(localizeFieldErrors(dict, result.fieldErrors));
       return false;
     }
     setSuccess(true);
