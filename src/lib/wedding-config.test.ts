@@ -288,25 +288,21 @@ describe("notifications schema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("defaults to disabled, no recipients, both events on when absent", () => {
+  it("defaults to disabled with no recipients when absent", () => {
     expect(DEFAULT_NOTIFICATIONS).toEqual({
       enabled: false,
       recipients: [],
-      onRsvp: true,
-      onUcapan: true,
     });
     expect(fileDefaults().notifications).toEqual(DEFAULT_NOTIFICATIONS);
   });
 
   it("replaces the whole notifications object wholesale when merging over file defaults", () => {
     const merged = mergeWeddingConfig(fileDefaults(), {
-      notifications: { enabled: true, recipients: ["a@example.com"], onRsvp: false, onUcapan: true },
+      notifications: { enabled: true, recipients: ["a@example.com"] },
     });
     expect(merged.notifications).toEqual({
       enabled: true,
       recipients: ["a@example.com"],
-      onRsvp: false,
-      onUcapan: true,
     });
   });
 });

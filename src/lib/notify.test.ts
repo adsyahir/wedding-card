@@ -33,34 +33,27 @@ describe("shouldSendNotification", () => {
   }
 
   it("is false by default (disabled, no recipients)", () => {
-    expect(shouldSendNotification(config(), "rsvp")).toBe(false);
-    expect(shouldSendNotification(config(), "ucapan")).toBe(false);
+    expect(shouldSendNotification(config())).toBe(false);
   });
 
   it("is false when disabled even with recipients configured", () => {
-    const c = config({ enabled: false, recipients: ["a@example.com"] });
-    expect(shouldSendNotification(c, "rsvp")).toBe(false);
+    expect(shouldSendNotification(config({ enabled: false, recipients: ["a@example.com"] }))).toBe(
+      false,
+    );
   });
 
-  it("is false when enabled but no recipients", () => {
-    const c = config({ enabled: true, recipients: [] });
-    expect(shouldSendNotification(c, "rsvp")).toBe(false);
+  it("is false when enabled but no recipients — there is nobody to send to", () => {
+    expect(shouldSendNotification(config({ enabled: true, recipients: [] }))).toBe(false);
   });
 
-  it("is true when enabled, recipients configured, and the event flag is on", () => {
-    const c = config({ enabled: true, recipients: ["a@example.com"], onRsvp: true });
-    expect(shouldSendNotification(c, "rsvp")).toBe(true);
+  it("is true when enabled with at least one recipient", () => {
+    expect(shouldSendNotification(config({ enabled: true, recipients: ["a@example.com"] }))).toBe(
+      true,
+    );
   });
 
-  it("is false for rsvp when onRsvp is off, independent of onUcapan", () => {
-    const c = config({ enabled: true, recipients: ["a@example.com"], onRsvp: false, onUcapan: true });
-    expect(shouldSendNotification(c, "rsvp")).toBe(false);
-    expect(shouldSendNotification(c, "ucapan")).toBe(true);
-  });
-
-  it("is false for ucapan when onUcapan is off, independent of onRsvp", () => {
-    const c = config({ enabled: true, recipients: ["a@example.com"], onRsvp: true, onUcapan: false });
-    expect(shouldSendNotification(c, "ucapan")).toBe(false);
-    expect(shouldSendNotification(c, "rsvp")).toBe(true);
+  it("is true with the maximum two recipients", () => {
+    const c = config({ enabled: true, recipients: ["a@example.com", "b@example.com"] });
+    expect(shouldSendNotification(c)).toBe(true);
   });
 });

@@ -42,8 +42,6 @@ export function NotificationSettings({
     initialConfig.recipients[0] ?? "",
     initialConfig.recipients[1] ?? "",
   ]);
-  const [onRsvp, setOnRsvp] = useState(initialConfig.onRsvp);
-  const [onUcapan, setOnUcapan] = useState(initialConfig.onUcapan);
 
   const [savePending, setSavePending] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -79,7 +77,7 @@ export function NotificationSettings({
         method: "POST",
         headers: { "Content-Type": "application/json", ...csrfHeaders() },
         body: JSON.stringify({
-          notifications: { enabled, recipients: cleanedRecipients, onRsvp, onUcapan },
+          notifications: { enabled, recipients: cleanedRecipients },
         }),
       });
       const data = (await response.json().catch(() => null)) as SaveResponse | null;
@@ -165,30 +163,6 @@ export function NotificationSettings({
             )}
           </label>
         ))}
-      </div>
-
-      <div
-        className={`flex flex-col gap-1 ${enabled ? "" : "pointer-events-none opacity-50"}`}
-        aria-disabled={!enabled}
-      >
-        <label className="flex items-center gap-2 text-sm text-brown-deep">
-          <input
-            type="checkbox"
-            checked={onRsvp}
-            disabled={!enabled}
-            onChange={(event) => setOnRsvp(event.target.checked)}
-          />
-          <span>{dict.notif_onRsvp}</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm text-brown-deep">
-          <input
-            type="checkbox"
-            checked={onUcapan}
-            disabled={!enabled}
-            onChange={(event) => setOnUcapan(event.target.checked)}
-          />
-          <span>{dict.notif_onUcapan}</span>
-        </label>
       </div>
 
       <div className="flex items-center gap-3 border-t border-tan/30 pt-4">

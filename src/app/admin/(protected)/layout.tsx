@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { countPendingWishes } from "@/db/queries/admin";
-import { wedding } from "@/config/wedding";
+import { getWeddingConfig } from "@/lib/wedding-config";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
@@ -47,6 +47,13 @@ export default async function ProtectedAdminLayout({
 }) {
   await requireAdmin();
 
+  // The header shows the couple's names and hashtag, so it has to read the
+  // RESOLVED config — it previously imported `wedding` (the file defaults)
+  // directly, which meant an admin could rename the couple, save, watch the
+  // card update, and still see the old names in the header above the form
+  // they had just used.
+  const config = await getWeddingConfig();
+
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
 
@@ -66,9 +73,9 @@ export default async function ProtectedAdminLayout({
           <div className="flex items-center gap-4">
             <div>
               <p className="font-serif text-lg leading-tight text-brown-deep">
-                {wedding.groom.shortName} &amp; {wedding.bride.shortName}
+                {config.groom.shortName} &amp; {config.bride.shortName}
               </p>
-              <p className="text-xs text-brown/60">{wedding.hashtag}</p>
+              <p className="text-xs text-brown/60">{config.hashtag}</p>
             </div>
             <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
           </div>

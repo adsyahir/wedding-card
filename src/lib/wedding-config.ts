@@ -176,8 +176,6 @@ const notificationEmailSchema = z
 const notificationsSchema = z.object({
   enabled: z.boolean(),
   recipients: z.array(notificationEmailSchema).max(MAX_NOTIFICATION_RECIPIENTS),
-  onRsvp: z.boolean(),
-  onUcapan: z.boolean(),
 });
 
 export type NotificationsConfig = z.infer<typeof notificationsSchema>;
@@ -185,8 +183,6 @@ export type NotificationsConfig = z.infer<typeof notificationsSchema>;
 export const DEFAULT_NOTIFICATIONS: NotificationsConfig = {
   enabled: false,
   recipients: [],
-  onRsvp: true,
-  onUcapan: true,
 };
 
 export const SECTION_KEYS = [

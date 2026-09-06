@@ -56,14 +56,18 @@ export function escapeHtml(value: string): string {
  * those are checked separately (a network/DB call each), after this cheap,
  * synchronous gate has already said "yes, in principle, send this".
  */
-export function shouldSendNotification(
-  config: NotificationsConfig,
-  event: "rsvp" | "ucapan",
-): boolean {
+/**
+ * There used to be per-event flags (`onRsvp`, `onUcapan`) alongside the
+ * master switch. They were meaningful when a wish could be submitted from
+ * its own standalone form, i.e. when there were genuinely two guest
+ * actions producing two emails. A wish now only ever arrives inside an
+ * RSVP, so every notification comes from the same single action and a
+ * separate "notify me about wishes" switch could never do anything. One
+ * switch, one meaning.
+ */
+export function shouldSendNotification(config: NotificationsConfig): boolean {
   if (!config.enabled) return false;
   if (config.recipients.length === 0) return false;
-  if (event === "rsvp" && !config.onRsvp) return false;
-  if (event === "ucapan" && !config.onUcapan) return false;
   return true;
 }
 
@@ -198,7 +202,7 @@ export type AttachedWish = { name: string; message: string };
 export async function notifyNewRsvp(rsvp: RsvpRow, wish?: AttachedWish | null): Promise<void> {
   try {
     const config = await getWeddingConfig();
-    if (!shouldSendNotification(config.notifications, "rsvp")) return;
+    if (!shouldSendNotification(config.notifications)) return;
 
     if (!(await underThrottle())) return;
 
@@ -230,7 +234,7 @@ export async function notifyNewRsvp(rsvp: RsvpRow, wish?: AttachedWish | null): 
 export async function notifyNewUcapan(wish: WishRow): Promise<void> {
   try {
     const config = await getWeddingConfig();
-    if (!shouldSendNotification(config.notifications, "ucapan")) return;
+    if (!shouldSendNotification(config.notifications)) return;
 
     if (!(await underThrottle())) return;
 
