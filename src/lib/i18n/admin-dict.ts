@@ -143,6 +143,7 @@ const ms = {
   rsvpExport_colAttending: "Kehadiran",
   rsvpExport_colAdults: "Dewasa",
   rsvpExport_colChildren: "Kanak-Kanak",
+  rsvpExport_colPax: "Bilangan",
   rsvpExport_colMessage: "Pesanan",
   rsvpExport_colDate: "Tarikh",
   rsvpExport_hadir: "Hadir",
@@ -246,6 +247,10 @@ const ms = {
   wc_venueLng: "Longitud (pilihan)",
   wc_venueGmaps: "Pautan Google Maps (https, google.com/goo.gl)",
   wc_venueWaze: "Pautan Waze (https, waze.com)",
+  wc_mapPreview: "Pratonton peta",
+  wc_mapPreviewHint:
+    "Inilah peta yang tetamu akan lihat. Ia dicari menggunakan nama dan alamat di atas — jika pin tersalah tempat, jadikan nama dewan lebih khusus atau isi latitud dan longitud.",
+  wc_mapPreviewNone: "Isi nama atau alamat dewan untuk melihat pratonton peta.",
 
   wc_aturCaraTimePlaceholder: "Masa",
   wc_aturCaraLabelPlaceholder: "Perkara",
@@ -443,6 +448,7 @@ const en: Record<keyof typeof ms, string> = {
   rsvpExport_colAttending: "Attendance",
   rsvpExport_colAdults: "Adults",
   rsvpExport_colChildren: "Children",
+  rsvpExport_colPax: "Pax",
   rsvpExport_colMessage: "Message",
   rsvpExport_colDate: "Date",
   rsvpExport_hadir: "Attending",
@@ -542,6 +548,10 @@ const en: Record<keyof typeof ms, string> = {
   wc_venueLng: "Longitude (optional)",
   wc_venueGmaps: "Google Maps Link (https, google.com/goo.gl)",
   wc_venueWaze: "Waze Link (https, waze.com)",
+  wc_mapPreview: "Map preview",
+  wc_mapPreviewHint:
+    "This is the map guests will see. It is looked up from the venue name and address above — if the pin lands in the wrong place, make the venue name more specific or fill in the latitude and longitude.",
+  wc_mapPreviewNone: "Enter a venue name or address to see the map preview.",
 
   wc_aturCaraTimePlaceholder: "Time",
   wc_aturCaraLabelPlaceholder: "Item",

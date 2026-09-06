@@ -4,6 +4,7 @@ import { logAudit, requireAdminApi } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { buildXlsx, XLSX_CONTENT_TYPE } from "@/lib/xlsx";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
 // `export const runtime = "nodejs"`. Force dynamic: never statically
@@ -52,12 +53,29 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const dict = getAdminDict(await getAdminLang());
+
+    /*
+     * The sheet follows `rsvpPaxMode`, the same setting the form follows.
+     * When the form only asks for a total, exporting a "Dewasa 1 /
+     * Kanak-Kanak 0" split invents a breakdown nobody was ever asked for —
+     * and this is the sheet that gets sent to the caterer, so the invented
+     * number is the one that gets cooked for. When the form asks for no
+     * headcount at all, the columns are dropped entirely.
+     */
+    const { rsvpPaxMode } = await getWeddingConfig();
+
+    const paxHeaders =
+      rsvpPaxMode === "adultsChildren"
+        ? [dict.rsvpExport_colAdults, dict.rsvpExport_colChildren]
+        : rsvpPaxMode === "total"
+          ? [dict.rsvpExport_colPax]
+          : [];
+
     const csvHeaders = [
       dict.rsvpExport_colName,
       dict.rsvpExport_colPhone,
       dict.rsvpExport_colAttending,
-      dict.rsvpExport_colAdults,
-      dict.rsvpExport_colChildren,
+      ...paxHeaders,
       dict.rsvpExport_colMessage,
       dict.rsvpExport_colDate,
     ];
@@ -68,8 +86,11 @@ export async function GET(request: Request): Promise<Response> {
       row.name,
       row.phone,
       row.attending ? dict.rsvpExport_hadir : dict.rsvpExport_tidakHadir,
-      row.adults,
-      row.children,
+      ...(rsvpPaxMode === "adultsChildren"
+        ? [row.adults, row.children]
+        : rsvpPaxMode === "total"
+          ? [row.adults + row.children]
+          : []),
       row.message,
       formatMyDate(row.createdAt),
     ]);

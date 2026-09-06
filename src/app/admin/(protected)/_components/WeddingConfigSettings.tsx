@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { WeddingConfig } from "@/config/wedding";
 import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "@/lib/script-font";
 import type { SectionsConfig } from "@/lib/wedding-config";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { buildMapEmbedUrl } from "@/lib/map-embed";
 import {
   formatMalayTime,
   isoToParts,
@@ -541,7 +542,84 @@ function LokasiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict
         <input className={inputClass} value={wazeUrl} onChange={(e) => setWazeUrl(e.target.value)} />
       </Field>
 
+      <MapPreview
+        dict={dict}
+        name={name}
+        addressLines={addressLines}
+        lat={lat}
+        lng={lng}
+      />
+
       <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
+    </div>
+  );
+}
+
+/**
+ * A live preview of the embedded map, below the venue fields.
+ *
+ * The map on the invitation is not built from the Google Maps LINK — a
+ * shortened `maps.app.goo.gl` link cannot be embedded — but from the venue
+ * name and address, exactly as `buildMapEmbedUrl` does for the public page.
+ * That is precisely why the preview earns its place: the geocoding is the
+ * part that can quietly land the pin in the wrong town, and without a
+ * preview nobody notices until a guest is lost on the day.
+ *
+ * The URL is debounced rather than rebuilt per keystroke: changing the src
+ * of an iframe reloads it, so typing an address without this would fire off
+ * a request to Google for every character.
+ */
+function MapPreview({
+  dict,
+  name,
+  addressLines,
+  lat,
+  lng,
+}: {
+  dict: AdminDict;
+  name: string;
+  addressLines: string;
+  lat: string;
+  lng: string;
+}) {
+  const live = buildMapEmbedUrl({
+    name,
+    addressLines: addressLines.split("\n").map((l) => l.trim()).filter(Boolean),
+    lat: lat.trim() === "" || Number.isNaN(Number(lat)) ? null : Number(lat),
+    lng: lng.trim() === "" || Number.isNaN(Number(lng)) ? null : Number(lng),
+  });
+
+  const [settled, setSettled] = useState(live);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSettled(live), 700);
+    return () => window.clearTimeout(timer);
+  }, [live]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-xs font-medium tracking-wide text-brown/80 uppercase">
+        {dict.wc_mapPreview}
+      </span>
+
+      {settled === null ? (
+        <p className="rounded-lg border border-dashed border-tan/50 px-4 py-8 text-center text-sm text-brown/70">
+          {dict.wc_mapPreviewNone}
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-tan/40">
+          <iframe
+            key={settled}
+            src={settled}
+            title={dict.wc_mapPreview}
+            className="block h-56 w-full sm:h-72"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      )}
+
+      <p className="text-xs leading-5 text-brown/70">{dict.wc_mapPreviewHint}</p>
     </div>
   );
 }
