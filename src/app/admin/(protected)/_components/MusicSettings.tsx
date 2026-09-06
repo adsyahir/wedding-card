@@ -63,6 +63,8 @@ export function MusicSettings({
   const [uploadPending, setUploadPending] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [droppedName, setDroppedName] = useState<string | null>(null);
 
   async function handleSelect(value: string) {
     const previous = selected;
@@ -72,7 +74,9 @@ export function MusicSettings({
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm(dict.music_confirmDelete)) return;
+    const isActive = selected === id;
+    const message = isActive ? dict.music_confirmDeleteActive : dict.music_confirmDelete;
+    if (!window.confirm(message)) return;
     await runDelete("/api/admin/music/delete", { id });
   }
 
@@ -185,7 +189,7 @@ export function MusicSettings({
                   <button
                     type="button"
                     onClick={() => handleDelete(track.id)}
-                    disabled={isActive || deletePending}
+                    disabled={deletePending}
                     title={isActive ? dict.music_deleteActiveTitle : undefined}
                     className="ml-auto rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
                   >
@@ -227,13 +231,46 @@ export function MusicSettings({
           className="rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep"
         />
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/mpeg,audio/mp4,.mp3,.m4a"
-          disabled={uploadPending}
-          className="text-sm text-brown-deep"
-        />
+        {/*
+          Drop target wrapping the real <input type="file">, rather than
+          replacing it. The input stays in the DOM and keeps working: drag
+          and drop is unusable by keyboard and awkward on a phone, so it is
+          an addition, never the only way in.
+        */}
+        <div
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragOver(false);
+            const dropped = event.dataTransfer.files?.[0];
+            if (!dropped || !fileInputRef.current) return;
+            // Assigning a DataTransfer's FileList to the input keeps the
+            // form submitting exactly as it does for a picked file — one
+            // upload path, not two.
+            const transfer = new DataTransfer();
+            transfer.items.add(dropped);
+            fileInputRef.current.files = transfer.files;
+            setDroppedName(dropped.name);
+          }}
+          className={`rounded-md border-2 border-dashed px-3 py-4 text-sm transition ${
+            dragOver ? "border-goldenrod bg-tan/20" : "border-tan/40 bg-cream/50"
+          }`}
+        >
+          <p className="mb-2 text-xs text-brown/70">{dict.music_dropHint}</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/mpeg,audio/mp4,.mp3,.m4a"
+            disabled={uploadPending}
+            onChange={(event) => setDroppedName(event.target.files?.[0]?.name ?? null)}
+            className="text-sm text-brown-deep"
+          />
+          {droppedName && <p className="mt-2 text-xs text-brown-deep">{droppedName}</p>}
+        </div>
 
         <button
           type="submit"

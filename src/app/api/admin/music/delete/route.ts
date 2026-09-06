@@ -4,8 +4,9 @@ import { z } from "zod";
 
 import { getDb } from "@/db";
 import { findMusicTrackById, getActiveMusicSetting } from "@/db/queries/admin";
-import { musicTracks } from "@/db/schema";
-import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
+import { ACTIVE_MUSIC_TRACK_KEY } from "@/db/queries/public";
+import { musicTracks, siteSettings } from "@/db/schema";
+import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, readJsonBody, toRecord } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
@@ -15,16 +16,18 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({ id: z.string().uuid() });
 
-// Fixed, non-interpolated message — same pattern as GENERIC_LOGIN_ERROR in
-// src/app/api/admin/login/route.ts.
-const ACTIVE_TRACK_CONFLICT_ERROR =
-  "Trek ini sedang aktif. Tukar muzik dahulu sebelum memadam.";
-
 /**
  * Permanently deletes one uploaded track: the R2 object, then the
- * `music_tracks` row. Refuses with 409 if the track is currently the
- * active one — deleting it out from under the invite would silently break
- * playback for every guest loading the page.
+ * `music_tracks` row.
+ *
+ * Deleting the ACTIVE track is allowed. It used to be refused with a 409
+ * telling the admin to switch away first, which is a rule the admin has to
+ * satisfy on the app's behalf for no reason they care about. Instead, if
+ * the deleted track was the active one, the active setting is moved to
+ * "none" in the same request — the card falls back to no music, which is
+ * exactly what "the track is gone" should mean. The alternative, leaving
+ * the setting pointing at a deleted id, would leave `getActiveMusicSrc`
+ * handing guests a URL that 404s.
  */
 export async function POST(request: Request): Promise<Response> {
   const guard = await requireAdminApi(request);
@@ -44,10 +47,7 @@ export async function POST(request: Request): Promise<Response> {
       return jsonError(404, API_ERRORS.notFound, undefined, ADMIN_ERROR_CODES.notFound);
     }
 
-    const activeValue = await getActiveMusicSetting();
-    if (activeValue === id) {
-      return jsonError(409, ACTIVE_TRACK_CONFLICT_ERROR, undefined, "active_track_conflict");
-    }
+    const wasActive = (await getActiveMusicSetting()) === id;
 
     if (track.r2Key) {
       const { env } = getCloudflareContext();
@@ -68,6 +68,24 @@ export async function POST(request: Request): Promise<Response> {
     const db = getDb();
     await db.delete(musicTracks).where(eq(musicTracks.id, id));
 
+    if (wasActive) {
+      // Point the setting at "none" rather than leaving it referencing a
+      // row that no longer exists.
+      const now = new Date();
+      await db
+        .insert(siteSettings)
+        .values({
+          key: ACTIVE_MUSIC_TRACK_KEY,
+          value: "none",
+          updatedAt: now,
+          updatedBy: guard.session.adminUserId,
+        })
+        .onConflictDoUpdate({
+          target: siteSettings.key,
+          set: { value: "none", updatedAt: now, updatedBy: guard.session.adminUserId },
+        });
+    }
+
     await logAudit({
       adminUserId: guard.session.adminUserId,
       action: "music.delete",
@@ -75,7 +93,12 @@ export async function POST(request: Request): Promise<Response> {
       targetId: id,
     });
 
-    return jsonOk();
+    // The client uses this to move its own radio selection to "none"
+    // without a round trip.
+    return Response.json(
+      { ok: true, fellBackToNone: wasActive },
+      { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
+    );
   } catch (error) {
     console.error("POST /api/admin/music/delete: failed", error);
     return jsonError(500, API_ERRORS.serverError, undefined, ADMIN_ERROR_CODES.serverError);

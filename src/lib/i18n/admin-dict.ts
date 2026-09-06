@@ -293,6 +293,8 @@ const ms = {
   music_selectAudioFile: "Sila pilih fail audio.",
   music_fileTooLarge: "Saiz fail terlalu besar (had 8 MB).",
   music_confirmDelete: "Padam trek muzik ini? Tindakan ini tidak boleh dibatalkan.",
+  music_confirmDeleteActive: "Trek ini sedang digunakan. Memadamnya akan menutup muzik latar. Teruskan?",
+  music_dropHint: "Seret fail ke sini, atau pilih fail:",
 
   // Gallery settings (src/app/admin/(protected)/_components/GallerySettings.tsx)
   gallery_heading: "Galeri",
@@ -571,6 +573,8 @@ const en: Record<keyof typeof ms, string> = {
   music_selectAudioFile: "Please select an audio file.",
   music_fileTooLarge: "File is too large (8 MB limit).",
   music_confirmDelete: "Delete this music track? This action cannot be undone.",
+  music_confirmDeleteActive: "This track is currently in use. Deleting it will turn the background music off. Continue?",
+  music_dropHint: "Drag a file here, or choose one:",
 
   gallery_heading: "Gallery",
   gallery_emptyState: "No photos uploaded yet. The card will show a default placeholder image.",

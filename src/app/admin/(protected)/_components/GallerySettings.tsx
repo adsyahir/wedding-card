@@ -56,6 +56,8 @@ export function GallerySettings({
   const router = useRouter();
   const { run: runDelete, pending: deletePending, error: deleteError } = useAdminAction(dict);
   const { run: runReorder, pending: reorderPending, error: reorderError } = useAdminAction(dict);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const [altDrafts, setAltDrafts] = useState<Record<string, string>>({});
   const [altPendingId, setAltPendingId] = useState<string | null>(null);
@@ -106,15 +108,33 @@ export function GallerySettings({
     await runDelete("/api/admin/gallery/delete", { id });
   }
 
-  async function handleMove(index: number, direction: -1 | 1) {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= images.length) return;
+  async function moveTo(fromIndex: number, toIndex: number) {
+    if (toIndex < 0 || toIndex >= images.length || toIndex === fromIndex) return;
 
     const reordered = [...images];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(targetIndex, 0, moved);
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
 
     await runReorder("/api/admin/gallery/reorder", { ids: reordered.map((img) => img.id) });
+  }
+
+  async function handleMove(index: number, direction: -1 | 1) {
+    await moveTo(index, index + direction);
+  }
+
+  /*
+   * Drag-and-drop reordering, added ALONGSIDE the up/down buttons rather
+   * than replacing them. Native HTML5 drag and drop cannot be operated by
+   * keyboard and is unreliable on touch, so it is the convenient path, not
+   * the only one — removing the buttons would make reordering impossible
+   * for anyone not using a mouse.
+   */
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null) return;
+    const from = dragIndex;
+    setDragIndex(null);
+    setDragOverIndex(null);
+    void moveTo(from, targetIndex);
   }
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
@@ -181,7 +201,25 @@ export function GallerySettings({
           {images.map((image, index) => (
             <div
               key={image.id}
-              className="flex flex-col gap-2 rounded-lg border border-tan/20 bg-cream p-2"
+              draggable={!reorderPending}
+              onDragStart={() => setDragIndex(index)}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setDragOverIndex(null);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragOverIndex !== index) setDragOverIndex(index);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                handleDrop(index);
+              }}
+              className={`flex cursor-grab flex-col gap-2 rounded-lg border bg-cream p-2 transition active:cursor-grabbing ${
+                dragOverIndex === index && dragIndex !== index
+                  ? "border-goldenrod ring-2 ring-goldenrod/40"
+                  : "border-tan/20"
+              } ${dragIndex === index ? "opacity-50" : ""}`}
             >
               {/*
                 `unoptimized`: same reasoning as the public Galeri
