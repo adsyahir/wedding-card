@@ -548,6 +548,7 @@ function LokasiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict
         addressLines={addressLines}
         lat={lat}
         lng={lng}
+        googleMapsUrl={googleMapsUrl}
       />
 
       <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
@@ -558,12 +559,12 @@ function LokasiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict
 /**
  * A live preview of the embedded map, below the venue fields.
  *
- * The map on the invitation is not built from the Google Maps LINK — a
- * shortened `maps.app.goo.gl` link cannot be embedded — but from the venue
- * name and address, exactly as `buildMapEmbedUrl` does for the public page.
- * That is precisely why the preview earns its place: the geocoding is the
- * part that can quietly land the pin in the wrong town, and without a
- * preview nobody notices until a guest is lost on the day.
+ * It renders exactly what `buildMapEmbedUrl` will render on the public
+ * page, from the same inputs and in the same order of preference: the
+ * pasted Google Maps link first, then the typed name and address. That is
+ * why it earns its place — geocoding is the step that can quietly land the
+ * pin in the wrong town, and without a preview nobody notices until a
+ * guest is lost on the day.
  *
  * The URL is debounced rather than rebuilt per keystroke: changing the src
  * of an iframe reloads it, so typing an address without this would fire off
@@ -575,18 +576,21 @@ function MapPreview({
   addressLines,
   lat,
   lng,
+  googleMapsUrl,
 }: {
   dict: AdminDict;
   name: string;
   addressLines: string;
   lat: string;
   lng: string;
+  googleMapsUrl: string;
 }) {
   const live = buildMapEmbedUrl({
     name,
     addressLines: addressLines.split("\n").map((l) => l.trim()).filter(Boolean),
     lat: lat.trim() === "" || Number.isNaN(Number(lat)) ? null : Number(lat),
     lng: lng.trim() === "" || Number.isNaN(Number(lng)) ? null : Number(lng),
+    googleMapsUrl,
   });
 
   const [settled, setSettled] = useState(live);

@@ -252,7 +252,7 @@ const ms = {
   wc_venueWaze: "Pautan Waze (https, waze.com)",
   wc_mapPreview: "Pratonton peta",
   wc_mapPreviewHint:
-    "Inilah peta yang tetamu akan lihat. Ia dicari menggunakan nama dan alamat di atas — jika pin tersalah tempat, jadikan nama dewan lebih khusus atau isi latitud dan longitud.",
+    "Inilah peta yang tetamu akan lihat. Ia mengikut pautan Google Maps di atas jika ada; jika tiada, ia dicari menggunakan nama dan alamat. Pautan pendek (maps.app.goo.gl) tidak boleh dibaca — gunakan pautan penuh google.com/maps/place/… supaya pin tepat.",
   wc_mapPreviewNone: "Isi nama atau alamat dewan untuk melihat pratonton peta.",
 
   wc_aturCaraTimePlaceholder: "Masa",
@@ -556,7 +556,7 @@ const en: Record<keyof typeof ms, string> = {
   wc_venueWaze: "Waze Link (https, waze.com)",
   wc_mapPreview: "Map preview",
   wc_mapPreviewHint:
-    "This is the map guests will see. It is looked up from the venue name and address above — if the pin lands in the wrong place, make the venue name more specific or fill in the latitude and longitude.",
+    "This is the map guests will see. It follows the Google Maps link above when there is one; otherwise it is looked up from the venue name and address. Short links (maps.app.goo.gl) cannot be read — paste the full google.com/maps/place/… link for an exact pin.",
   wc_mapPreviewNone: "Enter a venue name or address to see the map preview.",
 
   wc_aturCaraTimePlaceholder: "Time",
