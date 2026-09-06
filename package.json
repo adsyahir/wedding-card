@@ -16,7 +16,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "seed:admin": "node scripts/seed-admin.mjs",
     "db:studio": "drizzle-kit studio --config drizzle.config.local.ts",
-    "db:local:path": "node scripts/local-d1-path.mjs"
+    "db:local:path": "node scripts/local-d1-path.mjs",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^15.5.25",

@@ -17,16 +17,39 @@ deployed to Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare
 
 ## Getting started
 
-Edit `src/config/wedding.ts` to set the real wedding details — names, date,
-venue, contacts, etc. Nothing else needs to change to update the card's
-content.
-
 ```bash
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Filling in the wedding details
+
+`src/config/wedding.ts` is the single file to edit for the card's actual
+content — nothing else needs to change. It exports one `wedding` object,
+typed by `WeddingConfig`, with:
+
+- `siteUrl` — the public origin (used for OG tags/absolute URLs); update it
+  once a real domain is attached (see "Attach a custom domain" below).
+- `presetMusicPath` / `gaMeasurementId` — see "Background music" and
+  "Google Analytics" below; both ship disabled (`null`) by design.
+- `eventType`, `groom`, `bride`, `hosts`, `salam`, `invitationBody`,
+  `honorifics` — the invitation text itself.
+- `date`, `dayNameMs`, `displayDate`, `endTime` — the akad/ceremony
+  date-time (with the `+08:00` offset) and its human-readable form; `endTime`
+  feeds the generated `.ics` calendar entry.
+- `venue` — name, address lines, lat/lng, and Google Maps/Waze links.
+- `aturCara` — the run-of-show list (`{ time, label }` pairs).
+- `rsvpDeadline` / `rsvpDeadlineDisplay` — the RSVP cutoff shown to guests.
+- `contacts` — the "hubungi kami" contact list.
+- `hashtag` — the couple's wedding hashtag.
+- `gallery` — photo entries (`{ src, alt }`); ships with placeholder SVGs
+  under `public/images/gallery/` — replace `src` with real photos (any
+  raster format) when available.
+- `doa` — the closing prayer text.
+
+Every field is documented inline in the file itself.
 
 ### Background music
 
@@ -183,15 +206,143 @@ DBeaver, `sqlite3`, or any other SQLite client.
 - `npm run db:studio` — browse the local SQLite database in Drizzle Studio
 - `npm run db:local:path` — print the local SQLite file path
 
-## Cloudflare setup
+## Testing
 
-Before deploying, create the real D1 database and R2 bucket and update the
-placeholders in `wrangler.jsonc`:
+- `npm test` — the Vitest unit suite (pure logic: validation, crypto,
+  rate-limit math, CSV encoding, session expiry arithmetic, etc.).
+- `npm run smoke` — an end-to-end smoke test against an **already-running**
+  local dev server (`npm run dev` in another terminal first). It exercises
+  the public and admin HTTP surface with no dependencies beyond Node's
+  built-in `fetch`: the public page loads, a valid RSVP is accepted, a
+  duplicate RSVP (same phone) updates instead of inserting a second row, a
+  submitted ucapan lands as pending and does NOT appear on the public page,
+  the analytics beacon accepts a view and silently drops a bogus event name,
+  unauthenticated `/admin` redirects to `/admin/login`, an unauthenticated
+  admin API call returns 401, and the security headers are present. It
+  prints a pass/warn/fail line per check with an actionable message (which
+  file to look at) on failure, and exits non-zero if anything failed. Point
+  it at a different port/host with `SMOKE_BASE_URL`, e.g. against a
+  `wrangler` preview: `SMOKE_BASE_URL=http://localhost:8788 npm run smoke`.
 
-```bash
-npx wrangler d1 create wedding-card-db
-npx wrangler r2 bucket create wedding-card-assets
-```
+## Security
 
-Copy the returned `database_id` into `wrangler.jsonc`, then run
-`npm run cf-typegen` to refresh the generated environment types.
+See [`SECURITY.md`](./SECURITY.md) for the threat model, what's protected
+and how, honestly-stated known limitations, and the "if you suspect
+compromise" runbook.
+
+## Deploying
+
+⚠️ This checklist creates and modifies **real** Cloudflare resources
+(database, bucket, secrets, a live Worker). Nothing in local development
+(`npm run dev`, `npm test`, `npm run smoke`) touches any of this — it's
+entirely separate. Do this only when you're actually ready to go live, in
+order, on a machine with `wrangler` logged into the right Cloudflare
+account (`npx wrangler login`).
+
+**A note on the Cloudflare API token**: `wrangler`'s OAuth login (`wrangler
+login`) is enough for everything below — you don't need a separately
+issued API token for any of this. If you *are* using an API token instead
+(e.g. in CI), it needs **D1 (edit)**, **R2 (edit)**, and **Workers Scripts
+(edit)** permissions at minimum; a token scoped to only `user:read` (a
+common default for a freshly created token) can authenticate but can't
+create or write to any of the resources below, which is why, before this
+checklist has been run, no remote D1 database or R2 bucket exists yet.
+
+1. **Create the D1 database**:
+   ```bash
+   npx wrangler d1 create wedding-card-db
+   ```
+   Copy the `database_id` this prints into `wrangler.jsonc`'s
+   `d1_databases[0].database_id` — it currently holds a LOCAL-ONLY
+   placeholder (see the comment above it in that file) that only Miniflare
+   uses to key its local SQLite store; it is not a real remote database id.
+
+2. **Create the R2 bucket**:
+   ```bash
+   npx wrangler r2 bucket create wedding-card-assets
+   ```
+
+3. **Regenerate the Cloudflare env types** (picks up any binding changes):
+   ```bash
+   npm run cf-typegen
+   ```
+
+4. **Set the production secrets** — never reuse the values from your local
+   `.dev.vars`, and generate each with a real random-bytes source:
+   ```bash
+   openssl rand -base64 32 | npx wrangler secret put ANALYTICS_SALT
+   openssl rand -base64 32 | npx wrangler secret put CRON_SECRET
+   ```
+   These are the only two app secrets that exist today (see
+   `.dev.vars.example` and `src/types/cloudflare-env.d.ts`). There is no
+   `SESSION_SECRET`: admin sessions are plain cryptographically-random
+   tokens, SHA-256-hashed before being stored in D1 (`src/lib/session.ts`)
+   — there's no HMAC secret involved in issuing or checking one, so there's
+   nothing by that name to provision. See `SECURITY.md` for what actually
+   happens if you need to invalidate every admin session.
+
+5. **Run migrations against the remote database**:
+   ```bash
+   npm run db:migrate:remote
+   ```
+
+6. **Seed the first admin user, on the remote database**:
+   ```bash
+   npm run seed:admin -- --remote
+   ```
+
+7. **Deploy**:
+   ```bash
+   npm run deploy
+   ```
+   This runs `opennextjs-cloudflare build` then `opennextjs-cloudflare
+   deploy`. Verify the printed `*.workers.dev` URL loads before doing
+   anything else.
+
+8. **Attach a custom domain** (Cloudflare dashboard → Workers & Pages → this
+   worker → Settings → Domains & Routes → Add), then update `siteUrl` in
+   `src/config/wedding.ts` to that domain and redeploy (`npm run deploy`) —
+   it feeds OG tags and every absolute URL the card generates.
+
+9. **Set `wedding.gaMeasurementId`** in `src/config/wedding.ts` to a real
+   `"G-XXXXXXXXXX"` Measurement ID if you want Google Analytics (optional —
+   see "Google Analytics (optional)" above), then redeploy.
+
+10. **Schedule the cron endpoint** (analytics rollup + housekeeping — see
+    "Analytics" above for why this isn't a native Cloudflare Cron Trigger on
+    THIS worker). Any scheduler that can make an authenticated HTTPS POST
+    once a day works. The simplest is a tiny, separate Worker whose only job
+    is to be woken by a real Cron Trigger and call this app's endpoint —
+    e.g. in a new directory:
+    ```jsonc
+    // wrangler.jsonc for the separate cron worker
+    {
+      "name": "wedding-card-cron",
+      "main": "index.js",
+      "compatibility_date": "2026-09-03",
+      "triggers": { "crons": ["0 18 * * *"] } // adjust to your timezone; this is ~2am MYT
+    }
+    ```
+    ```js
+    // index.js
+    export default {
+      async scheduled(event, env, ctx) {
+        await fetch("https://<your-domain>/api/cron/rollup", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+        });
+      },
+    };
+    ```
+    deployed with its own `npx wrangler deploy` (with its own `CRON_SECRET`
+    set to the same value via `wrangler secret put`, in that worker) — or
+    use any external scheduler capable of an authenticated POST (a GitHub
+    Actions scheduled workflow, cron-job.org, etc.) instead of a second
+    Worker at all. This step is optional in the sense that
+    `/admin/analytics` opportunistically backfills missing days on its own
+    — see the "Analytics" section — but real cron keeps
+    `rate_limits`/`sessions` pruned and is a five-minute setup.
+
+After step 7, re-run `npm run smoke` against the deployed URL
+(`SMOKE_BASE_URL=https://<your-domain> npm run smoke`) to confirm the live
+deployment behaves the same as local dev did.
