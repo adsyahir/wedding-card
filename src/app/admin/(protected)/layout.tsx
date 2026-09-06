@@ -76,10 +76,10 @@ export default async function ProtectedAdminLayout({
     // paint. A client-only toggle would flash the light theme first.
     <div data-admin-theme={theme} className="min-h-screen bg-cream">
       <header className="sticky top-0 z-10 border-b border-tan/40 bg-sand/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-3">
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <div className="min-w-0">
-              <p className="font-serif text-lg leading-tight text-brown-deep">
+              <p className="truncate font-serif text-base leading-tight text-brown-deep sm:text-lg">
                 {config.groom.shortName} &amp; {config.bride.shortName}
               </p>
               <p className="text-xs text-brown/60">{config.hashtag}</p>

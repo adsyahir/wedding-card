@@ -119,7 +119,7 @@ export function NotificationSettings({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-4">
+    <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-3 sm:p-4">
       <h2 className="font-serif text-xl text-brown-deep">{dict.notif_heading}</h2>
 
       <p className="text-xs text-brown/60">{dict.notif_secretsNotice}</p>

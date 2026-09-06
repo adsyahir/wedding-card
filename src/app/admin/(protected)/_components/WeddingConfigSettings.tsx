@@ -220,10 +220,10 @@ export function WeddingConfigSettings({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-serif text-xl text-brown-deep">{dict.wc_heading}</h2>
-        <div className="flex items-center gap-2">
+    <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="font-serif text-lg text-brown-deep sm:text-xl">{dict.wc_heading}</h2>
+        <div className="flex flex-wrap items-center gap-2">
           {isOverridden && (
             <span className="rounded-full bg-tan/40 px-2 py-0.5 text-xs text-brown-deep">
               {dict.wc_overriddenBadge}
@@ -245,7 +245,14 @@ export function WeddingConfigSettings({
         </p>
       )}
 
-      <div role="tablist" aria-label={dict.wc_tabsAriaLabel} className="flex flex-wrap gap-2">
+      <div
+        role="tablist"
+        aria-label={dict.wc_tabsAriaLabel}
+        // Eight tabs wrap to three rows on a phone, which pushes the actual
+        // form most of a screen down and makes the panel look like it is
+        // mostly navigation. One scrolling row instead, same as AdminNav.
+        className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1"
+      >
         {[
           ...TABS.map((t) => ({ id: t as string, label: TAB_LABELS[t] })),
           ...extraTabs.map(({ id, label }) => ({ id, label })),
@@ -256,7 +263,7 @@ export function WeddingConfigSettings({
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
+            className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap ${
               tab === id
                 ? "border-goldenrod bg-tan text-brown-deep"
                 : "border-tan/40 bg-cream text-brown-deep"
