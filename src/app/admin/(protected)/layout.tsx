@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { SiteCredit } from "@/components/SiteCredit";
 import type { Metadata } from "next";
 
@@ -5,9 +6,11 @@ import { countPendingWishes } from "@/db/queries/admin";
 import { getWeddingConfig } from "@/lib/wedding-config";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
+import { ADMIN_THEME_COOKIE_NAME, parseAdminTheme } from "@/lib/admin-theme";
 
 import { AdminNav } from "./AdminNav";
 import { LangToggle } from "./LangToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { LogoutButton } from "./LogoutButton";
 
 // Never statically optimized/cached — every request must actually run the
@@ -55,6 +58,7 @@ export default async function ProtectedAdminLayout({
   // they had just used.
   const config = await getWeddingConfig();
 
+  const theme = parseAdminTheme((await cookies()).get(ADMIN_THEME_COOKIE_NAME)?.value);
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
 
@@ -68,11 +72,13 @@ export default async function ProtectedAdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    // Stamped server-side so the correct palette is in the very first
+    // paint. A client-only toggle would flash the light theme first.
+    <div data-admin-theme={theme} className="min-h-screen bg-cream">
       <header className="sticky top-0 z-10 border-b border-tan/40 bg-sand/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-4">
-            <div>
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <div className="min-w-0">
               <p className="font-serif text-lg leading-tight text-brown-deep">
                 {config.groom.shortName} &amp; {config.bride.shortName}
               </p>
@@ -80,7 +86,12 @@ export default async function ProtectedAdminLayout({
             </div>
             <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
+            <ThemeToggle
+              current={theme}
+              lightLabel={dict.theme_light}
+              darkLabel={dict.theme_dark}
+            />
             <LangToggle current={lang} />
             <LogoutButton dict={dict} />
           </div>

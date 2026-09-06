@@ -118,7 +118,7 @@ export default async function AdminRsvpPage({
           name="q"
           defaultValue={q}
           placeholder={dict.rsvp_searchPlaceholder}
-          className="min-w-[14rem] flex-1 rounded-lg border border-tan/50 bg-cream px-3 py-2 text-sm text-brown-deep outline-none focus-visible:border-goldenrod"
+          className="w-full min-w-0 flex-1 rounded-lg border border-tan/50 bg-cream px-3 py-2 text-sm text-brown-deep outline-none focus-visible:border-goldenrod sm:w-auto sm:min-w-[14rem]"
         />
         <select
           name="attending"

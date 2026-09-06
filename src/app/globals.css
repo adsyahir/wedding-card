@@ -333,3 +333,58 @@ input[type="file"]:disabled::file-selector-button {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ---------------------------------------------------------------------
+ * Admin dark theme.
+ *
+ * Scoped to `[data-admin-theme="dark"]`, which the admin layout stamps on
+ * its own wrapper. The public invitation never carries that attribute, so
+ * it stays light for every guest — a wedding card is a printed-paper
+ * aesthetic and a dark one would be a different product.
+ *
+ * These re-point the SAME tokens the admin already uses (cream, sand,
+ * brown, ...), so nothing downstream needs a `dark:` variant. The names
+ * stop being literal in dark mode — "cream" is near-black — but keeping
+ * one set of tokens is worth more than the names reading true.
+ * ------------------------------------------------------------------ */
+
+[data-admin-theme="dark"] {
+  --color-cream: #1b1714;
+  --color-sand: #262019;
+  --color-tan: #8a7250;
+  --color-goldenrod: #d9b64d;
+  --color-gold-light: #55452c;
+  --color-brown: #cdbfa9;
+  --color-brown-deep: #f3ece0;
+
+  color-scheme: dark;
+}
+
+/* Form controls: without an explicit background these keep the light
+   default and become white boxes punched into a dark page. */
+[data-admin-theme="dark"] input,
+[data-admin-theme="dark"] textarea,
+[data-admin-theme="dark"] select {
+  background-color: var(--color-sand);
+  color: var(--color-brown-deep);
+  border-color: var(--color-gold-light);
+}
+
+[data-admin-theme="dark"] input::placeholder,
+[data-admin-theme="dark"] textarea::placeholder {
+  color: color-mix(in oklab, var(--color-brown) 55%, transparent);
+}
+
+/* Native checkboxes, radios and date pickers render from the UA
+   stylesheet; `color-scheme: dark` above handles most of it, this just
+   tints them to the palette. */
+[data-admin-theme="dark"] input[type="checkbox"],
+[data-admin-theme="dark"] input[type="radio"] {
+  accent-color: var(--color-goldenrod);
+}
+
+/* The destructive-action red needs lifting off a dark ground to stay
+   legible; the light-mode 700 weight goes muddy. */
+[data-admin-theme="dark"] .text-red-700 {
+  color: #f08a7a;
+}

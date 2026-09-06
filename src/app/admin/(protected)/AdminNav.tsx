@@ -28,8 +28,10 @@ export function AdminNav({
     { href: "/admin/settings", label: dict.nav_tetapan },
   ] as const;
 
+  // The nav scrolls sideways on a phone rather than wrapping: five items
+  // do not fit 390px, and a wrapped nav pushes the whole page down.
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 no-scrollbar">
       {links.map((link) => {
         const isActive =
           link.href === "/admin" ? pathname === "/admin" : pathname?.startsWith(link.href);
@@ -39,7 +41,7 @@ export function AdminNav({
             key={link.href}
             href={link.href}
             aria-current={isActive ? "page" : undefined}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition ${
               isActive
                 ? "bg-goldenrod text-cream"
                 : "text-brown-deep hover:bg-tan/20"
