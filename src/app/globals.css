@@ -263,3 +263,60 @@ body > * {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------
+ * Pointer cursors on interactive elements.
+ *
+ * Tailwind v4's preflight dropped the old `button { cursor: pointer }`
+ * default in favour of the browser's `cursor: default`, so every button in
+ * the app looked unclickable. Rather than adding `cursor-pointer` to a few
+ * hundred call sites (and forgetting it on the next one), set it once here
+ * for the things that are genuinely activatable.
+ *
+ * Disabled controls get `not-allowed` instead — a pointer cursor on a
+ * control that will not respond is a small lie.
+ * ------------------------------------------------------------------ */
+
+button,
+summary,
+a[href],
+label[for],
+select,
+[role="button"],
+[role="tab"],
+[role="radio"],
+[role="switch"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"],
+[aria-disabled="true"] * {
+  cursor: not-allowed;
+}
+
+/* The file input's own "Choose File" button is a shadow-DOM part. */
+input[type="file"]::file-selector-button {
+  cursor: pointer;
+}
+
+input[type="file"]:disabled::file-selector-button {
+  cursor: not-allowed;
+}
+
+/* Drag handles say "grab", not "click" — the gallery cards are reorderable
+   by dragging, and a pointer cursor there would promise the wrong gesture. */
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}

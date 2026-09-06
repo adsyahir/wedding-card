@@ -77,7 +77,17 @@ export function MusicSettings({
     const isActive = selected === id;
     const message = isActive ? dict.music_confirmDeleteActive : dict.music_confirmDelete;
     if (!window.confirm(message)) return;
-    await runDelete("/api/admin/music/delete", { id });
+
+    const ok = await runDelete("/api/admin/music/delete", { id });
+
+    // The server moves the active setting to "none" when the deleted track
+    // was the active one, but this component holds its own `selected` copy
+    // for the radio group. Without mirroring it here that copy still points
+    // at the deleted id, so `router.refresh()` re-renders a list where NO
+    // radio matches and the group appears to have nothing chosen.
+    if (ok && isActive) {
+      setSelected("none");
+    }
   }
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
