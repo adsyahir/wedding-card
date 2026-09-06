@@ -27,9 +27,11 @@ const TEST_EMAIL_RATE_WINDOW_SECONDS = 60 * 60; // 1 hour
  * - Mailjet secrets missing (`sendMailjetEmail` → `reason: "unconfigured"`)
  *   → this is NOT admin-fixable from the dashboard; the response says so
  *   explicitly (needs `wrangler secret put`).
- * - Mailjet itself rejects the request (bad/unvalidated sender, invalid
- *   recipient, quota, ...) → reported as a Mailjet-side failure, with
- *   Mailjet's own status code, but never the API key/secret.
+ * - Mailjet itself rejects the request or the message (bad/unvalidated
+ *   sender, invalid recipient, quota, ...) → reported as a Mailjet-side
+ *   failure, but never the API key/secret. Note that a refused MESSAGE
+ *   still comes back as HTTP 200; `sendMailjetEmail` catches that and
+ *   reports `reason: "rejected"`.
  * - A network error/timeout reaching Mailjet → reported distinctly too.
  */
 export async function POST(request: Request): Promise<Response> {
@@ -78,7 +80,7 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    if (result.reason === "http_error") {
+    if (result.reason === "http_error" || result.reason === "rejected") {
       return jsonError(
         502,
         "Mailjet menolak permintaan (contohnya alamat penghantar belum disahkan). Semak dashboard Mailjet anda.",

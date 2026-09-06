@@ -29,7 +29,46 @@ export type MailjetSendInput = {
 
 export type MailjetSendResult =
   | { ok: true }
-  | { ok: false; reason: "unconfigured" | "http_error" | "network_error"; detail: string };
+  | {
+      ok: false;
+      reason: "unconfigured" | "http_error" | "rejected" | "network_error";
+      detail: string;
+    };
+
+/**
+ * Inspects a 2xx `/v3.1/send` body and returns a description of the
+ * problem, or `null` when every message was genuinely accepted.
+ *
+ * An unrecognised body shape is treated as a FAILURE, not a success: this
+ * function exists precisely because "the call returned 200" turned out not
+ * to mean the mail was sent, and guessing optimistically about a body we
+ * cannot parse would reintroduce exactly that.
+ */
+export function messageStatusError(body: unknown): string | null {
+  if (typeof body !== "object" || body === null) return "Mailjet returned an unreadable body";
+
+  const messages = (body as { Messages?: unknown }).Messages;
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return "Mailjet returned no per-message status";
+  }
+
+  const problems: string[] = [];
+  for (const message of messages) {
+    const status = (message as { Status?: unknown })?.Status;
+    if (status === "success") continue;
+
+    const errors = (message as { Errors?: unknown })?.Errors;
+    const detail = Array.isArray(errors)
+      ? errors
+          .map((e) => (e as { ErrorMessage?: unknown })?.ErrorMessage)
+          .filter((m): m is string => typeof m === "string")
+          .join("; ")
+      : "";
+    problems.push(detail || `status "${String(status)}"`);
+  }
+
+  return problems.length > 0 ? problems.join(" | ") : null;
+}
 
 /**
  * Reads the four Mailjet secrets from the Cloudflare env. Returns `null`
@@ -66,6 +105,11 @@ function readMailjetSecrets():
  * - On a non-2xx response, logs the status and response body — but NEVER
  *   the API key/secret, which never appear in the body or are constructed
  *   into any logged string here.
+ * - Checks the PER-MESSAGE status in the body, not just the HTTP status.
+ *   `/v3.1/send` answers 200 for a request it accepted but a message it
+ *   refused: an unvalidated sender comes back as HTTP 200 with
+ *   `Messages[0].Status: "error"`, and the mail is silently dropped. See
+ *   `messageStatusError` below.
  */
 export async function sendMailjetEmail(input: MailjetSendInput): Promise<MailjetSendResult> {
   const secrets = readMailjetSecrets();
@@ -110,6 +154,25 @@ export async function sendMailjetEmail(input: MailjetSendInput): Promise<Mailjet
         reason: "http_error",
         detail: `Mailjet responded ${response.status}`,
       };
+    }
+
+    /*
+     * HTTP 200 is not delivery. Mailjet answers 200 for a well-formed
+     * request and reports the fate of each message inside the body:
+     *
+     *   {"Messages":[{"Status":"error","Errors":[{"ErrorMessage":"..."}]}]}
+     *
+     * This bit an actual send: with an unvalidated `From:` the API replied
+     * 200 with Status "success", the app logged a success, and the message
+     * never entered the pipeline at all. Anything other than an explicit
+     * per-message "success" is now a failure, so a silent drop is reported
+     * as one instead of being announced as a delivered email.
+     */
+    const body = await response.json().catch(() => null);
+    const failure = messageStatusError(body);
+    if (failure) {
+      console.error("sendMailjetEmail: Mailjet accepted the request but refused the message", failure);
+      return { ok: false, reason: "rejected", detail: failure };
     }
 
     return { ok: true };
