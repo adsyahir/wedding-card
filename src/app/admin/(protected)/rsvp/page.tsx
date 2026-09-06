@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang, interpolate } from "@/lib/i18n/admin";
 import { getWeddingConfig } from "@/lib/wedding-config";
 
+import { DownloadMenu } from "../_components/DownloadMenu";
 import { formatDateTime } from "../_components/format";
 import { RsvpDeleteButton } from "../_components/RsvpDeleteButton";
 
@@ -104,20 +105,7 @@ export default async function AdminRsvpPage({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-2xl text-brown-deep">{dict.rsvp_heading}</h1>
-        <div className="flex items-center gap-2">
-          <a
-            href="/api/admin/rsvp/export?format=xlsx"
-            className="rounded-lg bg-goldenrod px-4 py-2 text-sm font-medium text-cream transition hover:bg-brown"
-          >
-            {dict.rsvp_downloadXlsx}
-          </a>
-          <a
-            href="/api/admin/rsvp/export"
-            className="rounded-lg border border-goldenrod px-4 py-2 text-sm font-medium text-brown-deep transition hover:bg-sand/60"
-          >
-            {dict.rsvp_downloadCsv}
-          </a>
-        </div>
+        <DownloadMenu dict={dict} />
       </div>
 
       <form method="get" className="flex flex-wrap items-center gap-2">

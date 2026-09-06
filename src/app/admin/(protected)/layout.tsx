@@ -8,11 +8,8 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import { ADMIN_THEME_COOKIE_NAME, parseAdminTheme } from "@/lib/admin-theme";
 
-import { AdminNav } from "./AdminNav";
 import { AdminMobileMenu } from "./AdminMobileMenu";
-import { LangToggle } from "./LangToggle";
-import { ThemeToggle } from "./ThemeToggle";
-import { LogoutButton } from "./LogoutButton";
+import { AdminSidebar } from "./AdminSidebar";
 
 // Never statically optimized/cached — every request must actually run the
 // guard below.
@@ -75,47 +72,46 @@ export default async function ProtectedAdminLayout({
   return (
     // Stamped server-side so the correct palette is in the very first
     // paint. A client-only toggle would flash the light theme first.
-    <div data-admin-theme={theme} className="min-h-screen bg-cream">
-      {/* `relative` so the mobile menu panel can hang off the header. */}
-      <header className="sticky top-0 z-10 relative border-b border-tan/40 bg-sand/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:flex-wrap sm:px-6 sm:py-3">
-          <div className="flex min-w-0 items-center gap-4">
+    <div data-admin-theme={theme} className="min-h-screen bg-cream lg:flex">
+      <AdminSidebar
+        dict={dict}
+        lang={lang}
+        theme={theme}
+        pendingWishCount={pendingWishCount}
+        coupleNames={`${config.groom.shortName} & ${config.bride.shortName}`}
+        hashtag={config.hashtag}
+      />
+
+      {/* `min-w-0` so a wide table inside `main` scrolls itself instead of
+          stretching the flex row and pushing the sidebar off-screen. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* The header is the small-screen shell only — above `lg` the
+            sidebar carries the nav, the toggles and the log-out button, so
+            a header would just be a second copy of all three. */}
+        <header className="sticky top-0 z-10 relative border-b border-tan/40 bg-sand/80 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3">
             <div className="min-w-0">
               <p className="truncate font-serif text-base leading-tight text-brown-deep sm:text-lg">
                 {config.groom.shortName} &amp; {config.bride.shortName}
               </p>
               <p className="truncate text-xs text-brown/60">{config.hashtag}</p>
             </div>
-            {/* Full nav from `sm` up; below that it lives in the menu. */}
-            <div className="hidden sm:block">
-              <AdminNav pendingWishCount={pendingWishCount} dict={dict} />
-            </div>
-          </div>
 
-          <div className="hidden shrink-0 items-center gap-3 sm:flex">
-            <ThemeToggle
-              current={theme}
-              lightLabel={dict.theme_light}
-              darkLabel={dict.theme_dark}
+            <AdminMobileMenu
+              dict={dict}
+              lang={lang}
+              theme={theme}
+              pendingWishCount={pendingWishCount}
             />
-            <LangToggle current={lang} />
-            <LogoutButton dict={dict} />
           </div>
+        </header>
 
-          <AdminMobileMenu
-            dict={dict}
-            lang={lang}
-            theme={theme}
-            pendingWishCount={pendingWishCount}
-          />
-        </div>
-      </header>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 lg:py-8">{children}</main>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">{children}</main>
-
-      <footer className="mx-auto max-w-5xl px-4 pt-2 pb-8 sm:px-6">
-        <SiteCredit />
-      </footer>
+        <footer className="mx-auto w-full max-w-5xl px-4 pt-2 pb-8 sm:px-6">
+          <SiteCredit />
+        </footer>
+      </div>
     </div>
   );
 }

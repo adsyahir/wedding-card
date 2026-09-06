@@ -117,8 +117,9 @@ const ms = {
 
   // RSVP page (src/app/admin/(protected)/rsvp/page.tsx)
   rsvp_heading: "RSVP",
-  rsvp_downloadCsv: "Muat Turun CSV",
-  rsvp_downloadXlsx: "Muat Turun Excel",
+  rsvp_download: "Muat Turun",
+  rsvp_downloadCsv: "CSV",
+  rsvp_downloadXlsx: "Excel",
   rsvp_searchPlaceholder: "Cari nama atau telefon…",
   rsvp_filterAll: "Semua",
   rsvp_filterHadir: "Hadir",
@@ -423,8 +424,9 @@ const en: Record<keyof typeof ms, string> = {
   wishActions_confirmDelete: "Delete this wish? This action cannot be undone.",
 
   rsvp_heading: "RSVP",
-  rsvp_downloadCsv: "Download CSV",
-  rsvp_downloadXlsx: "Download Excel",
+  rsvp_download: "Download",
+  rsvp_downloadCsv: "CSV",
+  rsvp_downloadXlsx: "Excel",
   rsvp_searchPlaceholder: "Search name or phone…",
   rsvp_filterAll: "All",
   rsvp_filterHadir: "Attending",

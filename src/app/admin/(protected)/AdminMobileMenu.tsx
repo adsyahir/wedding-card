@@ -20,8 +20,8 @@ import { ThemeToggle } from "./ThemeToggle";
  * three crowded rows that ate a third of the screen before any content.
  * One button, everything behind it.
  *
- * Above `sm` this renders nothing — the layout shows the full header
- * instead, which fits comfortably there.
+ * Above `lg` this renders nothing — the desktop sidebar carries the nav
+ * and the toggles instead.
  */
 export function AdminMobileMenu({
   dict,
@@ -54,7 +54,7 @@ export function AdminMobileMenu({
   }, [open]);
 
   return (
-    <div className="sm:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
