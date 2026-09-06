@@ -6,7 +6,7 @@ import { useId, useRef, useState } from "react";
 import {
   MAX_ADULTS,
   MAX_CHILDREN,
-  MAX_RSVP_MESSAGE_LEN,
+  MAX_WISH_MESSAGE_LEN,
   MIN_ADULTS,
   MIN_CHILDREN,
   rsvpSchema,
@@ -64,17 +64,36 @@ function Stepper({
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 10.5 8 14.5 16 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M5 5 15 15M15 5 5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function RsvpForm({
   onSuccess,
+  allowUcapan = true,
 }: {
   onSuccess?: (result: { attending: boolean; adults: number; children: number }) => void;
+  /** False when the admin has closed the ucapan section; the field is then hidden and never sent. */
+  allowUcapan?: boolean;
 }) {
   const [attending, setAttending] = useState<boolean | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [message, setMessage] = useState("");
+  const [ucapan, setUcapan] = useState("");
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -84,7 +103,7 @@ export function RsvpForm({
   const mountedAtRef = useRef(Date.now());
   const nameId = useId();
   const phoneId = useId();
-  const messageId = useId();
+  const ucapanId = useId();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -101,7 +120,7 @@ export function RsvpForm({
       attending,
       adults,
       children,
-      message: message.trim().length > 0 ? message : undefined,
+      ucapan: allowUcapan && ucapan.trim().length > 0 ? ucapan : undefined,
       website,
     };
 
@@ -111,7 +130,7 @@ export function RsvpForm({
       setFieldErrors({
         name: flat.name?.[0] ?? "",
         phone: flat.phone?.[0] ?? "",
-        message: flat.message?.[0] ?? "",
+        ucapan: flat.ucapan?.[0] ?? "",
       });
       setFormError("Sila semak semula maklumat yang dimasukkan.");
       return;
@@ -143,30 +162,55 @@ export function RsvpForm({
     );
   }
 
+  // STEP 1 — attendance only.
+  //
+  // The form is deliberately not shown until the guest has chosen. A wall
+  // of fields is a lot to land on; two large buttons is one easy decision,
+  // and it also means someone who can't attend never sees the pax steppers
+  // at all. `attending` doubles as the step marker — there is no separate
+  // step state to fall out of sync with it.
+  if (attending === null) {
+    return (
+      <div className="flex flex-col gap-5">
+        <p className="text-center text-sm text-brown">Sudikah tuan/puan hadir?</p>
+        <div role="group" aria-label="Kehadiran" className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setAttending(true)}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-gold-light bg-sand px-4 py-5 text-sm font-medium text-brown-deep transition-colors hover:border-goldenrod hover:bg-tan"
+          >
+            <CheckIcon />
+            Hadir
+          </button>
+          <button
+            type="button"
+            onClick={() => setAttending(false)}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-gold-light bg-sand px-4 py-5 text-sm font-medium text-brown-deep transition-colors hover:border-goldenrod hover:bg-tan"
+          >
+            <CrossIcon />
+            Tidak Hadir
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      <div role="radiogroup" aria-label="Kehadiran" className="grid grid-cols-2 gap-3">
-        {(
-          [
-            { value: true, label: "Hadir" },
-            { value: false, label: "Tidak Hadir" },
-          ] as const
-        ).map((option) => (
-          <button
-            key={String(option.value)}
-            type="button"
-            role="radio"
-            aria-checked={attending === option.value}
-            onClick={() => setAttending(option.value)}
-            className={`rounded-2xl border px-4 py-4 text-sm font-medium transition-colors ${
-              attending === option.value
-                ? "border-goldenrod bg-tan text-brown-deep"
-                : "border-gold-light bg-sand text-brown-deep"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
+      {/* The choice is already made; show it compactly with a way back
+          rather than repeating the two big buttons above the fields. */}
+      <div className="flex items-center justify-between rounded-2xl bg-sand px-4 py-3">
+        <span className="flex items-center gap-2 text-sm font-medium text-brown-deep">
+          {attending ? <CheckIcon /> : <CrossIcon />}
+          {attending ? "Hadir" : "Tidak Hadir"}
+        </span>
+        <button
+          type="button"
+          onClick={() => setAttending(null)}
+          className="text-xs font-medium text-brown underline underline-offset-4"
+        >
+          Tukar
+        </button>
       </div>
 
       <div>
@@ -231,23 +275,45 @@ export function RsvpForm({
         </div>
       )}
 
-      <div>
-        <label htmlFor={messageId} className="mb-1 block text-sm font-medium text-brown-deep">
-          Pesanan <span className="font-normal text-brown/70">(pilihan)</span>
-        </label>
-        <textarea
-          id={messageId}
-          value={message}
-          onChange={(e) => setMessage(e.target.value.slice(0, MAX_RSVP_MESSAGE_LEN))}
-          rows={3}
-          maxLength={MAX_RSVP_MESSAGE_LEN}
-          aria-describedby={`${messageId}-count`}
-          className="w-full rounded-xl border border-gold-light bg-cream px-4 py-2.5 text-brown-deep"
-        />
-        <p id={`${messageId}-count`} className="mt-1 text-right text-xs text-brown/70">
-          {message.length}/{MAX_RSVP_MESSAGE_LEN}
-        </p>
-      </div>
+      {/*
+        The one free-text field on this form, and it is PUBLIC (after
+        moderation). There used to be a private "Pesanan kepada keluarga"
+        box beside it; having two message fields with opposite visibility
+        was a trap — a guest could easily put something private on a public
+        wall. One field, one meaning.
+
+        Offered on both the Hadir and Tidak Hadir paths: the guests who
+        can't attend are often the ones who most want to send something.
+      */}
+      {allowUcapan && (
+        <div>
+          <label htmlFor={ucapanId} className="mb-1 block text-sm font-medium text-brown-deep">
+            Ucapan{" "}
+            <span className="font-normal text-brown/70">
+              (pilihan &middot; akan dipaparkan di kad setelah disemak)
+            </span>
+          </label>
+          <textarea
+            id={ucapanId}
+            value={ucapan}
+            onChange={(e) => setUcapan(e.target.value.slice(0, MAX_WISH_MESSAGE_LEN))}
+            rows={4}
+            maxLength={MAX_WISH_MESSAGE_LEN}
+            aria-describedby={fieldErrors.ucapan ? `${ucapanId}-error` : `${ucapanId}-count`}
+            aria-invalid={Boolean(fieldErrors.ucapan)}
+            className="w-full rounded-xl border border-gold-light bg-cream px-4 py-2.5 text-brown-deep"
+          />
+          {fieldErrors.ucapan ? (
+            <p id={`${ucapanId}-error`} role="alert" className="mt-1 text-xs text-red-700">
+              {fieldErrors.ucapan}
+            </p>
+          ) : (
+            <p id={`${ucapanId}-count`} className="mt-1 text-right text-xs text-brown/70">
+              {ucapan.length}/{MAX_WISH_MESSAGE_LEN}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Honeypot: real visitors never see or reach this field. */}
       <input

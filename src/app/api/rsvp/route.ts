@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { rsvps } from "@/db/schema";
+import { rsvps, wishes } from "@/db/schema";
 import { API_ERRORS, jsonError, jsonOk, readJsonBody, toRecord } from "@/lib/api";
 import { runInBackground } from "@/lib/background";
 import { notifyNewRsvp } from "@/lib/notify";
@@ -75,7 +75,7 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
-  const { name, phone, attending, adults, children, message } = parsed.data;
+  const { name, phone, attending, adults, children, message, ucapan } = parsed.data;
 
   try {
     const db = getDb();
@@ -132,7 +132,30 @@ export async function POST(request: Request): Promise<Response> {
     // AFTER the write above has already succeeded, so a slow/down/
     // misconfigured Mailjet can never delay or fail this response. See
     // `src/lib/notify.ts` for why this can never throw or block.
-    runInBackground(notifyNewRsvp(savedRow));
+    // An optional public wish submitted with the RSVP. Written in its own
+    // try/catch: a guest who has just successfully RSVP'd must not be told
+    // the whole thing failed because the wish insert did. It is also
+    // rejected outright if the admin has closed the ucapan section, so the
+    // toggle is honoured here exactly as it is on /api/wishes.
+    let savedWish: { name: string; message: string } | null = null;
+    if (ucapan && sections.ucapan) {
+      try {
+        await db.insert(wishes).values({
+          name,
+          message: ucapan,
+          // Hardcoded, exactly as on /api/wishes — arriving via the RSVP
+          // form must not be a way to skip moderation.
+          status: "pending",
+          createdAt: new Date(),
+          visitorHash,
+        });
+        savedWish = { name, message: ucapan };
+      } catch (error) {
+        console.error("POST /api/rsvp: wish insert failed, RSVP still saved", error);
+      }
+    }
+
+    runInBackground(notifyNewRsvp(savedRow, savedWish));
 
     return jsonOk();
   } catch (error) {

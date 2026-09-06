@@ -71,13 +71,19 @@ function siteOrigin(): Promise<string> {
   return getWeddingConfig().then((config) => config.siteUrl);
 }
 
-async function buildRsvpEmail(rsvp: RsvpRow): Promise<{ subject: string; textPart: string; htmlPart: string }> {
+async function buildRsvpEmail(
+  rsvp: RsvpRow,
+  wish: AttachedWish | null,
+): Promise<{ subject: string; textPart: string; htmlPart: string }> {
   const origin = await siteOrigin();
   const adminUrl = `${origin}/admin/rsvp`;
+  const ucapanUrl = `${origin}/admin/ucapan`;
   const attendanceLabel = rsvp.attending ? "Hadir" : "Tidak hadir";
   const message = rsvp.message ?? "-";
 
-  const subject = `RSVP baharu: ${rsvp.name}`;
+  // Flagged in the subject so the family can see at a glance that this one
+  // also needs moderating, without opening it.
+  const subject = wish ? `RSVP + ucapan baharu: ${rsvp.name}` : `RSVP baharu: ${rsvp.name}`;
 
   const textPart = [
     "RSVP baharu diterima.",
@@ -87,7 +93,16 @@ async function buildRsvpEmail(rsvp: RsvpRow): Promise<{ subject: string; textPar
     `Dewasa: ${rsvp.adults}`,
     `Kanak-kanak: ${rsvp.children}`,
     `Telefon: ${rsvp.phone}`,
-    `Mesej: ${message}`,
+    `Mesej peribadi: ${message}`,
+    ...(wish
+      ? [
+          "",
+          "Ucapan untuk dipaparkan (MENUNGGU KELULUSAN):",
+          wish.message,
+          "",
+          `Luluskan ucapan: ${ucapanUrl}`,
+        ]
+      : []),
     "",
     `Lihat senarai RSVP: ${adminUrl}`,
   ].join("\n");
@@ -100,8 +115,15 @@ async function buildRsvpEmail(rsvp: RsvpRow): Promise<{ subject: string; textPar
       <tr><td><strong>Dewasa</strong></td><td>${rsvp.adults}</td></tr>
       <tr><td><strong>Kanak-kanak</strong></td><td>${rsvp.children}</td></tr>
       <tr><td><strong>Telefon</strong></td><td>${escapeHtml(rsvp.phone)}</td></tr>
-      <tr><td><strong>Mesej</strong></td><td>${escapeHtml(message)}</td></tr>
+      <tr><td><strong>Mesej peribadi</strong></td><td>${escapeHtml(message)}</td></tr>
     </table>
+    ${
+      wish
+        ? `<h3>Ucapan untuk dipaparkan &mdash; menunggu kelulusan</h3>
+    <blockquote>${escapeHtml(wish.message)}</blockquote>
+    <p><a href="${escapeHtml(ucapanUrl)}">Luluskan ucapan</a></p>`
+        : ""
+    }
     <p><a href="${escapeHtml(adminUrl)}">Lihat senarai RSVP</a></p>
   `.trim();
 
@@ -165,14 +187,22 @@ async function underThrottle(): Promise<boolean> {
  * written successfully. Never throws — every failure path is caught,
  * logged, and swallowed.
  */
-export async function notifyNewRsvp(rsvp: RsvpRow): Promise<void> {
+export type AttachedWish = { name: string; message: string };
+
+/**
+ * `wish` is the optional public ucapan a guest may submit inside the RSVP
+ * form. It is folded into the SAME email rather than sent as a second one:
+ * one guest action should produce one notification, and the two pieces
+ * belong together in the family's inbox.
+ */
+export async function notifyNewRsvp(rsvp: RsvpRow, wish?: AttachedWish | null): Promise<void> {
   try {
     const config = await getWeddingConfig();
     if (!shouldSendNotification(config.notifications, "rsvp")) return;
 
     if (!(await underThrottle())) return;
 
-    const { subject, textPart, htmlPart } = await buildRsvpEmail(rsvp);
+    const { subject, textPart, htmlPart } = await buildRsvpEmail(rsvp, wish ?? null);
     const result = await sendMailjetEmail({
       to: config.notifications.recipients,
       subject,

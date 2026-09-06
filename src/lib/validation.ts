@@ -95,6 +95,21 @@ export const rsvpSchema = z.object({
     .max(MAX_RSVP_MESSAGE_LEN, `Message must be at most ${MAX_RSVP_MESSAGE_LEN} characters`)
     .refine((v) => !hasDisallowedControlChars(v), "Message contains invalid characters")
     .optional(),
+  /**
+   * An optional public wish submitted alongside the RSVP.
+   *
+   * Distinct from `message` above: `message` is a PRIVATE note to the
+   * family, visible only in the admin panel, whereas this is published on
+   * the ucapan wall once an admin approves it. Same length rules as a
+   * standalone wish so the two paths cannot drift.
+   */
+  ucapan: z
+    .string()
+    .trim()
+    .min(MIN_WISH_MESSAGE_LEN, `Ucapan must be at least ${MIN_WISH_MESSAGE_LEN} characters`)
+    .max(MAX_WISH_MESSAGE_LEN, `Ucapan must be at most ${MAX_WISH_MESSAGE_LEN} characters`)
+    .refine((v) => !hasDisallowedControlChars(v), "Ucapan contains invalid characters")
+    .optional(),
   // Honeypot field: legitimate clients never fill this in. Must be empty.
   website: honeypot,
 });

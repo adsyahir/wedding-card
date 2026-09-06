@@ -136,7 +136,7 @@ export function InviteApp({
         {activeSheet === "kalendar" && <KalendarSheet config={config} />}
         {activeSheet === "lokasi" && <LokasiSheet config={config} />}
         {activeSheet === "hubungi" && <HubungiSheet config={config} />}
-        {activeSheet === "rsvp" && <RsvpSheet onRsvpSuccess={handleRsvpSuccess} />}
+        {activeSheet === "rsvp" && <RsvpSheet onRsvpSuccess={handleRsvpSuccess}  allowUcapan={sections.ucapan}/>}
       </Sheet>
     </>
   );
