@@ -209,7 +209,7 @@ const ms = {
   wc_resetButton: "Kembalikan ke asal",
   wc_resetting: "Memulihkan...",
   wc_resetConfirm:
-    "Semua yang anda telah isi akan dipadam \u2014 nama, tarikh, lokasi, atur cara, senarai hubungi dan tetapan lain \u2014 dan kad kembali kepada isian asal. RSVP dan ucapan tetamu tidak terjejas. Tindakan ini tidak boleh dibatalkan.",
+    "Semua yang anda telah isi akan dipadam: nama, tarikh, lokasi, atur cara, senarai hubungi dan tetapan lain. Kad akan kembali kepada isian asal. RSVP dan ucapan tetamu tidak terjejas. Tindakan ini tidak boleh dibatalkan.",
   wc_tabsAriaLabel: "Tetapan kad jemputan",
   wc_tabButiran: "Butiran",
   wc_tabLokasi: "Lokasi",
@@ -252,7 +252,7 @@ const ms = {
   wc_venueWaze: "Pautan Waze (https, waze.com)",
   wc_mapPreview: "Pratonton peta",
   wc_mapPreviewHint:
-    "Inilah peta yang tetamu akan lihat. Ia mengikut pautan Google Maps di atas jika ada; jika tiada, ia dicari menggunakan nama dan alamat. Pautan pendek (maps.app.goo.gl) tidak boleh dibaca — gunakan pautan penuh google.com/maps/place/… supaya pin tepat.",
+    "Inilah peta yang tetamu akan lihat. Ia mengikut pautan Google Maps di atas jika ada; jika tiada, ia dicari menggunakan nama dan alamat. Pautan pendek (maps.app.goo.gl) tidak boleh dibaca. Gunakan pautan penuh google.com/maps/place/… supaya pin tepat.",
   wc_mapPreviewNone: "Isi nama atau alamat dewan untuk melihat pratonton peta.",
 
   wc_aturCaraTimePlaceholder: "Masa",
@@ -267,7 +267,7 @@ const ms = {
   wc_addContact: "+ Tambah Kenalan",
 
   wc_sectionsNotice:
-    'Menutup bahagian "RSVP" atau "Ucapan" juga menyekat penghantaran borang berkaitan di pelayan — bukan sekadar menyembunyikannya.',
+    'Menutup bahagian "RSVP" atau "Ucapan" juga menyekat penghantaran borang berkaitan di pelayan, bukan sekadar menyembunyikannya.',
   wc_sectionUndangan: "Bahagian Undangan",
   wc_sectionLokasi: "Bahagian Lokasi",
   wc_sectionAturCara: "Bahagian Atur Cara",
@@ -513,7 +513,7 @@ const en: Record<keyof typeof ms, string> = {
   wc_resetButton: "Restore to default",
   wc_resetting: "Restoring...",
   wc_resetConfirm:
-    "Everything you have filled in will be cleared \u2014 names, date, venue, itinerary, contacts and other settings \u2014 and the card will go back to its original content. Guest RSVPs and wishes are not affected. This cannot be undone.",
+    "Everything you have filled in will be cleared: names, date, venue, itinerary, contacts and other settings. The card will go back to its original content. Guest RSVPs and wishes are not affected. This cannot be undone.",
   wc_tabsAriaLabel: "Invitation card settings",
   wc_tabButiran: "Details",
   wc_tabLokasi: "Location",
@@ -556,7 +556,7 @@ const en: Record<keyof typeof ms, string> = {
   wc_venueWaze: "Waze Link (https, waze.com)",
   wc_mapPreview: "Map preview",
   wc_mapPreviewHint:
-    "This is the map guests will see. It follows the Google Maps link above when there is one; otherwise it is looked up from the venue name and address. Short links (maps.app.goo.gl) cannot be read — paste the full google.com/maps/place/… link for an exact pin.",
+    "This is the map guests will see. It follows the Google Maps link above when there is one; otherwise it is looked up from the venue name and address. Short links (maps.app.goo.gl) cannot be read. Paste the full google.com/maps/place/… link for an exact pin.",
   wc_mapPreviewNone: "Enter a venue name or address to see the map preview.",
 
   wc_aturCaraTimePlaceholder: "Time",
@@ -571,7 +571,7 @@ const en: Record<keyof typeof ms, string> = {
   wc_addContact: "+ Add Contact",
 
   wc_sectionsNotice:
-    'Turning off the "RSVP" or "Wishes" section also blocks the related form submissions on the server — not just hiding them.',
+    'Turning off the "RSVP" or "Wishes" section also blocks the related form submissions on the server, not just hiding them.',
   wc_sectionUndangan: "Invitation Section",
   wc_sectionLokasi: "Location Section",
   wc_sectionAturCara: "Itinerary Section",

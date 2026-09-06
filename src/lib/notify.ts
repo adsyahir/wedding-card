@@ -123,7 +123,7 @@ async function buildRsvpEmail(
     </table>
     ${
       wish
-        ? `<h3>Ucapan untuk dipaparkan &mdash; menunggu kelulusan</h3>
+        ? `<h3>Ucapan untuk dipaparkan (menunggu kelulusan)</h3>
     <blockquote>${escapeHtml(wish.message)}</blockquote>
     <p><a href="${escapeHtml(ucapanUrl)}">Luluskan ucapan</a></p>`
         : ""
@@ -143,7 +143,7 @@ async function buildUcapanEmail(
   const subject = `Ucapan baharu daripada ${wish.name}`;
 
   const textPart = [
-    "Ucapan baharu diterima (masih menunggu kelulusan — belum tersiar).",
+    "Ucapan baharu diterima (masih menunggu kelulusan, belum tersiar).",
     "",
     `Nama: ${wish.name}`,
     `Mesej: ${wish.message}`,

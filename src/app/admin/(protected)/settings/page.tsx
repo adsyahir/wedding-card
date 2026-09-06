@@ -2,7 +2,7 @@ import { wedding } from "@/config/wedding";
 import { getActiveMusicSetting, listGalleryImagesForAdmin, listMusicTracks } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
-import { getStoredWeddingConfigDoc, getWeddingConfig } from "@/lib/wedding-config";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
@@ -29,18 +29,16 @@ export default async function AdminSettingsPage() {
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
 
-  const [tracks, activeSetting, config, storedDoc, galleryImages] = await Promise.all([
+  const [tracks, activeSetting, config, galleryImages] = await Promise.all([
     listMusicTracks(),
     getActiveMusicSetting(),
     getWeddingConfig(),
-    getStoredWeddingConfigDoc(),
     listGalleryImagesForAdmin(),
   ]);
 
   // Mirrors `getActiveMusicSrc`'s own resolution (src/db/queries/public.ts):
   // an unset row defaults to "preset", same as the public invite does.
   const activeValue = activeSetting ?? "preset";
-  const isOverridden = Object.keys(storedDoc).length > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +46,6 @@ export default async function AdminSettingsPage() {
 
       <WeddingConfigSettings
         initialConfig={config}
-        isOverridden={isOverridden}
         dict={dict}
         extraTabs={[
           {

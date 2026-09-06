@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { WeddingConfig } from "@/config/wedding";
@@ -113,6 +113,18 @@ const SCRIPT_FONT_FAMILY: Record<ScriptFontKey, string> = {
   cormorantGaramond: "var(--font-cormorant), serif",
 };
 
+/**
+ * Lets `SaveBar` render the Restore-to-default button on the far right of
+ * the same row as Simpan, even though the reset state lives up in
+ * `WeddingConfigSettings`. Context rather than props because every one of
+ * the five tab components sits in between and none of them cares.
+ */
+const ResetContext = createContext<{
+  onReset: () => void;
+  pending: boolean;
+  label: string;
+} | null>(null);
+
 function SaveBar({
   dict,
   pending,
@@ -126,13 +138,15 @@ function SaveBar({
   success: boolean;
   onSave: () => void;
 }) {
+  const reset = useContext(ResetContext);
+
   return (
-    <div className="flex items-center gap-3 border-t border-tan/30 pt-4">
+    <div className="flex flex-wrap items-center gap-3 border-t border-tan/30 pt-4">
       <button
         type="button"
         onClick={onSave}
         disabled={pending}
-        className="rounded-md bg-goldenrod px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-brown disabled:opacity-50"
+        className="cursor-pointer rounded-md bg-goldenrod px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-brown disabled:opacity-50"
       >
         {pending ? dict.common_saving : dict.common_save}
       </button>
@@ -141,6 +155,20 @@ function SaveBar({
         <span role="alert" className="text-xs text-red-700">
           {error}
         </span>
+      )}
+
+      {/* Far right, opposite Simpan. Same row so the panel ends in one
+          bar instead of two, but the full width of the card between them
+          so the destructive one is never the button next to your cursor. */}
+      {reset && (
+        <button
+          type="button"
+          onClick={reset.onReset}
+          disabled={reset.pending}
+          className="ml-auto cursor-pointer rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+        >
+          {reset.label}
+        </button>
       )}
     </div>
   );
@@ -175,12 +203,10 @@ function useSectionSave(dict: AdminDict) {
 
 export function WeddingConfigSettings({
   initialConfig,
-  isOverridden,
   dict,
   extraTabs = [],
 }: {
   initialConfig: WeddingConfig & { sections: SectionsConfig };
-  isOverridden: boolean;
   dict: AdminDict;
   extraTabs?: ExtraSettingsTab[];
 }) {
@@ -227,27 +253,7 @@ export function WeddingConfigSettings({
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-tan/30 bg-sand/40 p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h2 className="font-serif text-lg text-brown-deep sm:text-xl">{dict.wc_heading}</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          {isOverridden && (
-            <span className="rounded-full bg-tan/40 px-2 py-0.5 text-xs text-brown-deep">
-              {dict.wc_overriddenBadge}
-            </span>
-          )}
-          {/* Desktop only. On a phone this sat a thumb's width from the tab
-              row and from Simpan, where a mistap wipes every setting — it
-              moves to the bottom of the panel instead (see below). */}
-          <button
-            type="button"
-            onClick={() => setResetOpen(true)}
-            disabled={resetPending}
-            className="hidden cursor-pointer rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40 sm:block"
-          >
-            {resetPending ? dict.wc_resetting : dict.wc_resetButton}
-          </button>
-        </div>
-      </div>
+      <h2 className="font-serif text-lg text-brown-deep sm:text-xl">{dict.wc_heading}</h2>
       {resetError && (
         <p role="alert" className="text-xs text-red-700">
           {resetError}
@@ -299,25 +305,25 @@ export function WeddingConfigSettings({
         ))}
       </div>
 
-      {tab === "butiran" && <ButiranTab initialConfig={initialConfig} dict={dict} />}
-      {tab === "lokasi" && <LokasiTab initialConfig={initialConfig} dict={dict} />}
-      {tab === "aturcara" && <AturCaraTab initialConfig={initialConfig} dict={dict} />}
-      {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
-      {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
+      <ResetContext.Provider
+        value={{
+          onReset: () => setResetOpen(true),
+          pending: resetPending,
+          label: resetPending ? dict.wc_resetting : dict.wc_resetButton,
+        }}
+      >
+        {tab === "butiran" && <ButiranTab initialConfig={initialConfig} dict={dict} />}
+        {tab === "lokasi" && <LokasiTab initialConfig={initialConfig} dict={dict} />}
+        {tab === "aturcara" && <AturCaraTab initialConfig={initialConfig} dict={dict} />}
+        {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
+        {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
+      </ResetContext.Provider>
+
+      {/* Outside the provider: the gallery, music and notification panels
+          have their own save controls, and Restore-to-default does not
+          touch what they edit. */}
       {extraTabs.find((t) => t.id === tab)?.content}
 
-      {/* The mobile home for Restore-to-default: past the end of the form,
-          separated, and nowhere near Simpan. */}
-      <div className="mt-2 border-t border-tan/30 pt-4 sm:hidden">
-        <button
-          type="button"
-          onClick={() => setResetOpen(true)}
-          disabled={resetPending}
-          className="w-full cursor-pointer rounded-md border border-red-200 px-3 py-2 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
-        >
-          {resetPending ? dict.wc_resetting : dict.wc_resetButton}
-        </button>
-      </div>
 
       {/*
         Restoring defaults throws away every setting the couple has entered
@@ -457,12 +463,12 @@ function ButiranTab({
           admin can see exactly what the card will say before saving. */}
       <div className="rounded-md border border-gold-light/60 bg-sand/50 px-3 py-2 text-sm text-brown">
         <div className="font-medium text-brown-deep">{dict.wc_previewHeading}</div>
-        <div>{malayFullPreview(eventDate, startTime) || "\u2014"}</div>
+        <div>{malayFullPreview(eventDate, startTime) || "-"}</div>
         <div className="text-brown/70">
-          {dict.wc_previewEnds}: {formatMalayTime(endTimeOfDay) || "\u2014"}
+          {dict.wc_previewEnds}: {formatMalayTime(endTimeOfDay) || "-"}
         </div>
         <div className="text-brown/70">
-          {dict.wc_previewDeadline}: {malayDisplayDate(deadlineDate) || "\u2014"}
+          {dict.wc_previewDeadline}: {malayDisplayDate(deadlineDate) || "-"}
         </div>
       </div>
 
