@@ -75,13 +75,39 @@ function siteOrigin(): Promise<string> {
   return getWeddingConfig().then((config) => config.siteUrl);
 }
 
+/**
+ * The headcount rows for the notification email, following `rsvpPaxMode`.
+ *
+ * The email used to print "Dewasa: 1 / Kanak-kanak: 0" unconditionally.
+ * With the form in "none" mode those are not answers a guest gave, they
+ * are the column defaults, and the family reads them as a real headcount.
+ * The same bug was fixed in the CSV/XLSX export; this was the third
+ * surface rendering `adults`/`children` without asking whether the form
+ * ever collected them.
+ */
+export function paxRows(
+  mode: "adultsChildren" | "total" | "none",
+  rsvp: { adults: number; children: number },
+): { label: string; value: string }[] {
+  if (mode === "none") return [];
+  if (mode === "total") {
+    return [{ label: "Bilangan hadir", value: String(rsvp.adults + rsvp.children) }];
+  }
+  return [
+    { label: "Dewasa", value: String(rsvp.adults) },
+    { label: "Kanak-kanak", value: String(rsvp.children) },
+  ];
+}
+
 async function buildRsvpEmail(
   rsvp: RsvpRow,
   wish: AttachedWish | null,
 ): Promise<{ subject: string; textPart: string; htmlPart: string }> {
-  const origin = await siteOrigin();
+  const config = await getWeddingConfig();
+  const origin = config.siteUrl;
   const adminUrl = `${origin}/admin/rsvp`;
   const ucapanUrl = `${origin}/admin/ucapan`;
+  const pax = paxRows(config.rsvpPaxMode, rsvp);
   const attendanceLabel = rsvp.attending ? "Hadir" : "Tidak hadir";
   const message = rsvp.message ?? "-";
 
@@ -94,8 +120,7 @@ async function buildRsvpEmail(
     "",
     `Nama: ${rsvp.name}`,
     `Kehadiran: ${attendanceLabel}`,
-    `Dewasa: ${rsvp.adults}`,
-    `Kanak-kanak: ${rsvp.children}`,
+    ...pax.map((row) => `${row.label}: ${row.value}`),
     `Telefon: ${rsvp.phone}`,
     `Mesej peribadi: ${message}`,
     ...(wish
@@ -116,8 +141,12 @@ async function buildRsvpEmail(
     <table>
       <tr><td><strong>Nama</strong></td><td>${escapeHtml(rsvp.name)}</td></tr>
       <tr><td><strong>Kehadiran</strong></td><td>${escapeHtml(attendanceLabel)}</td></tr>
-      <tr><td><strong>Dewasa</strong></td><td>${rsvp.adults}</td></tr>
-      <tr><td><strong>Kanak-kanak</strong></td><td>${rsvp.children}</td></tr>
+      ${pax
+        .map(
+          (row) =>
+            `<tr><td><strong>${escapeHtml(row.label)}</strong></td><td>${escapeHtml(row.value)}</td></tr>`,
+        )
+        .join("\n      ")}
       <tr><td><strong>Telefon</strong></td><td>${escapeHtml(rsvp.phone)}</td></tr>
       <tr><td><strong>Mesej peribadi</strong></td><td>${escapeHtml(message)}</td></tr>
     </table>

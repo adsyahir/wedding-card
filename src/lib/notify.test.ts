@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_NOTIFICATIONS, type NotificationsConfig } from "./wedding-config";
 
-import { escapeHtml, shouldSendNotification } from "./notify";
+import { escapeHtml, paxRows, shouldSendNotification } from "./notify";
 
 describe("escapeHtml", () => {
   it("escapes all five HTML-significant characters", () => {
@@ -55,5 +55,34 @@ describe("shouldSendNotification", () => {
   it("is true with the maximum two recipients", () => {
     const c = config({ enabled: true, recipients: ["a@example.com", "b@example.com"] });
     expect(shouldSendNotification(c)).toBe(true);
+  });
+});
+
+/*
+ * The notification email was the third surface to render adults/children
+ * without asking whether the form ever collected them. In "none" mode it
+ * printed "Dewasa: 1 / Kanak-kanak: 0", which are the column defaults, not
+ * anything the guest said.
+ */
+describe("paxRows", () => {
+  const rsvp = { adults: 3, children: 2 };
+
+  it("omits the headcount entirely when the form does not ask for it", () => {
+    expect(paxRows("none", rsvp)).toEqual([]);
+  });
+
+  it("reports a single combined figure in total mode", () => {
+    expect(paxRows("total", rsvp)).toEqual([{ label: "Bilangan hadir", value: "5" }]);
+  });
+
+  it("splits adults and children only when the form collected both", () => {
+    expect(paxRows("adultsChildren", rsvp)).toEqual([
+      { label: "Dewasa", value: "3" },
+      { label: "Kanak-kanak", value: "2" },
+    ]);
+  });
+
+  it("never emits a default-looking 1/0 for a form that asked nothing", () => {
+    expect(paxRows("none", { adults: 1, children: 0 })).toHaveLength(0);
   });
 });
