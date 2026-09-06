@@ -20,6 +20,8 @@ import {
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 import { localizeApiError, localizeFieldErrors } from "./api-error";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { TrashIcon } from "./TrashIcon";
 
 type ApiResponse =
   | { ok: true }
@@ -183,6 +185,7 @@ export function WeddingConfigSettings({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<string>("butiran");
+  const [resetOpen, setResetOpen] = useState(false);
   const [resetPending, setResetPending] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
@@ -195,9 +198,6 @@ export function WeddingConfigSettings({
   };
 
   async function handleReset() {
-    if (!window.confirm(dict.wc_resetConfirm)) {
-      return;
-    }
     setResetPending(true);
     setResetError(null);
     try {
@@ -231,7 +231,7 @@ export function WeddingConfigSettings({
           )}
           <button
             type="button"
-            onClick={handleReset}
+            onClick={() => setResetOpen(true)}
             disabled={resetPending}
             className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
           >
@@ -280,6 +280,25 @@ export function WeddingConfigSettings({
       {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
       {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
       {extraTabs.find((t) => t.id === tab)?.content}
+
+      {/*
+        Restoring defaults throws away every setting the couple has entered
+        — names, venue, itinerary, contacts — with no undo, so it asks for
+        the word to be typed rather than accepting a reflexive second click.
+      */}
+      <ConfirmDialog
+        open={resetOpen}
+        title={dict.wc_resetConfirmTitle}
+        body={dict.wc_resetConfirm}
+        confirmLabel={dict.wc_resetButton}
+        requirePhrase={dict.wc_resetPhrase}
+        dict={dict}
+        onCancel={() => setResetOpen(false)}
+        onConfirm={() => {
+          setResetOpen(false);
+          void handleReset();
+        }}
+      />
     </section>
   );
 }
@@ -604,8 +623,9 @@ function AturCaraTab({ initialConfig, dict }: { initialConfig: WeddingConfig; di
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
               >
+                <TrashIcon />
                 {dict.common_delete}
               </button>
             </div>
@@ -681,8 +701,9 @@ function HubungiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dic
             <button
               type="button"
               onClick={() => remove(index)}
-              className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+              className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
             >
+              <TrashIcon />
               {dict.common_delete}
             </button>
           </div>

@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
+import { TrashIcon } from "./TrashIcon";
+import { ConfirmDialog } from "./ConfirmDialog";
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 import { useAdminAction } from "./useAdminAction";
@@ -31,8 +35,9 @@ export function WishActions({
     await run("/api/admin/wishes/moderate", { id, status: next });
   }
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   async function remove() {
-    if (!window.confirm(dict.wishActions_confirmDelete)) return;
     await run("/api/admin/wishes/delete", { id });
   }
 
@@ -60,10 +65,11 @@ export function WishActions({
       ) : (
         <button
           type="button"
-          onClick={remove}
+          onClick={() => setConfirmOpen(true)}
           disabled={pending}
-          className={`${buttonBase} border border-red-200 text-red-700 hover:bg-red-50`}
+          className={`${buttonBase} inline-flex items-center gap-1 border border-red-200 text-red-700 hover:bg-red-50`}
         >
+          <TrashIcon />
           {dict.wishActions_delete}
         </button>
       )}
@@ -72,6 +78,18 @@ export function WishActions({
           {error}
         </p>
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={dict.confirm_deleteTitle}
+        body={dict.wishActions_confirmDelete}
+        confirmLabel={dict.common_delete}
+        dict={dict}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          void remove();
+        }}
+      />
     </div>
   );
 }

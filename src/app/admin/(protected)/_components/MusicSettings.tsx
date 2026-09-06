@@ -1,5 +1,7 @@
 "use client";
 
+import { TrashIcon } from "./TrashIcon";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -73,11 +75,10 @@ export function MusicSettings({
     if (!ok) setSelected(previous);
   }
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   async function handleDelete(id: string) {
     const isActive = selected === id;
-    const message = isActive ? dict.music_confirmDeleteActive : dict.music_confirmDelete;
-    if (!window.confirm(message)) return;
-
     const ok = await runDelete("/api/admin/music/delete", { id });
 
     // The server moves the active setting to "none" when the deleted track
@@ -198,11 +199,12 @@ export function MusicSettings({
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleDelete(track.id)}
+                    onClick={() => setConfirmDeleteId(track.id)}
                     disabled={deletePending}
                     title={isActive ? dict.music_deleteActiveTitle : undefined}
-                    className="ml-auto rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
                   >
+                    <TrashIcon />
                     {dict.common_delete}
                   </button>
                 </div>
@@ -296,6 +298,23 @@ export function MusicSettings({
           </p>
         )}
       </form>
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title={dict.confirm_deleteTitle}
+        body={
+          confirmDeleteId === selected
+            ? dict.music_confirmDeleteActive
+            : dict.music_confirmDelete
+        }
+        confirmLabel={dict.common_delete}
+        dict={dict}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={() => {
+          const id = confirmDeleteId;
+          setConfirmDeleteId(null);
+          if (id) void handleDelete(id);
+        }}
+      />
     </section>
   );
 }

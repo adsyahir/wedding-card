@@ -1,5 +1,7 @@
 "use client";
 
+import { TrashIcon } from "./TrashIcon";
+import { ConfirmDialog } from "./ConfirmDialog";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -103,8 +105,9 @@ export function GallerySettings({
     }
   }
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   async function handleDelete(id: string) {
-    if (!window.confirm(dict.gallery_confirmDelete)) return;
     await runDelete("/api/admin/gallery/delete", { id });
   }
 
@@ -281,10 +284,11 @@ export function GallerySettings({
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDelete(image.id)}
+                  onClick={() => setConfirmDeleteId(image.id)}
                   disabled={deletePending}
-                  className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
                 >
+                  <TrashIcon />
                   {dict.common_delete}
                 </button>
               </div>
@@ -331,6 +335,19 @@ export function GallerySettings({
           </p>
         )}
       </form>
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title={dict.confirm_deleteTitle}
+        body={dict.gallery_confirmDelete}
+        confirmLabel={dict.common_delete}
+        dict={dict}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={() => {
+          const id = confirmDeleteId;
+          setConfirmDeleteId(null);
+          if (id) void handleDelete(id);
+        }}
+      />
     </section>
   );
 }
