@@ -2,6 +2,7 @@ import { getAllRsvpsForExport } from "@/db/queries/admin";
 import { ADMIN_ERROR_CODES, API_ERRORS, jsonError } from "@/lib/api";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
+import { buildXlsx, XLSX_CONTENT_TYPE } from "@/lib/xlsx";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 
 // Runs on the Workers runtime under OpenNext — do NOT set
@@ -32,7 +33,12 @@ function formatMyDate(value: Date | string): string {
 }
 
 /**
- * Downloads the full (non-deleted) RSVP list as CSV.
+ * Downloads the full (non-deleted) RSVP list, as CSV or XLSX (`?format=`).
+ *
+ * XLSX is the better choice for a list of guest-supplied names: every cell
+ * is written as an inline string, so Excel cannot interpret one as a
+ * formula. CSV has to defend against that by prefixing a quote. Both are
+ * offered because CSV is what other tools import.
  *
  * A GET, not a POST — `requireAdminApi` skips the CSRF-header check for
  * GET/HEAD (see its docstring), but STILL requires a valid session cookie,
@@ -58,18 +64,19 @@ export async function GET(request: Request): Promise<Response> {
 
     const rows = await getAllRsvpsForExport();
 
-    const csv = toCsv(
-      csvHeaders,
-      rows.map((row) => [
-        row.name,
-        row.phone,
-        row.attending ? dict.rsvpExport_hadir : dict.rsvpExport_tidakHadir,
-        row.adults,
-        row.children,
-        row.message,
-        formatMyDate(row.createdAt),
-      ]),
-    );
+    const cells = rows.map((row) => [
+      row.name,
+      row.phone,
+      row.attending ? dict.rsvpExport_hadir : dict.rsvpExport_tidakHadir,
+      row.adults,
+      row.children,
+      row.message,
+      formatMyDate(row.createdAt),
+    ]);
+
+    // Anything that is not exactly "xlsx" falls back to CSV rather than
+    // erroring: a mistyped query string should still give you your list.
+    const wantsXlsx = new URL(request.url).searchParams.get("format") === "xlsx";
 
     await logAudit({
       adminUserId: guard.session.adminUserId,
@@ -79,11 +86,15 @@ export async function GET(request: Request): Promise<Response> {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    return new Response(csv, {
+    const body = wantsXlsx
+      ? (buildXlsx(csvHeaders, cells, "RSVP") as unknown as BodyInit)
+      : toCsv(csvHeaders, cells);
+
+    return new Response(body, {
       status: 200,
       headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="rsvp-${today}.csv"`,
+        "Content-Type": wantsXlsx ? XLSX_CONTENT_TYPE : "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="rsvp-${today}.${wantsXlsx ? "xlsx" : "csv"}"`,
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
       },

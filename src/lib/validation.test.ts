@@ -199,3 +199,33 @@ describe("wishSchema", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("normalizeMalaysianPhone — prefix range", () => {
+  it("rejects the unassigned 015 range", () => {
+    // The whole point of `[0-46-9]`: 015 is not an assigned mobile prefix,
+    // so it is a typo rather than a number, and better caught here than
+    // discovered when nobody answers.
+    expect(normalizeMalaysianPhone("0151234567")).toBeNull();
+    expect(normalizeMalaysianPhone("+60151234567")).toBeNull();
+  });
+
+  it("accepts every assigned prefix around it", () => {
+    for (const p of ["010", "011", "012", "013", "014", "016", "017", "018", "019"]) {
+      expect(normalizeMalaysianPhone(`${p}1234567`)).not.toBeNull();
+    }
+  });
+
+  it("accepts the three shapes people type and normalises them to one", () => {
+    const expected = "+60123456789";
+    expect(normalizeMalaysianPhone("0123456789")).toBe(expected);
+    expect(normalizeMalaysianPhone("60123456789")).toBe(expected);
+    expect(normalizeMalaysianPhone("+60123456789")).toBe(expected);
+    expect(normalizeMalaysianPhone("012-345 6789")).toBe(expected);
+    expect(normalizeMalaysianPhone("012.345.6789")).toBe(expected);
+  });
+
+  it("rejects too short and too long", () => {
+    expect(normalizeMalaysianPhone("012345")).toBeNull();
+    expect(normalizeMalaysianPhone("01234567890123")).toBeNull();
+  });
+});

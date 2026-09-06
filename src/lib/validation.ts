@@ -44,23 +44,34 @@ function hasDisallowedControlChars(value: string): boolean {
  * Returns `null` if the input cannot be interpreted as a valid Malaysian
  * mobile number.
  */
+/**
+ * Accepts a Malaysian mobile number in any of the forms people actually
+ * type it, and returns it in E.164 (`+60...`), or null if it isn't one.
+ *
+ * The pattern is deliberately narrower than "01 followed by digits": the
+ * `[0-46-9]` excludes the 015 range, which is not an assigned mobile
+ * prefix, so a typo there is caught rather than stored and then failing
+ * silently when someone tries to call it.
+ */
+const MY_MOBILE = /^(?:\+?60|0)1[0-46-9][0-9]{7,8}$/;
+
 export function normalizeMalaysianPhone(raw: string): string | null {
-  let s = raw.trim().replace(/[\s()-]/g, "");
+  // Strip the separators people type: spaces, dashes, brackets, dots.
+  const s = raw.trim().replace(/[\s()\-.]/g, "");
 
-  if (s.startsWith("+60")) {
-    s = `0${s.slice(3)}`;
-  } else if (/^60\d+$/.test(s)) {
-    s = `0${s.slice(2)}`;
-  }
+  if (!MY_MOBILE.test(s)) return null;
 
-  // A valid Malaysian mobile number, once normalized to start with a single
-  // leading 0, is "01" followed by 8-9 more digits (10-11 digits total).
-  if (!/^01\d{8,9}$/.test(s)) {
-    return null;
-  }
+  // Reduce every accepted prefix to the national form (a single leading 0)
+  // before rebuilding as E.164, so all three inputs produce one output.
+  const national = s.startsWith("+60")
+    ? `0${s.slice(3)}`
+    : s.startsWith("60")
+      ? `0${s.slice(2)}`
+      : s;
 
-  return `+60${s.slice(1)}`;
+  return `+60${national.slice(1)}`;
 }
+
 
 const honeypot = z.string().max(0, "Bot detected").optional().default("");
 
