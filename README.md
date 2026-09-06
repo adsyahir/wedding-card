@@ -101,7 +101,18 @@ alongside the existing Muzik panel):
   query outright. Closing `ucapan` or `navRsvp` also closes the
   corresponding write endpoint server-side (`POST /api/wishes` /
   `POST /api/rsvp` both return 403) — the toggle is a real closure, not
-  cosmetic.
+  cosmetic. Two more fine-grained toggles live in the same "Bahagian" tab:
+  `kalendarGrid` (the static month grid in the Kalendar sheet — default
+  **on**; turning it off leaves the date line and the add-to-calendar
+  buttons alone) and `petaEmbed` (the embedded Google Maps iframe in
+  Lokasi/the Lokasi sheet — default **off**, see SECURITY.md for why).
+- **Script font**: `scriptFont` (Butiran tab) picks which self-hosted
+  `next/font/google` family drives `--font-script` — the couple's
+  short/full names, the venue name, and the hashtag. Five options
+  (`parisienne` default, `greatVibes`, `dancingScript`, `sacramento`,
+  `cormorantGaramond`), all loaded unconditionally in `src/app/layout.tsx`
+  and switched via a `data-script-font` attribute on `<html>` set
+  server-side, so there's never a flash of the wrong font.
 - **Saving**: `POST /api/admin/settings/wedding` (Zod-validated,
   `requireAdminApi`-guarded, audit-logged) — each settings tab saves only
   the fields it owns, merged over whatever was already saved. **"Kembalikan

@@ -189,13 +189,16 @@ describe("resolveWeddingConfigFromRaw (the 'must never break' fallback)", () => 
 });
 
 describe("section-toggle defaults", () => {
-  it("defaults every section and nav toggle to true", () => {
-    for (const value of Object.values(DEFAULT_SECTIONS)) {
-      expect(value).toBe(true);
+  // `petaEmbed` is the one deliberate exception: embedding Google Maps
+  // means Google receives every guest's IP address, a privacy cost the
+  // couple should opt into, not inherit — see SECURITY.md.
+  it("defaults every section and nav toggle to true, except petaEmbed", () => {
+    for (const [key, value] of Object.entries(DEFAULT_SECTIONS)) {
+      expect(value).toBe(key === "petaEmbed" ? false : true);
     }
   });
 
-  it("the resolved default config carries all-true sections", () => {
+  it("the resolved default config carries the expected section defaults", () => {
     expect(fileDefaults().sections).toEqual({
       undangan: true,
       lokasi: true,
@@ -208,6 +211,8 @@ describe("section-toggle defaults", () => {
       navLokasi: true,
       navHubungi: true,
       navRsvp: true,
+      kalendarGrid: true,
+      petaEmbed: false,
     });
   });
 });

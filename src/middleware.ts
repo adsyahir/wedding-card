@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { wedding } from "@/config/wedding";
 import { randomToken } from "@/lib/crypto";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
+import { getWeddingConfig } from "@/lib/wedding-config";
 
 /**
  * Two jobs, deliberately kept separate and small:
@@ -22,7 +23,7 @@ import { SESSION_COOKIE_NAME } from "@/lib/session-cookie-name";
  * independently.
  */
 
-function buildCsp(nonce: string): string {
+function buildCsp(nonce: string, mapEmbedEnabled: boolean): string {
   const scriptSrc =
     process.env.NODE_ENV !== "production"
       ? // Next.js's dev overlay / Fast Refresh relies on eval() in dev mode;
@@ -44,7 +45,7 @@ function buildCsp(nonce: string): string {
     ? `'self' https://*.google-analytics.com https://www.google-analytics.com`
     : `'self'`;
 
-  return [
+  const directives = [
     `default-src 'self'`,
     `script-src ${scriptSrcSources}`,
     // 'unsafe-inline' is required here for Next.js's own injected <style>
@@ -59,13 +60,32 @@ function buildCsp(nonce: string): string {
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
-    `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
-  ].join("; ");
+  ];
+
+  // The embedded-map iframe (`Lokasi`/`LokasiSheet`) is gated on the admin
+  // toggle `sections.petaEmbed` (default OFF — see `src/lib/wedding-config.ts`
+  // for why). `frame-src` is added ONLY when that toggle is on, same
+  // principle as the GA sources above being conditional on
+  // `gaMeasurementId` — a deployment that never enables the map embed keeps
+  // the tightest possible CSP. Deliberately does NOT touch
+  // `frame-ancestors`, which stays `'none'` regardless: that directive
+  // controls who may frame THIS site, not what THIS site may frame.
+  if (mapEmbedEnabled) {
+    directives.push(`frame-src https://www.google.com`);
+  }
+
+  directives.push(`frame-ancestors 'none'`, `upgrade-insecure-requests`);
+
+  return directives.join("; ");
 }
 
-function applySecurityHeaders(request: NextRequest, response: NextResponse, nonce: string): void {
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+function applySecurityHeaders(
+  request: NextRequest,
+  response: NextResponse,
+  nonce: string,
+  mapEmbedEnabled: boolean,
+): void {
+  response.headers.set("Content-Security-Policy", buildCsp(nonce, mapEmbedEnabled));
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-Frame-Options", "DENY");
@@ -92,7 +112,7 @@ function applySecurityHeaders(request: NextRequest, response: NextResponse, nonc
   }
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const nonce = randomToken(16);
 
   // The nonce is set on the REQUEST headers (not just the response) so
@@ -107,18 +127,25 @@ export function middleware(request: NextRequest) {
   const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
   const isLoginPage = pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 
+  // Only the public invite page ("/") can ever render the map embed, so
+  // this is the only path worth the extra D1 read. `getWeddingConfig()`
+  // already never throws (see its own doc comment) — any failure here
+  // degrades to `false`, i.e. the tighter CSP with no `frame-src`, exactly
+  // like every other place that config helper is used.
+  const mapEmbedEnabled = pathname === "/" ? (await getWeddingConfig()).sections.petaEmbed : false;
+
   if (isAdminPage && !isLoginPage) {
     const hasSessionCookie = request.cookies.has(SESSION_COOKIE_NAME);
     if (!hasSessionCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       const response = NextResponse.redirect(loginUrl);
-      applySecurityHeaders(request, response, nonce);
+      applySecurityHeaders(request, response, nonce, mapEmbedEnabled);
       return response;
     }
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  applySecurityHeaders(request, response, nonce);
+  applySecurityHeaders(request, response, nonce, mapEmbedEnabled);
   return response;
 }
 

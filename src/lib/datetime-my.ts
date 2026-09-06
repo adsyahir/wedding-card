@@ -42,6 +42,25 @@ export const MALAY_MONTHS = [
   "Disember",
 ] as const;
 
+/** Short Malay weekday names, Sunday-first — used by the Kalendar month grid. */
+export const MALAY_DAYS_SHORT = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"] as const;
+
+/** Short Malay month names — used by the Kalendar month grid header. */
+export const MALAY_MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mac",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Ogo",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Dis",
+] as const;
+
 export type DateTimeParts = { date: string; time: string };
 
 const ISO_LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/;

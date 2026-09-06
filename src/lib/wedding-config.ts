@@ -8,6 +8,8 @@ import { getDb } from "@/db";
 import { siteSettings } from "@/db/schema";
 import { normalizeMalaysianPhone } from "@/lib/validation";
 
+import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "./script-font";
+
 /**
  * The admin-editable slice of the wedding card's content.
  *
@@ -199,10 +201,28 @@ export const SECTION_KEYS = [
 
 export const NAV_KEYS = ["navKalendar", "navLokasi", "navHubungi", "navRsvp"] as const;
 
+/**
+ * Fine-grained toggles nested under an already-visible section, rather than
+ * a whole section on/off:
+ *  - `kalendarGrid` — the static month grid inside the Kalendar sheet
+ *    (`KalendarSheet`/`CalendarMonthGrid`). Defaults `true`; turning it off
+ *    leaves the date line and the add-to-calendar buttons untouched.
+ *  - `petaEmbed` — the embedded Google Maps iframe in Lokasi/LokasiSheet.
+ *    Defaults **`false`**, deliberately: embedding Google Maps means Google
+ *    receives the IP address of every guest who opens the invitation, a
+ *    privacy cost the couple should opt into, not inherit (see
+ *    `SECURITY.md`). Also gates whether `frame-src https://www.google.com`
+ *    is added to the CSP at all (`src/middleware.ts`).
+ */
+export const EXTRA_TOGGLE_KEYS = ["kalendarGrid", "petaEmbed"] as const;
+
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export type NavKey = (typeof NAV_KEYS)[number];
+export type ExtraToggleKey = (typeof EXTRA_TOGGLE_KEYS)[number];
 
-export type SectionsConfig = Record<SectionKey, boolean> & Record<NavKey, boolean>;
+export type SectionsConfig = Record<SectionKey, boolean> &
+  Record<NavKey, boolean> &
+  Record<ExtraToggleKey, boolean>;
 
 export const DEFAULT_SECTIONS: SectionsConfig = {
   undangan: true,
@@ -216,6 +236,8 @@ export const DEFAULT_SECTIONS: SectionsConfig = {
   navLokasi: true,
   navHubungi: true,
   navRsvp: true,
+  kalendarGrid: true,
+  petaEmbed: false,
 };
 
 const sectionsSchema = z
@@ -231,8 +253,18 @@ const sectionsSchema = z
     navLokasi: z.boolean(),
     navHubungi: z.boolean(),
     navRsvp: z.boolean(),
+    kalendarGrid: z.boolean(),
+    petaEmbed: z.boolean(),
   })
   .partial();
+
+// `SCRIPT_FONT_KEYS`/`ScriptFontKey` live in `./script-font.ts` (no
+// `server-only`), not here, so the admin's client-side font dropdown can
+// import them without pulling in this whole (server-only) module — see
+// that file's doc comment. Re-exported here so every OTHER (server-side)
+// consumer can still just import them from `wedding-config.ts`.
+export { SCRIPT_FONT_KEYS };
+export type { ScriptFontKey };
 
 /**
  * The document stored (validated, but PARTIAL — only fields an admin has
@@ -262,6 +294,7 @@ export const weddingConfigDocSchema = z.object({
   doa: trimmedString(1, 1000).optional(),
   sections: sectionsSchema.optional(),
   notifications: notificationsSchema.optional(),
+  scriptFont: z.enum(SCRIPT_FONT_KEYS).optional(),
 });
 
 export type WeddingConfigDoc = z.infer<typeof weddingConfigDocSchema>;
@@ -331,6 +364,12 @@ export function mergeWeddingConfig(
     ...(partial.contacts !== undefined && { contacts: partial.contacts }),
     ...(partial.hashtag !== undefined && { hashtag: partial.hashtag }),
     ...(partial.doa !== undefined && { doa: partial.doa }),
+    // Pre-existing gap found while adding `scriptFont` here: `rsvpPaxMode`
+    // was validated by the schema but never actually merged into the
+    // resolved config, so an admin's saved pax-mode choice never took
+    // effect on the public card. Fixed alongside this change.
+    ...(partial.rsvpPaxMode !== undefined && { rsvpPaxMode: partial.rsvpPaxMode }),
+    ...(partial.scriptFont !== undefined && { scriptFont: partial.scriptFont }),
     sections: { ...base.sections, ...partial.sections },
     ...(partial.notifications !== undefined && { notifications: partial.notifications }),
   };

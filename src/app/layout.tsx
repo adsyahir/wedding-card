@@ -1,14 +1,51 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost, Parisienne } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  Dancing_Script,
+  Great_Vibes,
+  Jost,
+  Parisienne,
+  Sacramento,
+} from "next/font/google";
 
 import { getWeddingConfig } from "@/lib/wedding-config";
 
 import "./globals.css";
 
+// Five self-hosted script/serif families the admin can choose between for
+// `--font-script` (see globals.css's `html[data-script-font=...]` rules and
+// `WeddingConfigSettings`'s Butiran-tab dropdown). `next/font/google`
+// downloads and subsets each at BUILD time and serves it from this origin
+// — no request to fonts.googleapis.com at runtime, so no CSP change is
+// needed for these. Only the weight actually used (400) is loaded for the
+// four script faces to keep the bundle cost of five families in check;
+// Cormorant Garamond is already loaded below with the weights the serif
+// body copy needs.
 const script = Parisienne({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-parisienne",
+  display: "swap",
+});
+
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-great-vibes",
+  display: "swap",
+});
+
+const dancingScript = Dancing_Script({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-dancing-script",
+  display: "swap",
+});
+
+const sacramento = Sacramento({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-sacramento",
   display: "swap",
 });
 
@@ -54,11 +91,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Read once here (in addition to `generateMetadata` above — both are
+  // cheap, cached-per-request reads of the same D1 row) so the chosen
+  // script font is known at server-render time: `data-script-font` below
+  // must be correct in the very first byte of HTML, or the invitation
+  // would flash the wrong font as client JS reconciles it.
+  const config = await getWeddingConfig();
+
   return (
     <html
       lang="ms"
-      className={`h-full antialiased ${script.variable} ${serif.variable} ${sans.variable}`}
+      data-script-font={config.scriptFont}
+      className={`h-full antialiased ${script.variable} ${serif.variable} ${sans.variable} ${greatVibes.variable} ${dancingScript.variable} ${sacramento.variable}`}
     >
       <head>
         {/* Reveal-on-scroll elements are server-rendered with an inline

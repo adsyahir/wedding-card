@@ -108,7 +108,7 @@ export function InviteApp({
         <Petals />
         <Hero config={config} />
         {sections.undangan && <Undangan config={config} />}
-        {sections.lokasi && <Lokasi config={config} />}
+        {sections.lokasi && <Lokasi config={config} showMap={sections.petaEmbed} />}
         {sections.aturCara && <AturCara config={config} />}
         {sections.countdown && <Countdown targetIso={config.date} />}
         {sections.galeri && <Galeri gallery={gallery} />}
@@ -133,8 +133,10 @@ export function InviteApp({
         title={activeSheet ? SHEET_TITLES[activeSheet] : ""}
         triggerRef={activeTriggerRef}
       >
-        {activeSheet === "kalendar" && <KalendarSheet config={config} />}
-        {activeSheet === "lokasi" && <LokasiSheet config={config} />}
+        {activeSheet === "kalendar" && (
+          <KalendarSheet config={config} showGrid={sections.kalendarGrid} />
+        )}
+        {activeSheet === "lokasi" && <LokasiSheet config={config} showMap={sections.petaEmbed} />}
         {activeSheet === "hubungi" && <HubungiSheet config={config} />}
         {activeSheet === "rsvp" && <RsvpSheet onRsvpSuccess={handleRsvpSuccess}  allowUcapan={sections.ucapan} paxMode={config.rsvpPaxMode}/>}
       </Sheet>

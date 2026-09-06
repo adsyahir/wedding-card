@@ -17,6 +17,28 @@
 }
 
 /*
+ * Admin-selectable `--font-script` (Hero/Undangan/Lokasi/Footer). All five
+ * families are loaded unconditionally in `src/app/layout.tsx` (self-hosted
+ * by `next/font/google`, no extra network request either way); which one
+ * is actually USED is switched here, keyed off `data-script-font` on
+ * `<html>` — set server-side from `config.scriptFont`, so there is never a
+ * flash of the wrong font while client JS catches up. "parisienne" needs no
+ * rule since it's already the `@theme` default above.
+ */
+html[data-script-font="greatVibes"] {
+  --font-script: var(--font-great-vibes), cursive;
+}
+html[data-script-font="dancingScript"] {
+  --font-script: var(--font-dancing-script), cursive;
+}
+html[data-script-font="sacramento"] {
+  --font-script: var(--font-sacramento), cursive;
+}
+html[data-script-font="cormorantGaramond"] {
+  --font-script: var(--font-cormorant), serif;
+}
+
+/*
  * The page ground. Three layers, deliberately restrained — the card itself
  * should stay the brightest thing on screen, so everything here is a
  * low-contrast wash rather than decoration competing with the content:

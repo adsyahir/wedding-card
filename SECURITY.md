@@ -91,6 +91,21 @@ below are sized accordingly.
   `src/lib/mailjet.ts`, which excludes them from every error message and
   log line it writes, even on a failed send).
 
+- **The embedded map (when enabled) sends every guest's IP address to
+  Google.** `sections.petaEmbed` (default **off**) puts a keyless Google
+  Maps `output=embed` iframe in the Lokasi section/sheet
+  (`src/components/invite/{Lokasi,LokasiSheet}.tsx`). No API key or
+  billing is involved, but loading that iframe is still a request from the
+  guest's browser straight to google.com, carrying their IP address (and
+  whatever else a browser normally sends), independent of anything this
+  app does. That's why the toggle defaults to off and the admin UI
+  (`WeddingConfigSettings`'s Bahagian tab) states this plainly rather than
+  hiding it in a changelog — the couple should opt into that privacy cost
+  for their guests, not inherit it silently. `frame-src
+  https://www.google.com` is likewise added to the CSP (`src/middleware.ts`)
+  only while the toggle is on, so a deployment that never enables the map
+  keeps the tighter default policy.
+
 - **The rate limiter fails open.** If D1 is unreachable, `checkRateLimit`
   logs the error and returns `{ allowed: true }` rather than blocking every
   request (`src/lib/rate-limit.ts`). A broken rate limiter must never be

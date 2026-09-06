@@ -1,8 +1,10 @@
 "use client";
 
 import type { WeddingConfig } from "@/config/wedding";
+import { isoToParts } from "@/lib/datetime-my";
 import { trackEvent } from "@/lib/track";
 
+import { CalendarMonthGrid } from "./CalendarMonthGrid";
 import { buildIcs, toIcsUtcDate } from "./ics";
 
 function buildGoogleCalendarUrl(config: WeddingConfig): string {
@@ -51,13 +53,28 @@ function downloadIcs(config: WeddingConfig) {
   URL.revokeObjectURL(url);
 }
 
-export function KalendarSheet({ config }: { config: WeddingConfig }) {
+export function KalendarSheet({
+  config,
+  showGrid,
+}: {
+  config: WeddingConfig;
+  showGrid: boolean;
+}) {
+  const { date: isoDate } = isoToParts(config.date);
+  const [yearStr, monthStr, dayStr] = isoDate.split("-");
+  const eventDate =
+    yearStr && monthStr && dayStr
+      ? { year: Number(yearStr), month: Number(monthStr), day: Number(dayStr) }
+      : null;
+
   return (
     <div className="flex flex-col gap-4 text-center">
       <p className="font-serif text-lg text-brown-deep">
         {config.dayNameMs}, {config.displayDate}
       </p>
       <p className="text-sm text-brown">{config.venue.name}</p>
+
+      {showGrid && eventDate && <CalendarMonthGrid event={eventDate} />}
 
       <div className="mt-2 flex flex-col gap-3">
         <a

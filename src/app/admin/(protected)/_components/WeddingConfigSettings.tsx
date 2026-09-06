@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import type { WeddingConfig } from "@/config/wedding";
+import { SCRIPT_FONT_KEYS, type ScriptFontKey } from "@/lib/script-font";
 import type { SectionsConfig } from "@/lib/wedding-config";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -84,6 +85,18 @@ function Field({
 
 const inputClass =
   "rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep";
+
+/** CSS `font-family` value for each `scriptFont` option, matching the
+ * `html[data-script-font=...]` rules in globals.css — used to render each
+ * dropdown option (and the live preview line) IN that font, so the admin
+ * can see what they're choosing before saving. */
+const SCRIPT_FONT_FAMILY: Record<ScriptFontKey, string> = {
+  parisienne: "var(--font-parisienne), cursive",
+  greatVibes: "var(--font-great-vibes), cursive",
+  dancingScript: "var(--font-dancing-script), cursive",
+  sacramento: "var(--font-sacramento), cursive",
+  cormorantGaramond: "var(--font-cormorant), serif",
+};
 
 function SaveBar({
   dict,
@@ -277,6 +290,7 @@ function ButiranTab({
   const [deadlineDate, setDeadlineDate] = useState(initialDeadline.date);
   const [hashtag, setHashtag] = useState(initialConfig.hashtag);
   const [doa, setDoa] = useState(initialConfig.doa);
+  const [scriptFont, setScriptFont] = useState<ScriptFontKey>(initialConfig.scriptFont);
 
   function handleSave() {
     void save({
@@ -298,6 +312,7 @@ function ButiranTab({
       rsvpDeadlineDisplay: malayDisplayDate(deadlineDate),
       hashtag,
       doa,
+      scriptFont,
     });
   }
 
@@ -397,6 +412,29 @@ function ButiranTab({
       <Field label={dict.wc_doa} error={fieldErrors.doa}>
         <textarea className={inputClass} rows={3} value={doa} onChange={(e) => setDoa(e.target.value)} />
       </Field>
+
+      <Field label={dict.wc_scriptFontLabel} error={fieldErrors.scriptFont}>
+        <select
+          className={inputClass}
+          value={scriptFont}
+          onChange={(e) => setScriptFont(e.target.value as ScriptFontKey)}
+        >
+          {SCRIPT_FONT_KEYS.map((key) => (
+            <option key={key} value={key} style={{ fontFamily: SCRIPT_FONT_FAMILY[key] }}>
+              {dict[`wc_scriptFont_${key}` as const]}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <div className="rounded-md border border-gold-light/60 bg-sand/50 px-3 py-2 text-sm text-brown">
+        <div className="font-medium text-brown-deep">{dict.wc_scriptFontPreview}</div>
+        <div
+          className="mt-1 text-2xl text-brown-deep"
+          style={{ fontFamily: SCRIPT_FONT_FAMILY[scriptFont] }}
+        >
+          {groomShort || "—"} &amp; {brideShort || "—"}
+        </div>
+      </div>
 
       <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />
     </div>
@@ -652,6 +690,7 @@ function BahagianTab({
     { key: "galeri", label: dict.wc_sectionGaleri },
     { key: "ucapan", label: dict.wc_sectionUcapan },
     { key: "kehadiran", label: dict.wc_sectionKehadiran },
+    { key: "kalendarGrid", label: dict.wc_sectionKalendarGrid },
     { key: "navKalendar", label: dict.wc_navKalendar },
     { key: "navLokasi", label: dict.wc_navLokasi },
     { key: "navHubungi", label: dict.wc_navHubungi },
@@ -676,6 +715,18 @@ function BahagianTab({
             <span>{label}</span>
           </label>
         ))}
+      </div>
+
+      <div className="mt-2 border-t border-gold-light/50 pt-4">
+        <label className="flex items-center gap-2 text-sm text-brown-deep">
+          <input
+            type="checkbox"
+            checked={sections.petaEmbed}
+            onChange={() => toggle("petaEmbed")}
+          />
+          <span>{dict.wc_sectionPetaEmbed}</span>
+        </label>
+        <p className="mt-1 text-xs text-brown/70">{dict.wc_petaEmbedPrivacyNotice}</p>
       </div>
 
       <div className="mt-2 border-t border-gold-light/50 pt-4">

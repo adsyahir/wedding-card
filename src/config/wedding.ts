@@ -18,6 +18,13 @@ export type WeddingConfig = {
    */
   rsvpPaxMode: "adultsChildren" | "total" | "none";
   /**
+   * Which self-hosted `next/font/google` family drives `--font-script`
+   * (the couple's short/full names, the venue name, the hashtag). See
+   * `src/app/layout.tsx` (loads all five, sets `data-script-font` on
+   * `<html>`) and `src/lib/wedding-config.ts`'s `SCRIPT_FONT_KEYS`.
+   */
+  scriptFont: "parisienne" | "greatVibes" | "dancingScript" | "sacramento" | "cormorantGaramond";
+  /**
    * Google Analytics 4 Measurement ID (e.g. "G-XXXXXXXXXX"), or `null` to
    * disable GA entirely. When set, `<GoogleAnalytics>` is rendered ONLY on
    * the public invite page (never under `/admin`) — see `src/app/page.tsx`
@@ -64,6 +71,8 @@ export const wedding = {
   presetMusicPath: null,
 
   rsvpPaxMode: "adultsChildren",
+
+  scriptFont: "parisienne",
 
   // Set to a real "G-XXXXXXXXXX" Measurement ID to enable Google Analytics
   // on the public invite page. See README.

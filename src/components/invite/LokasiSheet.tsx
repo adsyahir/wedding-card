@@ -3,7 +3,7 @@
 import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
-export function LokasiSheet({ config }: { config: WeddingConfig }) {
+export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMap: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <p className="font-script text-2xl text-brown-deep">{config.venue.name}</p>
@@ -14,6 +14,16 @@ export function LokasiSheet({ config }: { config: WeddingConfig }) {
           </span>
         ))}
       </address>
+
+      {showMap && (
+        <iframe
+          src={`https://www.google.com/maps?q=${config.venue.lat},${config.venue.lng}&z=15&output=embed`}
+          title={`Peta lokasi: ${config.venue.name}`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="aspect-[4/3] w-full rounded-lg border-0"
+        />
+      )}
 
       <div className="mt-2 flex w-full flex-col gap-3">
         <a

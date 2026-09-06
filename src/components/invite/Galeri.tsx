@@ -10,6 +10,8 @@ import { Reveal } from "./Reveal";
 
 type GalleryItem = PublicGalleryItem;
 
+const AUTO_ADVANCE_MS = 5000;
+
 const FOCUSABLE_SELECTOR =
   'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -35,11 +37,143 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   );
 }
 
+/**
+ * Full-width, single-image-at-a-time carousel. Auto-advances every
+ * `AUTO_ADVANCE_MS`, but only until the guest first takes control (a tap on
+ * an arrow or a dot) — after that the timer never restarts, matching the
+ * spirit of every other carousel that respects a guest's manual navigation.
+ *
+ * `prefers-reduced-motion` disables auto-advance entirely, checked via
+ * `window.matchMedia` in an effect (not just CSS) so the `setInterval`
+ * itself never runs — there is no motion to "reduce" if it was never
+ * scheduled in the first place.
+ */
+function Carousel({ gallery, onOpen }: { gallery: readonly GalleryItem[]; onOpen: (index: number) => void }) {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [userTookControl, setUserTookControl] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mql.matches);
+    const onChange = () => setReducedMotion(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  // Auto-advance. Guarded so a re-render (e.g. from `index` itself changing)
+  // never restarts the interval — the effect only depends on the booleans
+  // that should actually start/stop it, never on `index`.
+  useEffect(() => {
+    if (reducedMotion || paused || userTookControl || gallery.length <= 1) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % gallery.length);
+    }, AUTO_ADVANCE_MS);
+    return () => window.clearInterval(id);
+  }, [reducedMotion, paused, userTookControl, gallery.length]);
+
+  const goTo = useCallback((next: number) => {
+    setUserTookControl(true);
+    setIndex(next);
+  }, []);
+
+  const showPrev = useCallback(() => {
+    goTo((index - 1 + gallery.length) % gallery.length);
+  }, [goTo, index, gallery.length]);
+
+  const showNext = useCallback(() => {
+    goTo((index + 1) % gallery.length);
+  }, [goTo, index, gallery.length]);
+
+  const current = gallery[index];
+  const multiple = gallery.length > 1;
+
+  return (
+    <div
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Galeri gambar"
+      className="relative mx-auto max-w-md"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false);
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onOpen(index)}
+        className="relative block aspect-[4/3] w-full overflow-hidden rounded-lg bg-sand"
+        aria-label={`Gambar ${index + 1}`}
+      >
+        {/*
+          `unoptimized`: uploaded images have unknown/arbitrary dimensions
+          and are served from `/api/gallery/<id>`, not a static asset — see
+          the original comment this carried before the carousel rewrite.
+        */}
+        <Image
+          key={current.src}
+          src={current.src}
+          alt={current.alt}
+          fill
+          unoptimized
+          sizes="(max-width: 480px) 100vw, 480px"
+          className="object-cover"
+          priority={index === 0}
+        />
+      </button>
+
+      {/* Polite live region announcing the current slide for screen readers,
+          separate from the visually-hidden alt text on the image itself. */}
+      <p aria-live="polite" className="sr-only">
+        Gambar {index + 1} daripada {gallery.length}
+      </p>
+
+      {multiple && (
+        <>
+          <button
+            type="button"
+            onClick={showPrev}
+            aria-label="Gambar sebelumnya"
+            className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-sand/90 text-brown-deep"
+          >
+            <ChevronIcon direction="left" />
+          </button>
+          <button
+            type="button"
+            onClick={showNext}
+            aria-label="Gambar seterusnya"
+            className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-sand/90 text-brown-deep"
+          >
+            <ChevronIcon direction="right" />
+          </button>
+
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {gallery.map((item, i) => (
+              <button
+                key={item.src}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Gambar ${i + 1}`}
+                aria-current={i === index}
+                className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                  i === index ? "bg-goldenrod" : "bg-tan/50"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const triggerRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const lastTriggerIndex = useRef<number | null>(null);
 
   const close = useCallback(() => {
@@ -61,12 +195,10 @@ export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
   }
 
   // Focus the close button when the lightbox opens; restore focus to the
-  // triggering thumbnail when it closes.
+  // carousel image button when it closes.
   useEffect(() => {
     if (activeIndex !== null) {
       closeButtonRef.current?.focus();
-    } else if (lastTriggerIndex.current !== null) {
-      triggerRefs.current[lastTriggerIndex.current]?.focus();
     }
   }, [activeIndex]);
 
@@ -137,36 +269,8 @@ export function Galeri({ gallery }: { gallery: readonly GalleryItem[] }) {
         Galeri
       </Reveal>
 
-      <Reveal delay={0.1} className="mx-auto mt-8 grid max-w-md grid-cols-3 gap-2 sm:gap-3">
-        {gallery.map((item, index) => (
-          <button
-            key={item.src}
-            type="button"
-            ref={(el) => {
-              triggerRefs.current[index] = el;
-            }}
-            onClick={() => open(index)}
-            className="relative aspect-square overflow-hidden rounded-lg bg-sand"
-          >
-            {/*
-              `unoptimized`: uploaded images have unknown/arbitrary
-              dimensions and are served from `/api/gallery/<id>`, not a
-              static asset — the Cloudflare image-optimization binding
-              isn't configured (out of scope here), so `next/image` would
-              otherwise fail to resize them. The fixed `aspect-square` +
-              `object-cover` container above is what actually prevents
-              layout shift, independent of this flag.
-            */}
-            <Image
-              src={item.src}
-              alt={item.alt}
-              fill
-              unoptimized
-              sizes="(max-width: 480px) 33vw, 160px"
-              className="object-cover"
-            />
-          </button>
-        ))}
+      <Reveal delay={0.1} className="mt-8">
+        <Carousel gallery={gallery} onOpen={open} />
       </Reveal>
 
       {active && (
