@@ -53,3 +53,6 @@ next-env.d.ts
 
 # stray local sqlite scratch files
 wedding-local.sqlite*
+
+# exported wedding settings (may contain the couple's details)
+wedding-settings.json

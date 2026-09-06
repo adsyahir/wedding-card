@@ -381,6 +381,8 @@ DBeaver, `sqlite3`, or any other SQLite client.
   migrations to the local or remote D1 database
 - `npm run seed:admin` — interactively create/update an admin login (see
   "Admin login" above)
+- `npm run settings:export` / `npm run settings:import` — move the wedding
+  settings between environments as a JSON file (see below)
 - `npm run db:studio` — browse the local SQLite database in Drizzle Studio
 - `npm run db:local:path` — print the local SQLite file path
 
@@ -407,6 +409,38 @@ DBeaver, `sqlite3`, or any other SQLite client.
 See [`SECURITY.md`](./SECURITY.md) for the threat model, what's protected
 and how, honestly-stated known limitations, and the "if you suspect
 compromise" runbook.
+
+### Moving settings between local and production
+
+Everything the admin can edit — names, date, venue, atur cara, contacts,
+section toggles, headcount mode, script font, notification recipients —
+lives in one JSON document in `site_settings`. Rather than filling the
+admin panel in twice (once locally, once against production), configure it
+once and copy it:
+
+```bash
+npm run settings:export                 # local D1  -> wedding-settings.json
+npm run settings:import -- --remote     # that file -> production D1
+```
+
+Both directions take `--remote`, and `--file <path>` for somewhere other
+than the default `wedding-settings.json`. `npm run settings:import --
+--reset` deletes the row, putting the card back on the defaults in
+`src/config/wedding.ts` — the same thing the admin panel's "Kembalikan ke
+asal" button does.
+
+The exported file is gitignored: it contains the couple's real details.
+
+It deliberately does **not** touch guest data (`rsvps`, `wishes`), admin
+accounts, or the gallery and music tables — those last two point at R2
+objects, so copying the rows alone would leave dangling references.
+Re-upload media through the admin panel.
+
+The script checks only that the file is a JSON object. The app validates
+properly on read and falls back to the file defaults if the document is
+malformed, so a bad import shows you the defaults rather than a broken
+page — if an import appears to do nothing, that is the first thing to
+suspect.
 
 ## Deploying
 
