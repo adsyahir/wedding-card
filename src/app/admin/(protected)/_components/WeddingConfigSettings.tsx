@@ -637,11 +637,12 @@ function BahagianTab({
   initialConfig,
   dict,
 }: {
-  initialConfig: { sections: SectionsConfig };
+  initialConfig: { sections: SectionsConfig; rsvpPaxMode: WeddingConfig["rsvpPaxMode"] };
   dict: AdminDict;
 }) {
   const { save, pending, error, success } = useSectionSave(dict);
   const [sections, setSections] = useState<SectionsConfig>({ ...initialConfig.sections });
+  const [rsvpPaxMode, setRsvpPaxMode] = useState(initialConfig.rsvpPaxMode);
 
   const SECTION_TOGGLE_LABELS: { key: keyof SectionsConfig; label: string }[] = [
     { key: "undangan", label: dict.wc_sectionUndangan },
@@ -662,7 +663,7 @@ function BahagianTab({
   }
 
   function handleSave() {
-    void save({ sections });
+    void save({ sections, rsvpPaxMode });
   }
 
   return (
@@ -675,6 +676,31 @@ function BahagianTab({
             <span>{label}</span>
           </label>
         ))}
+      </div>
+
+      <div className="mt-2 border-t border-gold-light/50 pt-4">
+        <p className="mb-1 text-sm font-medium text-brown-deep">{dict.wc_paxModeLabel}</p>
+        <p className="mb-2 text-xs text-brown/70">{dict.wc_paxModeNotice}</p>
+        <div className="flex flex-col gap-2">
+          {(
+            [
+              { value: "adultsChildren", label: dict.wc_paxModeAdultsChildren },
+              { value: "total", label: dict.wc_paxModeTotal },
+              { value: "none", label: dict.wc_paxModeNone },
+            ] as const
+          ).map((option) => (
+            <label key={option.value} className="flex items-center gap-2 text-sm text-brown-deep">
+              <input
+                type="radio"
+                name="rsvpPaxMode"
+                value={option.value}
+                checked={rsvpPaxMode === option.value}
+                onChange={() => setRsvpPaxMode(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <SaveBar dict={dict} pending={pending} error={error} success={success} onSave={handleSave} />

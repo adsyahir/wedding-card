@@ -83,10 +83,13 @@ function CrossIcon() {
 export function RsvpForm({
   onSuccess,
   allowUcapan = true,
+  paxMode = "adultsChildren",
 }: {
   onSuccess?: (result: { attending: boolean; adults: number; children: number }) => void;
   /** False when the admin has closed the ucapan section; the field is then hidden and never sent. */
   allowUcapan?: boolean;
+  /** How to ask for headcount — see `wedding.rsvpPaxMode`. */
+  paxMode?: "adultsChildren" | "total" | "none";
 }) {
   const [attending, setAttending] = useState<boolean | null>(null);
   const [name, setName] = useState("");
@@ -104,6 +107,9 @@ export function RsvpForm({
   const nameId = useId();
   const phoneId = useId();
   const ucapanId = useId();
+  const paxId = useId();
+  const adultsId = useId();
+  const childrenId = useId();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -254,10 +260,19 @@ export function RsvpForm({
         )}
       </div>
 
-      {attending !== false && (
+      {/*
+        Headcount, however the admin chose to ask for it. Whichever mode is
+        active, the server still receives `adults` and `children` — the
+        modes differ only in how the guest is asked, so nothing downstream
+        (the tally, the CSV, the caterer's number) has to care.
+
+        Never shown to someone who answered Tidak Hadir: asking a guest who
+        just said they can't come how many are coming is nonsense.
+      */}
+      {attending !== false && paxMode === "adultsChildren" && (
         <div className="grid grid-cols-2 gap-4">
           <Stepper
-            id="adults"
+            id={adultsId}
             label="Jumlah Dewasa"
             value={adults}
             min={MIN_ADULTS}
@@ -265,7 +280,7 @@ export function RsvpForm({
             onChange={setAdults}
           />
           <Stepper
-            id="children"
+            id={childrenId}
             label="Jumlah Kanak-kanak"
             value={children}
             min={MIN_CHILDREN}
@@ -275,23 +290,31 @@ export function RsvpForm({
         </div>
       )}
 
-      {/*
-        The one free-text field on this form, and it is PUBLIC (after
-        moderation). There used to be a private "Pesanan kepada keluarga"
-        box beside it; having two message fields with opposite visibility
-        was a trap — a guest could easily put something private on a public
-        wall. One field, one meaning.
+      {attending !== false && paxMode === "total" && (
+        <div>
+          <label htmlFor={paxId} className="mb-1 block text-sm font-medium text-brown-deep">
+            Jumlah kehadiran
+          </label>
+          <select
+            id={paxId}
+            value={adults}
+            onChange={(e) => setAdults(Number(e.target.value))}
+            className="w-full rounded-xl border border-gold-light bg-cream px-4 py-2.5 text-brown-deep"
+          >
+            {/* Same bounds the server enforces, imported rather than repeated. */}
+            {Array.from({ length: MAX_ADULTS }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n} orang
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-        Offered on both the Hadir and Tidak Hadir paths: the guests who
-        can't attend are often the ones who most want to send something.
-      */}
       {allowUcapan && (
         <div>
           <label htmlFor={ucapanId} className="mb-1 block text-sm font-medium text-brown-deep">
-            Ucapan{" "}
-            <span className="font-normal text-brown/70">
-              (pilihan &middot; akan dipaparkan di kad setelah disemak)
-            </span>
+            Ucapan anda <span className="font-normal text-brown/70">(jika ada)</span>
           </label>
           <textarea
             id={ucapanId}

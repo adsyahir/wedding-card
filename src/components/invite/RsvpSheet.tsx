@@ -15,9 +15,11 @@ import { RsvpForm } from "./RsvpForm";
 export function RsvpSheet({
   onRsvpSuccess,
   allowUcapan = true,
+  paxMode = "adultsChildren",
 }: {
   onRsvpSuccess?: (result: { attending: boolean; adults: number; children: number }) => void;
   allowUcapan?: boolean;
+  paxMode?: "adultsChildren" | "total" | "none";
 }) {
-  return <RsvpForm onSuccess={onRsvpSuccess} allowUcapan={allowUcapan} />;
+  return <RsvpForm onSuccess={onRsvpSuccess} allowUcapan={allowUcapan} paxMode={paxMode} />;
 }

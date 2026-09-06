@@ -262,6 +262,11 @@ const ms = {
   wc_navLokasi: "Nav: Lokasi",
   wc_navHubungi: "Nav: Hubungi",
   wc_navRsvp: "Nav: RSVP (juga menutup penghantaran RSVP)",
+  wc_paxModeLabel: "Cara tanya jumlah kehadiran",
+  wc_paxModeNotice: "Hanya ditanya kepada tetamu yang memilih Hadir.",
+  wc_paxModeAdultsChildren: "Asingkan dewasa dan kanak-kanak",
+  wc_paxModeTotal: "Satu jumlah sahaja (cth. 3 orang)",
+  wc_paxModeNone: "Jangan tanya (nama, telefon dan ucapan sahaja)",
 
   // Music settings (src/app/admin/(protected)/_components/MusicSettings.tsx)
   music_heading: "Muzik Latar",
@@ -525,6 +530,11 @@ const en: Record<keyof typeof ms, string> = {
   wc_navLokasi: "Nav: Location",
   wc_navHubungi: "Nav: Contact",
   wc_navRsvp: "Nav: RSVP (also blocks RSVP submission)",
+  wc_paxModeLabel: "How to ask for headcount",
+  wc_paxModeNotice: "Only asked of guests who choose Hadir.",
+  wc_paxModeAdultsChildren: "Separate adults and children",
+  wc_paxModeTotal: "A single total (e.g. 3 people)",
+  wc_paxModeNone: "Do not ask (name, phone and wish only)",
 
   music_heading: "Background Music",
   music_noMusic: "No music",

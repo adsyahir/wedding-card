@@ -11,6 +11,13 @@ export type WeddingConfig = {
    */
   presetMusicPath: string | null;
   /**
+   * How the RSVP form asks for headcount:
+   *  - "adultsChildren": separate Dewasa / Kanak-kanak steppers
+   *  - "total":          one "Jumlah kehadiran" dropdown
+   *  - "none":           don't ask at all (name, phone and ucapan only)
+   */
+  rsvpPaxMode: "adultsChildren" | "total" | "none";
+  /**
    * Google Analytics 4 Measurement ID (e.g. "G-XXXXXXXXXX"), or `null` to
    * disable GA entirely. When set, `<GoogleAnalytics>` is rendered ONLY on
    * the public invite page (never under `/admin`) — see `src/app/page.tsx`
@@ -55,6 +62,8 @@ export const wedding = {
 
   // Set to "/music/preset-1.mp3" once you add the file. See README.
   presetMusicPath: null,
+
+  rsvpPaxMode: "adultsChildren",
 
   // Set to a real "G-XXXXXXXXXX" Measurement ID to enable Google Analytics
   // on the public invite page. See README.

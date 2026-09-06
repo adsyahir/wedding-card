@@ -257,6 +257,7 @@ export const weddingConfigDocSchema = z.object({
   rsvpDeadline: isoDateTimeSchema.optional(),
   rsvpDeadlineDisplay: trimmedString(1, 60).optional(),
   contacts: z.array(contactSchema).max(MAX_CONTACTS).optional(),
+  rsvpPaxMode: z.enum(["adultsChildren", "total", "none"]).optional(),
   hashtag: trimmedString(1, 60).optional(),
   doa: trimmedString(1, 1000).optional(),
   sections: sectionsSchema.optional(),

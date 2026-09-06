@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { Reveal } from "./Reveal";
-import { UcapanForm } from "./UcapanForm";
 
 export type PublicWish = {
   name: string;
@@ -57,18 +56,6 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
           Lihat lagi
         </button>
       )}
-
-      <div className="mx-auto mt-12 max-w-md text-left">
-        <Reveal
-          as="h3"
-          className="text-center font-serif text-xl tracking-[0.15em] text-brown-deep uppercase"
-        >
-          Sampaikan Ucapan
-        </Reveal>
-        <div className="mt-6">
-          <UcapanForm />
-        </div>
-      </div>
     </section>
   );
 }
