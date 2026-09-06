@@ -198,6 +198,11 @@ export function WeddingConfigSettings({
     bahagian: dict.wc_tabBahagian,
   };
 
+  const allTabs = [
+    ...TABS.map((id) => ({ id: id as string, label: TAB_LABELS[id] })),
+    ...extraTabs.map(({ id, label }) => ({ id, label })),
+  ];
+
   async function handleReset() {
     setResetPending(true);
     setResetError(null);
@@ -230,11 +235,14 @@ export function WeddingConfigSettings({
               {dict.wc_overriddenBadge}
             </span>
           )}
+          {/* Desktop only. On a phone this sat a thumb's width from the tab
+              row and from Simpan, where a mistap wipes every setting — it
+              moves to the bottom of the panel instead (see below). */}
           <button
             type="button"
             onClick={() => setResetOpen(true)}
             disabled={resetPending}
-            className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+            className="hidden cursor-pointer rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40 sm:block"
           >
             {resetPending ? dict.wc_resetting : dict.wc_resetButton}
           </button>
@@ -246,25 +254,41 @@ export function WeddingConfigSettings({
         </p>
       )}
 
+      {/*
+        On a phone: a native <select>. The scrolling pill row that was here
+        hid half its options off the right edge, so you had to know a tab
+        existed before you could scroll to it — and scrolling a row of tap
+        targets invites selecting one by accident. The OS picker shows every
+        tab at once and cannot be mistapped.
+      */}
+      <label className="sm:hidden">
+        <span className="sr-only">{dict.wc_tabsAriaLabel}</span>
+        <select
+          value={tab}
+          onChange={(e) => setTab(e.target.value)}
+          className="w-full cursor-pointer rounded-lg border border-tan/50 bg-cream px-3 py-2.5 text-sm font-medium text-brown-deep"
+        >
+          {allTabs.map(({ id, label }) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <div
         role="tablist"
         aria-label={dict.wc_tabsAriaLabel}
-        // Eight tabs wrap to three rows on a phone, which pushes the actual
-        // form most of a screen down and makes the panel look like it is
-        // mostly navigation. One scrolling row instead, same as AdminNav.
-        className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1"
+        className="no-scrollbar -mx-1 hidden gap-2 overflow-x-auto px-1 sm:flex"
       >
-        {[
-          ...TABS.map((t) => ({ id: t as string, label: TAB_LABELS[t] })),
-          ...extraTabs.map(({ id, label }) => ({ id, label })),
-        ].map(({ id, label }) => (
+        {allTabs.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap ${
+            className={`shrink-0 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap ${
               tab === id
                 ? "border-goldenrod bg-tan text-brown-deep"
                 : "border-tan/40 bg-cream text-brown-deep"
@@ -281,6 +305,19 @@ export function WeddingConfigSettings({
       {tab === "hubungi" && <HubungiTab initialConfig={initialConfig} dict={dict} />}
       {tab === "bahagian" && <BahagianTab initialConfig={initialConfig} dict={dict} />}
       {extraTabs.find((t) => t.id === tab)?.content}
+
+      {/* The mobile home for Restore-to-default: past the end of the form,
+          separated, and nowhere near Simpan. */}
+      <div className="mt-2 border-t border-tan/30 pt-4 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setResetOpen(true)}
+          disabled={resetPending}
+          className="w-full cursor-pointer rounded-md border border-red-200 px-3 py-2 text-xs text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+        >
+          {resetPending ? dict.wc_resetting : dict.wc_resetButton}
+        </button>
+      </div>
 
       {/*
         Restoring defaults throws away every setting the couple has entered
