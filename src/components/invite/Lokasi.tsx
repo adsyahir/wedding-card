@@ -43,16 +43,19 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
         </address>
       </Reveal>
 
+      {/* Side by side at every width, mobile included. Stacked, two short
+          labels read as a sequence of steps rather than a choice between
+          two map apps. */}
       <Reveal
         delay={0.2}
-        className="mx-auto mt-8 flex max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center"
+        className="mx-auto mt-8 flex max-w-md items-stretch justify-center gap-3"
       >
         <a
           href={config.venue.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("maps_click")}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-tan px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           <GoogleMapsIcon />
           Google Maps
@@ -62,7 +65,7 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("waze_click")}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-goldenrod bg-sand px-6 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-goldenrod bg-sand px-4 py-3 text-sm font-medium text-brown-deep transition-transform hover:scale-[1.02]"
         >
           <WazeIcon />
           Waze
