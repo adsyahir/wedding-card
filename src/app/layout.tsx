@@ -70,7 +70,7 @@ const sans = Jost({
 // admin-editable — see `src/lib/wedding-config.ts`).
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getWeddingConfig();
-  const title = `${config.groom.shortName} & ${config.bride.shortName} — Walimatul Urus`;
+  const title = `${config.groom.shortName} & ${config.bride.shortName} | Walimatul Urus`;
   const description = `Jemputan perkahwinan ${config.groom.shortName} & ${config.bride.shortName}, ${config.dayNameMs} ${config.displayDate} di ${config.venue.name}.`;
 
   return {

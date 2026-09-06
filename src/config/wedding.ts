@@ -60,8 +60,9 @@ export type WeddingConfig = {
   venue: {
     name: string;
     addressLines: string[];
-    lat: number;
-    lng: number;
+    /** Optional — the map falls back to the venue name and address. */
+    lat: number | null;
+    lng: number | null;
     googleMapsUrl: string;
     wazeUrl: string;
   };

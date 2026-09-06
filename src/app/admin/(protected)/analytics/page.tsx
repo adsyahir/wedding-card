@@ -36,7 +36,7 @@ function rangeHref(range: RangeDays): string {
 }
 
 function percentage(numerator: number, denominator: number): string {
-  if (denominator <= 0) return "—";
+  if (denominator <= 0) return "-";
   return `${((numerator / denominator) * 100).toFixed(1)}%`;
 }
 

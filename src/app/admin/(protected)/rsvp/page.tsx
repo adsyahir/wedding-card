@@ -209,7 +209,7 @@ export default async function AdminRsvpPage({
                   </td>
                   {showPax && <td className="px-3 py-2">{row.adults}</td>}
                   {showSplit && <td className="px-3 py-2">{row.children}</td>}
-                  <td className="max-w-[16rem] px-3 py-2 text-brown/80">{row.message ?? "—"}</td>
+                  <td className="max-w-[16rem] px-3 py-2 text-brown/80">{row.message ?? "-"}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {formatDateTime(row.createdAt, lang)}
                   </td>

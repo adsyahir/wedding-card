@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 // defaults rather than the admin-resolved config. A stale alt string on a
 // renamed couple is a cosmetic, non-critical gap; the actual rendered image
 // below always reflects the live, admin-saved config.
-export const alt = `${weddingDefaults.groom.shortName} & ${weddingDefaults.bride.shortName} — Walimatul Urus`;
+export const alt = `${weddingDefaults.groom.shortName} & ${weddingDefaults.bride.shortName} | Walimatul Urus`;
 
 export default async function OpengraphImage() {
   const wedding = await getWeddingConfig();

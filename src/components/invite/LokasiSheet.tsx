@@ -6,6 +6,7 @@ import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
 export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMap: boolean }) {
+  const mapUrl = buildMapEmbedUrl(config.venue);
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       {/* Sans, not script — see the note in Lokasi.tsx. */}
@@ -18,9 +19,9 @@ export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMa
         ))}
       </address>
 
-      {showMap && (
+      {showMap && mapUrl && (
         <iframe
-          src={buildMapEmbedUrl(config.venue)}
+          src={mapUrl}
           title={`Peta lokasi: ${config.venue.name}`}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"

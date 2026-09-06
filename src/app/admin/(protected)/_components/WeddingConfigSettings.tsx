@@ -450,7 +450,7 @@ function ButiranTab({
           className="mt-1 text-2xl text-brown-deep"
           style={{ fontFamily: SCRIPT_FONT_FAMILY[scriptFont] }}
         >
-          {groomShort || "—"} &amp; {brideShort || "—"}
+          {groomShort || "..."} &amp; {brideShort || "..."}
         </div>
       </div>
 
@@ -476,8 +476,11 @@ function LokasiTab({ initialConfig, dict }: { initialConfig: WeddingConfig; dict
           .split("\n")
           .map((l) => l.trim())
           .filter(Boolean),
-        lat: Number(lat),
-        lng: Number(lng),
+        // Blank means "not set", not zero. `Number("")` is 0, so sending it
+        // raw would silently save coordinates at 0,0 — in the Gulf of Guinea
+        // — the moment someone cleared the field.
+        lat: lat.trim() === "" ? null : Number(lat),
+        lng: lng.trim() === "" ? null : Number(lng),
         googleMapsUrl,
         wazeUrl,
       },

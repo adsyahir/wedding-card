@@ -119,11 +119,23 @@ const hostsSchema = z.object({
 const venueSchema = z.object({
   name: trimmedString(1, 150),
   addressLines: z.array(trimmedString(1, 150)).min(1).max(MAX_ADDRESS_LINES),
-  lat: z.number().min(-90, "Latitud mesti antara -90 dan 90").max(90, "Latitud mesti antara -90 dan 90"),
+  // Optional. The map embed queries by venue name and address, so
+  // coordinates are only a fallback for a venue with no usable name — and
+  // most couples paste a Maps link rather than knowing their latitude.
+  // Still range-checked when present: a typo'd coordinate silently pointing
+  // at the wrong hemisphere is worse than none at all.
+  lat: z
+    .number()
+    .min(-90, "Latitud mesti antara -90 dan 90")
+    .max(90, "Latitud mesti antara -90 dan 90")
+    .nullable()
+    .optional(),
   lng: z
     .number()
     .min(-180, "Longitud mesti antara -180 dan 180")
-    .max(180, "Longitud mesti antara -180 dan 180"),
+    .max(180, "Longitud mesti antara -180 dan 180")
+    .nullable()
+    .optional(),
   googleMapsUrl: httpsUrlOnHosts(["google.com", "goo.gl", "maps.app.goo.gl"]),
   wazeUrl: httpsUrlOnHosts(["waze.com"]),
 });
@@ -354,7 +366,16 @@ export function mergeWeddingConfig(
     ...(partial.dayNameMs !== undefined && { dayNameMs: partial.dayNameMs }),
     ...(partial.displayDate !== undefined && { displayDate: partial.displayDate }),
     ...(partial.endTime !== undefined && { endTime: partial.endTime }),
-    ...(partial.venue !== undefined && { venue: partial.venue }),
+    // `lat`/`lng` are optional in the doc but always present (possibly
+    // null) on the resolved config, so an omitted coordinate normalises to
+    // null here rather than leaking `undefined` into the rendered card.
+    ...(partial.venue !== undefined && {
+      venue: {
+        ...partial.venue,
+        lat: partial.venue.lat ?? null,
+        lng: partial.venue.lng ?? null,
+      },
+    }),
     ...(partial.aturCara !== undefined && { aturCara: partial.aturCara }),
     ...(partial.rsvpDeadline !== undefined && { rsvpDeadline: partial.rsvpDeadline }),
     ...(partial.rsvpDeadlineDisplay !== undefined && {
