@@ -320,3 +320,16 @@ input[type="file"]:disabled::file-selector-button {
 [draggable="true"]:active {
   cursor: grabbing;
 }
+
+/* Hide the scrollbar while keeping the element scrollable. Used by the
+   ucapan wall, which drifts on its own and shows edge fades instead — a
+   native scrollbar down the side of a wedding card looks like chrome that
+   escaped from a settings panel. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
