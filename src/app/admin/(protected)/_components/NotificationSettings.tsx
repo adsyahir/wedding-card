@@ -135,7 +135,17 @@ export function NotificationSettings({
         <span>{dict.notif_enable}</span>
       </label>
 
-      <div className="flex flex-col gap-2">
+      {/*
+        Everything below only has meaning while notifications are on, so it
+        is disabled rather than merely ignored — a filled-in recipient with
+        the master switch off reads as "this is set up", when in fact
+        nothing will ever be sent. The Save button stays enabled: turning
+        notifications OFF is itself a change that has to be savable.
+      */}
+      <div
+        className={`flex flex-col gap-2 ${enabled ? "" : "pointer-events-none opacity-50"}`}
+        aria-disabled={!enabled}
+      >
         {[0, 1].map((index) => (
           <label key={index} className="flex flex-col gap-1 text-sm text-brown-deep">
             <span className="font-medium">{dict.notif_recipientLabel.replace("{n}", String(index + 1))}</span>
@@ -145,6 +155,7 @@ export function NotificationSettings({
               onChange={(event) => updateRecipient(index, event.target.value)}
               placeholder={dict.notif_recipientPlaceholder}
               maxLength={254}
+              disabled={!enabled}
               className="rounded-md border border-tan/40 bg-cream px-3 py-1.5 text-sm text-brown-deep"
             />
             {fieldErrors[`notifications.recipients.${index}`] && (
@@ -156,11 +167,15 @@ export function NotificationSettings({
         ))}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div
+        className={`flex flex-col gap-1 ${enabled ? "" : "pointer-events-none opacity-50"}`}
+        aria-disabled={!enabled}
+      >
         <label className="flex items-center gap-2 text-sm text-brown-deep">
           <input
             type="checkbox"
             checked={onRsvp}
+            disabled={!enabled}
             onChange={(event) => setOnRsvp(event.target.checked)}
           />
           <span>{dict.notif_onRsvp}</span>
@@ -169,6 +184,7 @@ export function NotificationSettings({
           <input
             type="checkbox"
             checked={onUcapan}
+            disabled={!enabled}
             onChange={(event) => setOnUcapan(event.target.checked)}
           />
           <span>{dict.notif_onUcapan}</span>
@@ -196,7 +212,7 @@ export function NotificationSettings({
         <button
           type="button"
           onClick={handleTestSend}
-          disabled={testPending}
+          disabled={testPending || !enabled}
           className="rounded-md border border-tan/40 px-4 py-1.5 text-sm font-medium text-brown-deep transition hover:bg-tan/20 disabled:opacity-50"
         >
           {testPending ? dict.notif_testSending : dict.notif_testSend}
