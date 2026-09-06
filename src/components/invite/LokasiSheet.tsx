@@ -1,5 +1,6 @@
 "use client";
 
+import { buildMapEmbedUrl } from "@/lib/map-embed";
 import type { WeddingConfig } from "@/config/wedding";
 import { trackEvent } from "@/lib/track";
 
@@ -18,7 +19,7 @@ export function LokasiSheet({ config, showMap }: { config: WeddingConfig; showMa
 
       {showMap && (
         <iframe
-          src={`https://www.google.com/maps?q=${config.venue.lat},${config.venue.lng}&z=15&output=embed`}
+          src={buildMapEmbedUrl(config.venue)}
           title={`Peta lokasi: ${config.venue.name}`}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
