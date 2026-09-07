@@ -1,37 +1,59 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "wedding-card-arif",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2026-09-03",
-	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-	// Public, non-secret deployment config. SET THIS to the real origin
-	// before going live: it is what the "Lihat senarai RSVP" links in the
-	// notification emails point at, and what the WhatsApp share preview
-	// resolves its image against. No trailing slash. Deliberately NOT
-	// derived from the request Host, which a guest controls — see
-	// src/lib/site-url.ts.
-	"vars": {
-		"SITE_URL": "https://wedding-card-arif.workers.dev"
-	},
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "wedding-card-db",
-			// LOCAL-ONLY placeholder. No remote D1 database exists yet — Miniflare
-			// just keys its local SQLite store off this value. Before deploying,
-			// run `wrangler d1 create wedding-card-db` and paste the real id here.
-			"database_id": "d53c99d8-2853-4a35-89f3-6da853c8147f",
-			"migrations_dir": "drizzle"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "ASSETS_BUCKET",
-			"bucket_name": "wedding-card-assets"
-		}
-	]
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  "name": "wedding-card-arif",
+
+  "main": ".open-next/worker.js",
+
+  "compatibility_date": "2026-09-03",
+
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "vars": {
+    "SITE_URL": "https://ariff-drsyazni.adsyahir.com"
+  },
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "wedding-card-db",
+      "database_id": "956a23e4-0bac-4f2f-9357-e2824098debb",
+      "migrations_dir": "drizzle"
+    },
+    {
+      "binding": "wedding_card_db",
+      "database_name": "wedding-card-db",
+      "database_id": "956a23e4-0bac-4f2f-9357-e2824098debb",
+      "remote": false
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "ASSETS_BUCKET",
+      "bucket_name": "wedding-card-assets"
+    },
+    {
+      "bucket_name": "wedding-card-assets",
+      "binding": "wedding_card_assets"
+    }
+  ],
+
+  "routes": [
+    {
+      "pattern": "ariff-drsyazni.adsyahir.com",
+      "custom_domain": true
+    }
+  ]
 }
