@@ -24,7 +24,7 @@ export function AturCara({ config }: { config: WeddingConfig }) {
                 />
               )}
               <div>
-                <p className="font-serif text-lg font-medium text-brown-deep">{item.time}</p>
+                <p className="font-serif text-lg font-medium text-brown-deep lining-nums">{item.time}</p>
                 <p className="mt-0.5 text-sm text-brown">{item.label}</p>
               </div>
             </div>

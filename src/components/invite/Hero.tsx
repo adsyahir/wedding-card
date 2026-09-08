@@ -38,7 +38,14 @@ export function Hero({ config }: { config: WeddingConfig }) {
           {config.dayNameMs}
         </p>
 
-        <p className="font-serif text-3xl tracking-[0.15em] text-brown-deep">
+        {/*
+          `lining-nums`: Cormorant Garamond defaults to OLD-STYLE figures,
+          where 0 sits at x-height and 1/2 have descenders, so "01 | 11 |
+          2026" read as an uneven, wobbling line. The family ships a lining
+          set (verified: the woff2 carries the `lnum` feature), which puts
+          every digit on the same cap height. Same typeface, steady line.
+        */}
+        <p className="font-serif text-3xl tracking-[0.15em] text-brown-deep lining-nums">
           {day}
           <span className="mx-2 text-goldenrod">|</span>
           {month}

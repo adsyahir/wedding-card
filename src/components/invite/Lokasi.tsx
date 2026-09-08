@@ -33,7 +33,13 @@ export function Lokasi({ config }: { config: WeddingConfig }) {
           actually trying to find the place, so a legible copy of the venue
           name is always one tap away whatever font is chosen here.
         */}
-        <p className="font-script text-3xl text-brown-deep">{config.venue.name}</p>
+        {/*
+          Deliberately NOT the script face, unlike the couple's names and
+          the hashtag. This is the line a guest reads to find the building,
+          and a script face is exactly where an older guest loses it. It
+          follows the Hero's venue line instead, which is already serif.
+        */}
+        <p className="font-serif text-2xl text-brown-deep">{config.venue.name}</p>
         <address className="mt-3 text-base leading-7 text-brown not-italic">
           {config.venue.addressLines.map((line) => (
             <span key={line} className="block">
