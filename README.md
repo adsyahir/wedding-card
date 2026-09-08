@@ -359,7 +359,6 @@ writes to. There is no separate local database to keep in sync.
 npm run db:migrate:local   # create/upgrade the local schema
 npm run db:studio          # browse it in Drizzle Studio
 npm run db:local:path      # print the .sqlite path, to open in any GUI
-npm run db:local:link      # point ./wedding-local.sqlite at that file
 ```
 
 `npm run db:local:path` prints a path you can open directly in TablePlus,
@@ -386,8 +385,6 @@ DBeaver, `sqlite3`, or any other SQLite client.
   settings between environments as a JSON file (see below)
 - `npm run db:studio` — browse the local SQLite database in Drizzle Studio
 - `npm run db:local:path` — print the local SQLite file path
-- `npm run db:local:link` — link `./wedding-local.sqlite` to it (re-run after
-  changing `database_id`, which silently moves the store to a new, empty file)
 
 ## Testing
 
