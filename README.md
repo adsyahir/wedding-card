@@ -388,6 +388,9 @@ DBeaver, `sqlite3`, or any other SQLite client.
   (R2 + `gallery_images`); `--remote` requires typing `TAMBAH`
 - `npm run gallery:truncate` — remove every gallery image (objects then rows);
   `--remote` requires typing `PADAM`
+- `node scripts/build-world-map.mjs` — regenerate `src/lib/world-map.json`,
+  the analytics map geometry (run by hand; `world-atlas` and friends are
+  devDependencies and never reach the Worker)
 - `npm run db:local:path` — print the local SQLite file path
 
 ## Testing

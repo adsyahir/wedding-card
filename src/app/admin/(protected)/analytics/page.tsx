@@ -10,6 +10,7 @@ import {
   getReferrerBreakdown,
   getRsvpFunnel,
   getTopCities,
+  getTopCityPoints,
   getTopCountries,
   resolveDateRange,
   resolveRangeDays,
@@ -23,6 +24,7 @@ import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
 import { StatCard } from "../_components/StatCard";
+import { WorldMap } from "./WorldMap";
 import { VisitsChart } from "./VisitsChart";
 
 // Never statically optimized/cached — every request must actually run the
@@ -135,6 +137,7 @@ export default async function AdminAnalyticsPage({
     liveTodayPoint,
     topCountries,
     topCities,
+    cityPoints,
     deviceBreakdown,
     osBreakdown,
     browserBreakdown,
@@ -146,12 +149,32 @@ export default async function AdminAnalyticsPage({
     getLiveDayStats(range.todayDay),
     getTopCountries(range),
     getTopCities(range),
+    getTopCityPoints(range),
     getDeviceBreakdown(range),
     getOsBreakdown(range),
     getBrowserBreakdown(range),
     getReferrerBreakdown(range),
     getRsvpFunnel(range),
   ]);
+
+  /*
+   * ISO alpha-2 is what Cloudflare gives us and what the rows store, but
+   * "MY" is not a thing anyone wants to read in a list. `Intl.DisplayNames`
+   * is built into the runtime, so this costs no dependency and follows the
+   * admin's own language. Falls back to the raw code if a region is
+   * unknown to the runtime.
+   */
+  const regionNames = new Intl.DisplayNames([lang === "en" ? "en" : "ms"], { type: "region" });
+  const countryName = (code: string) => {
+    try {
+      return regionNames.of(code.toUpperCase()) ?? code;
+    } catch {
+      return code;
+    }
+  };
+  const countryNames = Object.fromEntries(
+    topCountries.map((c) => [c.key.toUpperCase(), countryName(c.key)]),
+  );
 
   const chartData: DailyPoint[] = [...historicalPoints, liveTodayPoint];
 
@@ -189,9 +212,25 @@ export default async function AdminAnalyticsPage({
         <VisitsChart data={chartData} dict={dict} />
       </section>
 
+      <section className="flex flex-col gap-3">
+        <h2 className="font-serif text-xl text-brown-deep">{dict.analytics_mapHeading}</h2>
+        <div className="rounded-xl border border-tan/30 bg-sand/40 p-3 sm:p-4">
+          <WorldMap
+            countries={topCountries}
+            cities={cityPoints}
+            countryNames={countryNames}
+            dict={dict}
+          />
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel title={dict.analytics_panelCountries}>
-          <BreakdownList rows={topCountries} emptyLabel={dict.analytics_emptyCountries} />
+          <BreakdownList
+            rows={topCountries}
+            emptyLabel={dict.analytics_emptyCountries}
+            formatKey={countryName}
+          />
         </Panel>
         <Panel title={dict.analytics_panelCities}>
           <BreakdownList rows={topCities} emptyLabel={dict.analytics_emptyCities} />

@@ -199,6 +199,12 @@ const ms = {
   analytics_chartTooltipDay: "Hari: {day}",
   analytics_chartSeriesViews: "Lawatan",
   analytics_chartSeriesUniques: "Pelawat unik",
+  analytics_mapHeading: "Peta Dunia",
+  analytics_mapAria: "Peta dunia menunjukkan negara dan bandar tetamu",
+  analytics_mapLegend:
+    "Warna menunjukkan bilangan lawatan mengikut negara. Bulatan menandakan bandar; saiznya mengikut bilangan lawatan.",
+  analytics_mapNoCityCoords:
+    "Warna menunjukkan bilangan lawatan mengikut negara. Bandar akan muncul sebagai bulatan apabila data lokasi baharu direkodkan.",
   analytics_panelCountries: "Negara teratas",
   analytics_panelCities: "Bandar teratas",
   analytics_emptyCountries: "Tiada data negara lagi.",
@@ -524,6 +530,12 @@ const en: Record<keyof typeof ms, string> = {
   analytics_chartTooltipDay: "Day: {day}",
   analytics_chartSeriesViews: "Visits",
   analytics_chartSeriesUniques: "Unique visitors",
+  analytics_mapHeading: "World Map",
+  analytics_mapAria: "World map showing visitor countries and cities",
+  analytics_mapLegend:
+    "Colour shows visits per country. Circles mark cities, sized by visit count.",
+  analytics_mapNoCityCoords:
+    "Colour shows visits per country. Cities appear as circles once new location data is recorded.",
   analytics_panelCountries: "Top countries",
   analytics_panelCities: "Top cities",
   analytics_emptyCountries: "No country data yet.",

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, countDistinct, eq, gte, lt, lte, desc } from "drizzle-orm";
+import { and, asc, avg, count, countDistinct, desc, eq, gte, isNotNull, lt, lte } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
 import { getDb } from "@/db";
@@ -134,6 +134,67 @@ export async function getTopCountries(range: DateRange, limit = 10): Promise<Key
 
 export async function getTopCities(range: DateRange, limit = 10): Promise<KeyCount[]> {
   return topByColumn(pageViews.city, range, limit);
+}
+
+export type CityPoint = {
+  city: string;
+  country: string | null;
+  lat: number;
+  lng: number;
+  count: number;
+};
+
+/**
+ * Top cities that have usable coordinates, for the dots on the analytics
+ * map. Grouped by city AND country, so a Kajang in two countries stays two
+ * dots rather than being averaged into the sea between them.
+ *
+ * Rows written before `latitude`/`longitude` existed have none, and
+ * Cloudflare does not always supply them, so this list is a SUBSET of
+ * `getTopCities` by design — the map plots what it can place, and the list
+ * beside it still shows every city. `avg` because the stored values are
+ * already rounded to ~11km, so several readings for one city differ only in
+ * that last place.
+ */
+export async function getTopCityPoints(range: DateRange, limit = 25): Promise<CityPoint[]> {
+  const db = getDb();
+  const n = count();
+  const rows = await db
+    .select({
+      city: pageViews.city,
+      country: pageViews.country,
+      lat: avg(pageViews.latitude),
+      lng: avg(pageViews.longitude),
+      n,
+    })
+    .from(pageViews)
+    .where(
+      and(
+        gte(pageViews.ts, range.start),
+        lt(pageViews.ts, range.end),
+        isNotNull(pageViews.city),
+        isNotNull(pageViews.latitude),
+        isNotNull(pageViews.longitude),
+      ),
+    )
+    .groupBy(pageViews.city, pageViews.country)
+    .orderBy(desc(n))
+    .limit(limit);
+
+  const points: CityPoint[] = [];
+  for (const row of rows as {
+    city: string | null;
+    country: string | null;
+    lat: unknown;
+    lng: unknown;
+    n: number;
+  }[]) {
+    const lat = Number(row.lat);
+    const lng = Number(row.lng);
+    if (!row.city || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    points.push({ city: row.city, country: row.country, lat, lng, count: row.n });
+  }
+  return points;
 }
 
 export async function getDeviceBreakdown(range: DateRange): Promise<KeyCount[]> {

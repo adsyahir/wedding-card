@@ -32,6 +32,19 @@ import { feature } from "topojson-client";
 import countries from "i18n-iso-countries";
 
 const require = createRequire(import.meta.url);
+/*
+ * 110m, deliberately, even though it omits the smallest countries.
+ *
+ * The 50m set does include Singapore — which a Malaysian wedding will
+ * certainly see — but it produces 1.1MB of path data against 123KB, and
+ * this JSON is imported by a server component, so it lands in the Worker
+ * bundle. Worse, it buys nothing visually: at this canvas width Singapore
+ * is about one pixel across, so its fill would be invisible either way.
+ *
+ * Small countries are covered by the CITY DOTS instead, which are placed
+ * from coordinates and so do not depend on the polygon existing at all.
+ * A Singapore visit shows as a dot over Singapore.
+ */
 const topology = require("world-atlas/countries-110m.json");
 
 const WIDTH = 1000;
