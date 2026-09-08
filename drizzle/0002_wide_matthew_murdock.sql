@@ -1,0 +1,1 @@
+ALTER TABLE `sessions` ADD `idle_window_seconds` integer DEFAULT 7200 NOT NULL;

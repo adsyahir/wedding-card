@@ -39,6 +39,9 @@ const GENERIC_LOGIN_ERROR = "Nama pengguna atau kata laluan tidak sah.";
 const loginSchema = z.object({
   username: z.string().min(1).max(64),
   password: z.string().min(1).max(200),
+  // Opt-in, and absent means false: a client that does not send the field
+  // must never get the long-lived session by accident.
+  remember: z.boolean().optional(),
 });
 
 function noStore(status: number, body: unknown, extraHeaders?: HeadersInit): Response {
@@ -129,18 +132,22 @@ export async function POST(request: Request): Promise<Response> {
       .set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() })
       .where(eq(adminUsers.id, user.id));
 
-    const { token, csrfToken } = await createSession(user.id);
+    const remember = parsed.data.remember === true;
+    const { token, csrfToken, cookieMaxAgeSeconds } = await createSession(user.id, remember);
 
     const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+    cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(cookieMaxAgeSeconds));
     // Companion, JS-readable cookie carrying the raw CSRF token — see
     // `csrfCookieOptions` in `src/lib/session.ts` for why this is safe.
     // The response body also still carries it (harmless, kept for
     // backwards-compatible callers), but the cookie is the source of truth
     // `src/lib/csrf-client.ts` reads from, which works in any tab.
-    cookieStore.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions());
+    cookieStore.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions(cookieMaxAgeSeconds));
 
-    await logAudit({ adminUserId: user.id, action: "login" });
+    // Recorded distinctly: a 30-day session is a different security event
+    // from a 12-hour one, and the audit log is where you would go to find
+    // out how a session was still alive a fortnight later.
+    await logAudit({ adminUserId: user.id, action: remember ? "login.remember" : "login" });
 
     // The CSRF token travels ONLY in the __Host-wc_csrf cookie, which any
     // admin tab can read. It used to also be returned here for the client

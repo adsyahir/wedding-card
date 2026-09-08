@@ -81,6 +81,7 @@ const ms = {
   login_usernameLabel: "Nama Pengguna",
   login_passwordLabel: "Kata Laluan",
   login_submit: "Log Masuk",
+  login_remember: "Ingat saya selama 30 hari",
   login_submitting: "Log Masuk…",
 
   // Shared across many client components
@@ -394,6 +395,7 @@ const en: Record<keyof typeof ms, string> = {
   login_usernameLabel: "Username",
   login_passwordLabel: "Password",
   login_submit: "Log In",
+  login_remember: "Remember me for 30 days",
   login_submitting: "Logging in…",
 
   common_unexpectedError: "Unexpected error. Please try again.",

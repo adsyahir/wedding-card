@@ -23,7 +23,27 @@ export { SESSION_COOKIE_NAME };
 const IDLE_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
 const ABSOLUTE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-export type CreatedSession = { token: string; csrfToken: string };
+/*
+ * "Ingat saya" windows.
+ *
+ * A remembered session trades security for the family not re-typing a
+ * password every afternoon during the run-up to the wedding. It is a
+ * deliberate trade, kept honest three ways: it is opt-in per login, never
+ * the default; it still has a hard 30-day ceiling rather than being
+ * endless; and logout still revokes it server-side, so "remember me" can
+ * always be undone from any device that has the session.
+ *
+ * Idle and absolute are equal here on purpose. A shorter idle window would
+ * log out exactly the person who asked not to be logged out.
+ */
+const REMEMBER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export type CreatedSession = {
+  token: string;
+  csrfToken: string;
+  /** How long the cookies should live: the session's absolute window. */
+  cookieMaxAgeSeconds: number;
+};
 export type ValidSession = { adminUserId: string; csrfHash: string };
 
 /**
@@ -32,14 +52,28 @@ export type ValidSession = { adminUserId: string; csrfHash: string };
  * `RateLimitIncrementer` seam in `src/lib/rate-limit.ts`).
  */
 
-/** The `{ idleExpiresAt, absoluteExpiresAt }` pair for a brand-new session created at `now`. */
-export function computeNewSessionExpiry(now: Date): {
+/**
+ * The expiry fields for a brand-new session created at `now`.
+ *
+ * `idleWindowSeconds` is returned (and stored) rather than re-read from a
+ * constant later, because the two kinds of session slide by different
+ * amounts — see `REMEMBER_WINDOW_MS`.
+ */
+export function computeNewSessionExpiry(
+  now: Date,
+  remember = false,
+): {
   idleExpiresAt: Date;
   absoluteExpiresAt: Date;
+  idleWindowSeconds: number;
 } {
+  const idleMs = remember ? REMEMBER_WINDOW_MS : IDLE_WINDOW_MS;
+  const absoluteMs = remember ? REMEMBER_WINDOW_MS : ABSOLUTE_WINDOW_MS;
+
   return {
-    idleExpiresAt: new Date(now.getTime() + IDLE_WINDOW_MS),
-    absoluteExpiresAt: new Date(now.getTime() + ABSOLUTE_WINDOW_MS),
+    idleExpiresAt: new Date(now.getTime() + idleMs),
+    absoluteExpiresAt: new Date(now.getTime() + absoluteMs),
+    idleWindowSeconds: idleMs / 1000,
   };
 }
 
@@ -60,12 +94,19 @@ export function isSessionExpired(
 
 /**
  * The slid-forward `idleExpiresAt` for a still-valid session being used at
- * `now`: `now + IDLE_WINDOW_MS`, capped so it never exceeds
+ * `now`: `now + idleWindowSeconds`, capped so it never exceeds
  * `absoluteExpiresAt` — a session can be kept alive by continuous use for
  * up to the absolute window, never longer.
+ *
+ * The window comes from the session row, not a constant: a remembered
+ * session slides by 30 days, an ordinary one by 2 hours.
  */
-export function computeSlidingIdleExpiry(now: Date, absoluteExpiresAt: Date): Date {
-  return new Date(Math.min(now.getTime() + IDLE_WINDOW_MS, absoluteExpiresAt.getTime()));
+export function computeSlidingIdleExpiry(
+  now: Date,
+  absoluteExpiresAt: Date,
+  idleWindowSeconds: number,
+): Date {
+  return new Date(Math.min(now.getTime() + idleWindowSeconds * 1000, absoluteExpiresAt.getTime()));
 }
 
 /**
@@ -74,14 +115,20 @@ export function computeSlidingIdleExpiry(now: Date, absoluteExpiresAt: Date): Da
  * caller's immediate use (setting the cookie / response body) — from this
  * point on, only their hashes exist, in the database.
  */
-export async function createSession(adminUserId: string): Promise<CreatedSession> {
+export async function createSession(
+  adminUserId: string,
+  remember = false,
+): Promise<CreatedSession> {
   const token = randomToken(32);
   const csrfToken = randomToken(32);
 
   const [tokenHash, csrfHash] = await Promise.all([sha256Hex(token), sha256Hex(csrfToken)]);
 
   const now = new Date();
-  const { idleExpiresAt, absoluteExpiresAt } = computeNewSessionExpiry(now);
+  const { idleExpiresAt, absoluteExpiresAt, idleWindowSeconds } = computeNewSessionExpiry(
+    now,
+    remember,
+  );
 
   const db = getDb();
   await db.insert(sessions).values({
@@ -91,9 +138,14 @@ export async function createSession(adminUserId: string): Promise<CreatedSession
     createdAt: now,
     idleExpiresAt,
     absoluteExpiresAt,
+    idleWindowSeconds,
   });
 
-  return { token, csrfToken };
+  // The cookie lives as long as the session possibly can; the SERVER decides
+  // when it is actually dead. A cookie that expired sooner would log out an
+  // admin who was still actively using the dashboard, which is exactly what
+  // sliding the idle expiry exists to prevent.
+  return { token, csrfToken, cookieMaxAgeSeconds: Math.floor((absoluteExpiresAt.getTime() - now.getTime()) / 1000) };
 }
 
 /**
@@ -114,7 +166,11 @@ export async function validateSession(token: string): Promise<ValidSession | nul
   const now = new Date();
   if (isSessionExpired(row, now)) return null;
 
-  const newIdleExpiresAt = computeSlidingIdleExpiry(now, row.absoluteExpiresAt);
+  const newIdleExpiresAt = computeSlidingIdleExpiry(
+    now,
+    row.absoluteExpiresAt,
+    row.idleWindowSeconds,
+  );
 
   await db
     .update(sessions)

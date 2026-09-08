@@ -133,7 +133,12 @@ export function BottomNav({
       // without this the first Tab on the cover lands on a button nobody
       // can see.
       inert={!shown}
-      className={`fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] justify-around border-t border-gold-light/60 bg-sand/90 pt-2 pb-safe backdrop-blur transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${
+      // Decelerating curve rather than plain ease-out: the bar arrives
+      // quickly and settles, which reads as the nav coming to rest rather
+      // than sliding to a stop. Opacity is deliberately faster than the
+      // slide (250ms of a 450ms move) so it is legible before it lands
+      // instead of fading in after it has already arrived.
+      className={`fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] justify-around border-t border-gold-light/60 bg-sand/90 pt-2 pb-safe backdrop-blur transition-[transform,opacity] duration-[450ms,250ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
         shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"
       }`}
     >

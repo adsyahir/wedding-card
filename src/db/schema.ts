@@ -43,6 +43,18 @@ export const sessions = sqliteTable(
     csrfHash: text("csrf_hash").notNull(),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     idleExpiresAt: integer("idle_expires_at", { mode: "timestamp" }).notNull(),
+    /*
+     * How far `idleExpiresAt` slides forward each time the session is used.
+     * Stored per session rather than read from a constant because "remember
+     * me" sessions have a much longer idle window than ordinary ones — with
+     * a single global constant, using a remembered session would shrink its
+     * idle expiry back to the short window and log the admin out anyway.
+     */
+    // Defaulted so the migration can add the column to a table that already
+    // has rows: SQLite refuses ADD COLUMN NOT NULL without one. The default
+    // is the ordinary (non-remembered) window, which is the right value for
+    // every session that existed before this column did.
+    idleWindowSeconds: integer("idle_window_seconds").notNull().default(2 * 60 * 60),
     absoluteExpiresAt: integer("absolute_expires_at", {
       mode: "timestamp",
     }).notNull(),
