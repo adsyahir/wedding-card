@@ -130,18 +130,23 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
             A fixed-height window rather than the full list: with fifty
             wishes the page becomes mostly wall, and everything below it
             (kehadiran, the hashtag) falls off the end of a long scroll.
+
+            20rem shows two or three wishes at a time. Taller reads as the
+            whole page being the wall; shorter and the drift has nothing to
+            reveal. The edge fade shrinks with it, since 2rem at each end of
+            a 20rem box eats a fifth of the readable area.
           */}
           <div
             ref={scrollRef}
             tabIndex={0}
             role="region"
             aria-label="Ucapan daripada tetamu"
-            className="no-scrollbar fade-edges max-h-[26rem] overflow-y-auto px-1"
+            className="no-scrollbar fade-edges max-h-[20rem] overflow-y-auto px-1 [--fade:1.5rem]"
           >
-            <div className="flex flex-col gap-8 py-2 text-center">
+            <div className="flex flex-col gap-6 py-2 text-center">
               {wishes.map((wish, index) => (
                 <div key={`${wish.name}-${wish.createdAt}-${index}`} className="px-2">
-                  <p className="font-serif text-lg leading-8 text-brown-deep italic">
+                  <p className="font-serif text-base leading-7 text-brown-deep italic">
                     &ldquo;{wish.message}&rdquo;
                   </p>
                   <p className="mt-2 text-xs font-medium tracking-[0.15em] text-brown uppercase">
