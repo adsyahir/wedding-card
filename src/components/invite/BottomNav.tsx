@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 
 export type NavKey = "kalendar" | "lokasi" | "hubungi" | "rsvp";
@@ -59,6 +60,56 @@ const ITEMS: { key: NavKey; label: string; Icon: () => ReactElement }[] = [
   { key: "rsvp", label: "RSVP", Icon: HeartIcon },
 ];
 
+/**
+ * How far the guest must scroll before the nav appears. Small on purpose:
+ * this is "they have started reading", not "they have read a section".
+ */
+const REVEAL_AFTER_PX = 24;
+
+/**
+ * True once the guest has scrolled past `REVEAL_AFTER_PX`.
+ *
+ * The nav is hidden on the first screen so the hero lands as one clean
+ * full-height card — the couple's names, the date and the venue with
+ * nothing docked over the bottom of it. It slides in as soon as there is
+ * any intent to go further, which is also the first moment it is any use.
+ */
+function useScrolled(): boolean {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const read = () => {
+      frame = 0;
+      // A page too short to scroll would otherwise hide the nav forever.
+      const scrollable = document.documentElement.scrollHeight > window.innerHeight + 8;
+      setScrolled(!scrollable || window.scrollY > REVEAL_AFTER_PX);
+    };
+
+    // rAF-coalesced: scroll fires far more often than the DOM can change,
+    // and setState per event would rerender the nav dozens of times a
+    // second for a boolean that flips once.
+    const onScroll = () => {
+      if (frame === 0) frame = requestAnimationFrame(read);
+    };
+
+    // Run once on mount: a reload can restore a scroll position partway
+    // down the page, where the nav must already be visible.
+    read();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  return scrolled;
+}
+
 export function BottomNav({
   items,
   onSelect,
@@ -70,13 +121,21 @@ export function BottomNav({
   registerTriggerRef: (key: NavKey, el: HTMLButtonElement | null) => void;
 }) {
   const visibleItems = ITEMS.filter(({ key }) => items?.[key] !== false);
+  const shown = useScrolled();
 
   if (visibleItems.length === 0) return null;
 
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] justify-around border-t border-gold-light/60 bg-sand/90 pt-2 pb-safe backdrop-blur"
+      // `inert` while hidden, not just transparent: a translated-away nav is
+      // still in the tab order and still reachable by a screen reader, so
+      // without this the first Tab on the cover lands on a button nobody
+      // can see.
+      inert={!shown}
+      className={`fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[480px] justify-around border-t border-gold-light/60 bg-sand/90 pt-2 pb-safe backdrop-blur transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${
+        shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"
+      }`}
     >
       {visibleItems.map(({ key, label, Icon }) => (
         <button

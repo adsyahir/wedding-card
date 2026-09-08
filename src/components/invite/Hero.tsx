@@ -7,7 +7,15 @@ export function Hero({ config }: { config: WeddingConfig }) {
   const [day, month, year] = formatNumeric(config.date);
 
   return (
-    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
+    /*
+     * `min-h-dvh`, not `min-h-screen`. `100vh` on a phone is the viewport
+     * with the browser chrome RETRACTED, so with the URL bar showing the
+     * hero is taller than what you can actually see and the venue line sits
+     * just below the fold — which is the one line a guest needs. `100dvh`
+     * tracks the visible height, so the first screen is genuinely one
+     * screen.
+     */
+    <section className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
       {/* Sized generously and bled slightly off the edges: at 88px these
           read as stray marks on a phone rather than as framing. */}
       <BotanicalCorner className="pointer-events-none absolute -top-2 -left-3" />
