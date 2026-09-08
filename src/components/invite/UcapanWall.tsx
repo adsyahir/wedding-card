@@ -125,31 +125,39 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
           <p>Jadilah yang pertama menyampaikan ucapan.</p>
         </Reveal>
       ) : (
-        <Reveal delay={0.1} className="relative mx-auto mt-8 max-w-sm">
+        <Reveal delay={0.1} className="relative mx-auto mt-8 max-w-[16rem]">
           {/*
             A fixed-height window rather than the full list: with fifty
             wishes the page becomes mostly wall, and everything below it
             (kehadiran, the hashtag) falls off the end of a long scroll.
 
-            Narrower than the sections around it (max-w-sm against the
-            card's own width) so the wishes read as a quoted column rather
-            than full-width body text: a short line length is what makes a
-            run of italic serif quotes scannable.
+            Sized to match the reference card the design follows
+            (kadkahwinmy.com/invite/26761/drsyazni-ariff), measured off the
+            live page rather than eyeballed: a 258x236px scroll window,
+            14.4px/20px body text, a 12.6px uppercase name 4px under it, and
+            20px between one wish and the next.
+
+            Two deliberate consequences. The quotes are the SANS at body
+            weight, not italic serif — at 14px an italic serif is markedly
+            harder to read, and the reference is right about that. And there
+            is no edge fade: the reference hard-clips, so a wish is cut
+            mid-line at the bottom, which is what tells you the list
+            continues.
           */}
           <div
             ref={scrollRef}
             tabIndex={0}
             role="region"
             aria-label="Ucapan daripada tetamu"
-            className="no-scrollbar fade-edges max-h-[26rem] overflow-y-auto px-1"
+            className="no-scrollbar max-h-[14.75rem] overflow-y-auto"
           >
-            <div className="flex flex-col gap-8 py-2 text-center">
+            <div className="flex flex-col gap-5 py-2 text-center">
               {wishes.map((wish, index) => (
-                <div key={`${wish.name}-${wish.createdAt}-${index}`} className="px-2">
-                  <p className="font-serif text-lg leading-8 text-brown-deep italic">
+                <div key={`${wish.name}-${wish.createdAt}-${index}`}>
+                  <p className="text-[0.9rem] leading-5 text-brown">
                     &ldquo;{wish.message}&rdquo;
                   </p>
-                  <p className="mt-2 text-xs font-medium tracking-[0.15em] text-brown uppercase">
+                  <p className="mt-1 text-[0.79rem] leading-5 text-brown/80 uppercase">
                     {wish.name}
                   </p>
                 </div>
