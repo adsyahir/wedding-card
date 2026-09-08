@@ -22,6 +22,13 @@
       "when": 1788856577630,
       "tag": "0002_wide_matthew_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788858855364,
+      "tag": "0003_violet_lifeguard",
+      "breakpoints": true
     }
   ]
 }

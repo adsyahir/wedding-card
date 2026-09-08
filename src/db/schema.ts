@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
  * Drizzle schema for the wedding-card D1 database.
@@ -116,6 +116,18 @@ export const pageViews = sqliteTable(
     country: text("country"),
     region: text("region"),
     city: text("city"),
+    /*
+     * Cloudflare's edge estimate for the request, ROUNDED TO ONE DECIMAL
+     * PLACE (~11km) at write time — see `src/app/api/track/route.ts`.
+     *
+     * Kept only so the analytics map can put a dot where a city is; the
+     * city NAME beside it is already the more precise statement, so this
+     * adds a pin, not a new disclosure. Nullable because rows written
+     * before this column existed have none, and because Cloudflare does not
+     * always supply coordinates.
+     */
+    latitude: real("latitude"),
+    longitude: real("longitude"),
     referrerHost: text("referrer_host"),
     deviceType: text("device_type"),
     os: text("os"),

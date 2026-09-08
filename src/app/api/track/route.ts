@@ -96,10 +96,35 @@ function normalizeReferrerHost(referrer: string | undefined, requestHost: string
  * Every field is nullable: local dev (`next dev`) has none of these, and
  * that must never break the beacon.
  */
-function getGeo(request: Request): { country: string | null; region: string | null; city: string | null } {
+/**
+ * Coordinates are rounded to ONE DECIMAL PLACE (~11km) before they are
+ * stored. Cloudflare reports far more precision than that, and none of it
+ * is wanted: the map needs to know which city a dot belongs near, and the
+ * city NAME stored alongside already says that more precisely. Keeping the
+ * raw figure would make the row more identifying than the rest of the
+ * table for no gain.
+ *
+ * Returns null for anything unparseable or out of range, so a malformed
+ * edge value can never be written as a coordinate.
+ */
+function coarseCoord(value: unknown, limit: number): number | null {
+  const n = typeof value === "string" ? Number(value) : typeof value === "number" ? value : NaN;
+  if (!Number.isFinite(n) || Math.abs(n) > limit) return null;
+  return Math.round(n * 10) / 10;
+}
+
+function getGeo(request: Request): {
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+} {
   let country: string | null = null;
   let region: string | null = null;
   let city: string | null = null;
+  let latitude: number | null = null;
+  let longitude: number | null = null;
 
   try {
     const { cf } = getCloudflareContext();
@@ -107,6 +132,8 @@ function getGeo(request: Request): { country: string | null; region: string | nu
       if (typeof cf.country === "string") country = cf.country;
       if (typeof cf.region === "string") region = cf.region;
       if (typeof cf.city === "string") city = cf.city;
+      latitude = coarseCoord(cf.latitude, 90);
+      longitude = coarseCoord(cf.longitude, 180);
     }
   } catch {
     // No Cloudflare request context available (e.g. `next dev` without the
@@ -121,7 +148,7 @@ function getGeo(request: Request): { country: string | null; region: string | nu
     if (headerCountry && headerCountry !== "XX") country = headerCountry;
   }
 
-  return { country, region, city };
+  return { country, region, city, latitude, longitude };
 }
 
 // Only POST is exported — Next.js's route handler dispatcher returns a 405
@@ -168,7 +195,7 @@ export async function POST(request: Request): Promise<Response> {
 
     if (parsed.data.type === "view") {
       const { deviceType, os, browser } = parseUserAgent(userAgent);
-      const { country, region, city } = getGeo(request);
+      const { country, region, city, latitude, longitude } = getGeo(request);
       const path = sanitizePath(parsed.data.path);
       const referrerHost = normalizeReferrerHost(parsed.data.referrer, request.headers.get("Host"));
 
@@ -178,6 +205,8 @@ export async function POST(request: Request): Promise<Response> {
         country,
         region,
         city,
+        latitude,
+        longitude,
         referrerHost,
         deviceType,
         os,

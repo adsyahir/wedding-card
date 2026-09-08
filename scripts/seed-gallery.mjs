@@ -104,11 +104,16 @@ function existingKeys() {
 
 async function seed() {
   if (useRemote) {
-    fail(
-      "seeding is local only.\n" +
-        "These are stock photographs. Writing them to the deployed site would put\n" +
-        "somebody else's wedding on the real invitation. Drop --remote.",
+    console.log(
+      `\n*** Ini akan menambah gambar CONTOH ke galeri ${target}. ***\n` +
+        `Gambar ini akan kelihatan pada kad jemputan sebenar sebaik sahaja ditambah.\n` +
+        `Padamkannya kemudian dengan: npm run gallery:truncate -- --remote\n`,
     );
+    const answer = await ask("Taip TAMBAH untuk teruskan: ");
+    if (answer !== "TAMBAH") {
+      console.log("\nDibatalkan. Tiada apa-apa ditambah.\n");
+      process.exit(0);
+    }
   }
 
   let files;
