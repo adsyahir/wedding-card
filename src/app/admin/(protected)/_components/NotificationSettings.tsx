@@ -31,9 +31,12 @@ type TestResponse = { ok: true } | { ok: false; error: string; code?: string };
 export function NotificationSettings({
   initialConfig,
   dict,
+  canTestSend,
 }: {
   initialConfig: NotificationsConfig;
   dict: AdminDict;
+  /** Whether this admin may send the Mailjet test email (see src/lib/admin-privileges.ts). */
+  canTestSend: boolean;
 }) {
   const router = useRouter();
 
@@ -182,6 +185,13 @@ export function NotificationSettings({
         )}
       </div>
 
+      {/*
+        Only the account allowed to use it sees it — see
+        `src/lib/admin-privileges.ts`. The route enforces the same rule, so
+        this is tidiness rather than security: offering a button that
+        answers 403 is worse than not offering it.
+      */}
+      {canTestSend && (
       <div className="flex items-center gap-3 border-t border-tan/30 pt-4">
         <button
           type="button"
@@ -198,6 +208,7 @@ export function NotificationSettings({
           </span>
         )}
       </div>
+      )}
     </section>
   );
 }

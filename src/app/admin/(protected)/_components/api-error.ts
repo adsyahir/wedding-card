@@ -38,6 +38,7 @@ const CODE_TO_DICT_KEY: Record<string, keyof AdminDict> = {
   // POST /api/admin/password. Without these the route's own comment was a
   // lie: `localizeApiError` fell through to the server's Malay string, so
   // an English-reading admin mistyping their password got Malay.
+  test_email_forbidden: "notif_testForbidden",
   wrong_current_password: "password_errWrongCurrent",
   same_password: "password_errSame",
   weak_tooShort: "password_weak_tooShort",

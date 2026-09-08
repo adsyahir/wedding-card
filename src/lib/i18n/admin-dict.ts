@@ -92,6 +92,7 @@ const ms = {
   password_submit: "Tukar kata laluan",
   password_changed: "Kata laluan telah ditukar.",
   password_mismatch: "Kata laluan tidak sepadan.",
+  notif_testForbidden: "Hanya akaun admin utama boleh menghantar e-mel ujian.",
   password_errWrongCurrent: "Kata laluan semasa tidak betul.",
   password_errSame: "Kata laluan baharu sama dengan yang lama.",
   password_errChangedRelogin:
@@ -437,6 +438,7 @@ const en: Record<keyof typeof ms, string> = {
   password_submit: "Change password",
   password_changed: "Password changed.",
   password_mismatch: "Passwords do not match.",
+  notif_testForbidden: "Only the main admin account can send the test email.",
   password_errWrongCurrent: "Current password is incorrect.",
   password_errSame: "The new password is the same as the old one.",
   password_errChangedRelogin:

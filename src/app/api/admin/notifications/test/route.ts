@@ -1,4 +1,6 @@
 import { ADMIN_ERROR_CODES, API_ERRORS, jsonError, jsonOk } from "@/lib/api";
+import { getAdminUsername } from "@/db/queries/admin";
+import { canSendTestEmail } from "@/lib/admin-privileges";
 import { logAudit, requireAdminApi } from "@/lib/auth";
 import { sendMailjetEmail } from "@/lib/mailjet";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -37,6 +39,21 @@ const TEST_EMAIL_RATE_WINDOW_SECONDS = 60 * 60; // 1 hour
 export async function POST(request: Request): Promise<Response> {
   const guard = await requireAdminApi(request);
   if (!guard.ok) return guard.response;
+
+  /*
+   * Checked HERE, not only by hiding the button. The panel omits the
+   * control for other accounts, but that is presentation — anyone holding
+   * a valid session could still POST this path directly.
+   */
+  const username = await getAdminUsername(guard.session.adminUserId);
+  if (!canSendTestEmail(username)) {
+    return jsonError(
+      403,
+      "Hanya akaun admin utama boleh menghantar e-mel ujian.",
+      undefined,
+      "test_email_forbidden",
+    );
+  }
 
   const rateLimit = await checkRateLimit(
     `notify-test:${guard.session.adminUserId}`,

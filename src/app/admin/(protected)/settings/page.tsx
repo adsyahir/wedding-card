@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import { getWeddingConfig } from "@/lib/wedding-config";
 import { getAdminUsername } from "@/db/queries/admin";
+import { canSendTestEmail } from "@/lib/admin-privileges";
 
 import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
@@ -77,7 +78,13 @@ export default async function AdminSettingsPage() {
           {
             id: "notifikasi",
             label: dict.notif_heading,
-            content: <NotificationSettings initialConfig={config.notifications} dict={dict} />,
+            content: (
+              <NotificationSettings
+                initialConfig={config.notifications}
+                dict={dict}
+                canTestSend={canSendTestEmail(username)}
+              />
+            ),
           },
         ]}
       />
