@@ -34,6 +34,21 @@ const CODE_TO_DICT_KEY: Record<string, keyof AdminDict> = {
   mailjet_unconfigured: "errors_mailjetUnconfigured",
   mailjet_rejected: "errors_mailjetRejected",
   mailjet_network_error: "errors_mailjetNetworkError",
+
+  // POST /api/admin/password. Without these the route's own comment was a
+  // lie: `localizeApiError` fell through to the server's Malay string, so
+  // an English-reading admin mistyping their password got Malay.
+  wrong_current_password: "password_errWrongCurrent",
+  same_password: "password_errSame",
+  weak_tooShort: "password_weak_tooShort",
+  weak_tooLong: "password_weak_tooLong",
+  weak_blank: "password_weak_blank",
+  weak_sameAsUsername: "password_weak_sameAsUsername",
+  weak_common: "password_weak_common",
+  weak_lowVariety: "password_weak_lowVariety",
+  weak_repeatedChar: "password_weak_repeatedChar",
+  weak_sequence: "password_weak_sequence",
+  password_changed_relogin: "password_errChangedRelogin",
 };
 
 /**

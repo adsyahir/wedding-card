@@ -9,6 +9,7 @@ import {
   getRangeTotals,
   getReferrerBreakdown,
   getRsvpFunnel,
+  getAllCountryCounts,
   getTopCities,
   getTopCityPoints,
   getTopCountries,
@@ -136,6 +137,7 @@ export default async function AdminAnalyticsPage({
     historicalPoints,
     liveTodayPoint,
     topCountries,
+    allCountryCounts,
     topCities,
     cityPoints,
     deviceBreakdown,
@@ -148,6 +150,7 @@ export default async function AdminAnalyticsPage({
     yesterdayDay ? getDailyStatsInRange(range.startDay, yesterdayDay) : Promise.resolve<DailyPoint[]>([]),
     getLiveDayStats(range.todayDay),
     getTopCountries(range),
+    getAllCountryCounts(range),
     getTopCities(range),
     getTopCityPoints(range),
     getDeviceBreakdown(range),
@@ -172,8 +175,10 @@ export default async function AdminAnalyticsPage({
       return code;
     }
   };
+  // Built from the full set, not the top ten: the map shades all of them,
+  // so a tooltip on the eleventh would otherwise read "SE".
   const countryNames = Object.fromEntries(
-    topCountries.map((c) => [c.key.toUpperCase(), countryName(c.key)]),
+    allCountryCounts.map((c) => [c.key.toUpperCase(), countryName(c.key)]),
   );
 
   const chartData: DailyPoint[] = [...historicalPoints, liveTodayPoint];
@@ -216,7 +221,7 @@ export default async function AdminAnalyticsPage({
         <h2 className="font-serif text-xl text-brown-deep">{dict.analytics_mapHeading}</h2>
         <div className="rounded-xl border border-tan/30 bg-sand/40 p-3 sm:p-4">
           <WorldMap
-            countries={topCountries}
+            countries={allCountryCounts}
             cities={cityPoints}
             countryNames={countryNames}
             dict={dict}

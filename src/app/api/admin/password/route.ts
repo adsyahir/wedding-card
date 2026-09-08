@@ -85,7 +85,13 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const db = getDb();
     const [user] = await db
-      .select()
+      .select({
+        id: adminUsers.id,
+        username: adminUsers.username,
+        passwordHash: adminUsers.passwordHash,
+        salt: adminUsers.salt,
+        iterations: adminUsers.iterations,
+      })
       .from(adminUsers)
       .where(eq(adminUsers.id, guard.session.adminUserId))
       .limit(1);
@@ -133,13 +139,30 @@ export async function POST(request: Request): Promise<Response> {
       .where(eq(adminUsers.id, user.id));
 
     await revokeAllSessionsForUser(user.id);
-
-    const { token, csrfToken, cookieMaxAgeSeconds } = await createSession(user.id);
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(cookieMaxAgeSeconds));
-    cookieStore.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions(cookieMaxAgeSeconds));
-
     await logAudit({ adminUserId: user.id, action: "password.change" });
+
+    /*
+     * Past this point the password HAS changed and every session is dead.
+     * A failure while issuing the replacement session must therefore not
+     * report a generic 500: that tells the admin the change failed when the
+     * opposite is true, and they would keep trying the old password. The
+     * distinct code says what actually happened — sign in again with the
+     * NEW password.
+     */
+    try {
+      const { token, csrfToken, cookieMaxAgeSeconds } = await createSession(user.id);
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(cookieMaxAgeSeconds));
+      cookieStore.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions(cookieMaxAgeSeconds));
+    } catch (error) {
+      console.error("POST /api/admin/password: password changed but re-session failed", error);
+      return jsonError(
+        500,
+        "Kata laluan telah ditukar, tetapi sesi baharu gagal dibuat. Sila log masuk semula.",
+        undefined,
+        "password_changed_relogin",
+      );
+    }
 
     return jsonOk();
   } catch (error) {

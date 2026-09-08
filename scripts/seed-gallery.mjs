@@ -6,18 +6,22 @@
  *
  * Usage:
  *   npm run seed:gallery                  # load seed/gallery/*.jpg into local R2 + D1
+ *   npm run seed:gallery -- --remote      # ...into the DEPLOYED site (asks first)
  *   npm run gallery:truncate              # remove every gallery image, local
  *   npm run gallery:truncate -- --remote  # remove them from the DEPLOYED site
  *
- * SAME TWO ASYMMETRIES AS `seed-guests.mjs`, for the same reasons:
+ * BOTH DIRECTIONS ALLOW `--remote`, AND BOTH ASK FIRST.
  *
- * 1. SEEDING IS LOCAL ONLY. `--remote` is refused. Stock photographs of
- *    somebody else's wedding have no business on the real invitation, and
- *    they would go live the moment they were written.
+ * Unlike the guest seeder — where inventing RSVPs would put fake numbers in
+ * front of the caterer — filling the deployed gallery with placeholders is
+ * a legitimate thing to want: it is how you check the gallery works on the
+ * real site before the couple's own photographs exist. So seeding remote is
+ * permitted, behind typing TAMBAH, because these images DO go live the
+ * moment they are written and the card may already be shared.
  *
- * 2. TRUNCATING REMOTE REQUIRES TYPING A CONFIRMATION. Clearing test images
- *    off a deployed site is legitimate; the same command later deletes the
- *    couple's actual photographs, and the R2 objects do not come back.
+ * Truncating remote asks the same way for the opposite reason: by then the
+ * images may be the couple's actual photographs, and R2 objects do not come
+ * back.
  *
  * The gallery lives in two places at once — bytes in R2, metadata in D1 —
  * so both paths here delete R2 objects BEFORE the rows that name them. The
@@ -137,6 +141,11 @@ async function seed() {
       ]),
     )[0]?.results?.[0]?.next ?? 0,
   );
+  // A non-numeric result would interpolate into the VALUES list as the bare
+  // token `NaN` and fail as an opaque SQL syntax error three steps later.
+  if (!Number.isFinite(startOrder)) {
+    fail("could not read the current gallery sort order from D1.");
+  }
 
   const rows = [];
   const nowSec = Math.floor(Date.now() / 1000);

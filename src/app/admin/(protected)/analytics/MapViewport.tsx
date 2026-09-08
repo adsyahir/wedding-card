@@ -21,10 +21,11 @@ export type MapMarker = {
  * Zoom and pan for the analytics map.
  *
  * The map itself stays a SERVER component: its 115KB of country geometry is
- * passed in as `children` and rendered to HTML, never to JavaScript. This
- * wrapper only owns three numbers and a CSS transform, so adding
- * interaction costs the browser a couple of hundred bytes rather than the
- * whole world.
+ * passed in as `children`, so it is never bundled as JavaScript and never
+ * parsed as such. It does cross a client boundary, so it appears in the RSC
+ * flight payload as well as the SSR HTML — transferred twice, executed
+ * zero times, which is still far better than shipping the JSON to be
+ * bundled. This wrapper itself owns three numbers and a CSS transform.
  *
  * A CSS transform rather than a moving `viewBox`, for the same reason: the
  * viewBox lives on server-rendered markup this component never re-renders.
@@ -55,6 +56,14 @@ export function MapViewport({
 }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  /*
+   * Mirrors `dragRef` as STATE purely so the transition can be switched off
+   * while dragging and back on when you let go. Reading the ref in the
+   * style object does not work: a ref change causes no re-render, so on
+   * pointerup the markup still carried `transition: none` until something
+   * else happened to re-render.
+   */
+  const [dragging, setDragging] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
@@ -84,6 +93,7 @@ export function MapViewport({
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (scale === 1) return;
     dragRef.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y };
+    setDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -100,6 +110,7 @@ export function MapViewport({
 
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
     dragRef.current = null;
+    setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -126,7 +137,7 @@ export function MapViewport({
           style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: "center",
-            transition: dragRef.current ? "none" : "transform 200ms ease-out",
+            transition: dragging ? "none" : "transform 200ms ease-out",
           }}
         >
           {children}
@@ -152,7 +163,7 @@ export function MapViewport({
                 height: marker.r * 2,
                 marginLeft: -marker.r,
                 marginTop: -marker.r,
-                transition: dragRef.current ? "none" : "left 200ms ease-out, top 200ms ease-out",
+                transition: dragging ? "none" : "left 200ms ease-out, top 200ms ease-out",
               }}
             />
           ))}

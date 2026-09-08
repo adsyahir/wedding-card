@@ -40,6 +40,14 @@ const PBKDF2_ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const DERIVED_KEY_BYTES = 32;
 const MIN_PASSWORD_LENGTH = 12;
+/*
+ * Must match `MAX_PASSWORD_LENGTH` in src/lib/password-policy.ts, which the
+ * login route enforces (`password: z.string().max(200)`). Without this the
+ * seeder would happily hash a 5000-character password and create an account
+ * that the login endpoint then rejects outright — an account nobody can
+ * sign in to, with no error explaining why.
+ */
+const MAX_PASSWORD_LENGTH = 200;
 
 const args = process.argv.slice(2);
 const useRemote = args.includes("--remote");
@@ -152,6 +160,9 @@ function weakPasswordReason(password, username) {
   if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
     return `mesti sekurang-kurangnya ${MIN_PASSWORD_LENGTH} aksara.`;
   }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return `tidak boleh melebihi ${MAX_PASSWORD_LENGTH} aksara.`;
+  }
   if (password.trim().length === 0) {
     return "tidak boleh hanya ruang kosong.";
   }
@@ -161,12 +172,15 @@ function weakPasswordReason(password, username) {
   if (COMMON_WEAK_PASSWORDS.has(password.toLowerCase())) {
     return "terlalu biasa/mudah diteka.";
   }
+  // Same order as src/lib/password-policy.ts: a single repeated character
+  // satisfies both rules, and checked the other way round the repeated-char
+  // branch is unreachable — one distinct character is always fewer than four.
+  if (/^(.)\1+$/.test(password)) {
+    return "tidak boleh aksara yang sama diulang sahaja.";
+  }
   const uniqueChars = new Set(password).size;
   if (uniqueChars < 4) {
     return "terlalu sedikit variasi aksara (cth. bukan huruf berulang).";
-  }
-  if (/^(.)\1+$/.test(password)) {
-    return "tidak boleh aksara yang sama diulang sahaja.";
   }
   const sequences = ["0123456789", "abcdefghijklmnopqrstuvwxyz", "qwertyuiop", "asdfghjkl"];
   const lower = password.toLowerCase();

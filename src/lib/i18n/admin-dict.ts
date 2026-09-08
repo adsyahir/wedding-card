@@ -92,6 +92,10 @@ const ms = {
   password_submit: "Tukar kata laluan",
   password_changed: "Kata laluan telah ditukar.",
   password_mismatch: "Kata laluan tidak sepadan.",
+  password_errWrongCurrent: "Kata laluan semasa tidak betul.",
+  password_errSame: "Kata laluan baharu sama dengan yang lama.",
+  password_errChangedRelogin:
+    "Kata laluan telah ditukar, tetapi sesi baharu gagal dibuat. Sila log masuk semula dengan kata laluan baharu.",
   password_weak_tooShort: "Terlalu pendek.",
   password_weak_tooLong: "Terlalu panjang.",
   password_weak_blank: "Tidak boleh hanya ruang kosong.",
@@ -433,6 +437,10 @@ const en: Record<keyof typeof ms, string> = {
   password_submit: "Change password",
   password_changed: "Password changed.",
   password_mismatch: "Passwords do not match.",
+  password_errWrongCurrent: "Current password is incorrect.",
+  password_errSame: "The new password is the same as the old one.",
+  password_errChangedRelogin:
+    "Your password was changed, but a new session could not be created. Please sign in again with the new password.",
   password_weak_tooShort: "Too short.",
   password_weak_tooLong: "Too long.",
   password_weak_blank: "Cannot be only whitespace.",

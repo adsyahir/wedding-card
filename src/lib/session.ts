@@ -208,19 +208,6 @@ export async function revokeSession(token: string): Promise<void> {
 }
 
 /**
- * Revokes every non-revoked session belonging to `adminUserId`. Not called
- * anywhere yet — for a future password-change flow, where every existing
- * session must be invalidated the moment the password changes.
- */
-export async function revokeAllSessionsFor(adminUserId: string): Promise<void> {
-  const db = getDb();
-  await db
-    .update(sessions)
-    .set({ revokedAt: new Date() })
-    .where(and(eq(sessions.adminUserId, adminUserId), isNull(sessions.revokedAt)));
-}
-
-/**
  * Deletes session rows whose absolute expiry has passed. Not called from
  * anywhere yet — wired up by the Phase 7 cron job (mirrors
  * `pruneRateLimits` in `src/lib/rate-limit.ts`).
@@ -232,10 +219,17 @@ export async function pruneExpiredSessions(): Promise<void> {
 }
 
 /**
- * Cookie attributes for setting the session cookie. `maxAge` is the idle
- * window (in seconds) — the cookie's own lifetime is a courtesy for the
- * browser to stop sending it; the server-side idle/absolute expiry checks
- * in `validateSession` are the actual authority.
+ * Cookie attributes for the session cookie.
+ *
+ * Callers pass the session's ABSOLUTE window in seconds, not the idle one.
+ * The cookie has to outlive the idle window: the server slides idle expiry
+ * forward on every request, and a cookie that expired at the idle window
+ * would sign out an admin who was actively using the dashboard, making that
+ * sliding pointless.
+ *
+ * The cookie's lifetime is only a courtesy to stop the browser sending a
+ * dead token; the idle/absolute checks in `validateSession` are the
+ * authority.
  */
 export function sessionCookieOptions(maxAgeSeconds = IDLE_WINDOW_MS / 1000) {
   return {

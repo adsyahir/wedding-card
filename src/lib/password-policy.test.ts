@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COMMON_WEAK_PASSWORDS,
+  MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
   passwordWeakness,
 } from "./password-policy";
@@ -62,6 +63,25 @@ describe("parity with scripts/seed-admin.mjs", () => {
     const match = seeder.match(/const MIN_PASSWORD_LENGTH = (\d+);/);
     expect(match).not.toBeNull();
     expect(Number(match![1])).toBe(MIN_PASSWORD_LENGTH);
+  });
+
+  it("uses the same maximum length", () => {
+    // The seeder had no max at all. It would hash a 5000-character password
+    // and create an account the login route then rejects outright
+    // (`password: z.string().max(200)`) — an account nobody can sign in to.
+    const match = seeder.match(/const MAX_PASSWORD_LENGTH = (\d+);/);
+    expect(match).not.toBeNull();
+    expect(Number(match![1])).toBe(MAX_PASSWORD_LENGTH);
+  });
+
+  it("orders the repeated-character rule before the low-variety one", () => {
+    // Reversed, the repeated-character branch is unreachable and the admin
+    // gets the vaguer message for the clearer mistake.
+    const repeated = seeder.indexOf('/^(.)\\1+$/');
+    const variety = seeder.indexOf("new Set(password).size");
+    expect(repeated).toBeGreaterThan(-1);
+    expect(variety).toBeGreaterThan(-1);
+    expect(repeated).toBeLessThan(variety);
   });
 
   it("uses the same weak-password list", () => {

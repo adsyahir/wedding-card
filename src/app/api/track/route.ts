@@ -108,6 +108,10 @@ function normalizeReferrerHost(referrer: string | undefined, requestHost: string
  * edge value can never be written as a coordinate.
  */
 function coarseCoord(value: unknown, limit: number): number | null {
+  // `Number("")` and `Number("  ")` are 0 — finite and in range — so an
+  // empty edge value would be stored as 0.0 and plotted in the Gulf of
+  // Guinea, the classic null-island bug.
+  if (typeof value === "string" && value.trim() === "") return null;
   const n = typeof value === "string" ? Number(value) : typeof value === "number" ? value : NaN;
   if (!Number.isFinite(n) || Math.abs(n) > limit) return null;
   return Math.round(n * 10) / 10;

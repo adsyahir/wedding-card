@@ -26,6 +26,7 @@
  */
 
 import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 import { feature } from "topojson-client";
@@ -136,10 +137,13 @@ for (const f of collection.features) {
 }
 
 const out = { width: WIDTH, height: HEIGHT, paths };
-writeFileSync("src/lib/world-map.json", JSON.stringify(out) + "\n");
+// Resolved against this file, not the cwd: run from anywhere else, a
+// cwd-relative path silently writes the map into the wrong directory.
+const OUT_PATH = fileURLToPath(new URL("../src/lib/world-map.json", import.meta.url));
+writeFileSync(OUT_PATH, JSON.stringify(out) + "\n");
 
 const bytes = JSON.stringify(out).length;
 console.log(
-  `src/lib/world-map.json: ${Object.keys(paths).length} countries, ${Math.round(bytes / 1024)}KB` +
+  `${OUT_PATH}: ${Object.keys(paths).length} countries, ${Math.round(bytes / 1024)}KB` +
     (skipped.length ? `\nno alpha-2 mapping (skipped): ${skipped.join(", ")}` : ""),
 );

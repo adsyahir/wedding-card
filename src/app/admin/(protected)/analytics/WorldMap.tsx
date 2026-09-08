@@ -15,9 +15,10 @@ import worldMap from "@/lib/world-map.json";
  * Rendering here also keeps the 123KB of geometry in `world-map.json` out
  * of the browser bundle entirely: it becomes HTML, not JavaScript.
  *
- * There is no pan, zoom or hover panel. `<title>` gives every shape a
- * native tooltip, which browsers and screen readers already handle, and the
- * ranked lists beside the map carry the exact numbers.
+ * Zoom and pan live in `MapViewport`, a thin client wrapper; this component
+ * stays server-side. `<title>` gives every shape a native tooltip, which
+ * browsers and screen readers already handle, so there is no hover panel to
+ * build, and the ranked lists beside the map carry the exact numbers.
  */
 
 /**

@@ -132,6 +132,19 @@ export async function getTopCountries(range: DateRange, limit = 10): Promise<Key
   return topByColumn(pageViews.country, range, limit);
 }
 
+/**
+ * EVERY country with at least one visit, for the map.
+ *
+ * `getTopCountries` is deliberately a top-10, which is right for a ranked
+ * side panel and wrong for a choropleth: shading only the first ten leaves
+ * the eleventh-busiest country looking identical to one nobody visited
+ * from, which is a map that quietly misstates the data. There are 249
+ * possible values, so an unbounded count here is cheap.
+ */
+export async function getAllCountryCounts(range: DateRange): Promise<KeyCount[]> {
+  return topByColumn(pageViews.country, range, 300);
+}
+
 export async function getTopCities(range: DateRange, limit = 10): Promise<KeyCount[]> {
   return topByColumn(pageViews.city, range, limit);
 }
