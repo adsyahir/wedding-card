@@ -39,13 +39,14 @@ export function Hero({ config }: { config: WeddingConfig }) {
         </p>
 
         {/*
-          `lining-nums`: Cormorant Garamond defaults to OLD-STYLE figures,
-          where 0 sits at x-height and 1/2 have descenders, so "01 | 11 |
-          2026" read as an uneven, wobbling line. The family ships a lining
-          set (verified: the woff2 carries the `lnum` feature), which puts
-          every digit on the same cap height. Same typeface, steady line.
+          The sans (Jost), not the serif. Cormorant's figures are drawn for
+          running text and stay slightly fragile at display size even with
+          `lining-nums` forced on. Jost is geometric: the digits are even,
+          the strokes hold their weight at 30px, and it reads instantly —
+          which is what you want from the one line a guest screenshots.
+          Wide tracking keeps it feeling engraved rather than merely plain.
         */}
-        <p className="font-serif text-3xl tracking-[0.15em] text-brown-deep lining-nums">
+        <p className="font-sans text-3xl font-light tracking-[0.25em] text-brown-deep lining-nums">
           {day}
           <span className="mx-2 text-goldenrod">|</span>
           {month}
