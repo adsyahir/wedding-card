@@ -1,0 +1,68 @@
+name: Daily D1 backup
+
+# 18:00 UTC = 02:00 MYT, when nobody is submitting RSVPs.
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch: {}
+
+# THE DUMP CONTAINS GUEST PII — names and phone numbers.
+#
+# This repository is PUBLIC, and on a public repo anyone with a workflow-run
+# URL can download its artifacts. So the export is never uploaded as an
+# artifact, never committed, and never printed to the log. It goes straight
+# to the private R2 bucket and the runner is discarded.
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` for wrangler alone would install the whole app. Only the
+      # CLI is needed, and pinning it keeps a wrangler release from changing
+      # the export format underneath the backups.
+      - name: Export the database
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 d1 export DB --remote --output backup.sql
+
+      # A backup that silently wrote nothing is worse than no backup at all,
+      # because it looks like one. The schema alone is a few KB, so anything
+      # under 1KB means the export failed without a non-zero exit.
+      - name: Refuse an empty or truncated dump
+        run: |
+          size=$(wc -c < backup.sql)
+          echo "dump size: ${size} bytes"
+          if [ "$size" -lt 1024 ]; then
+            echo "::error::backup.sql is only ${size} bytes — refusing to store it"
+            exit 1
+          fi
+          for table in admin_users rsvps wishes site_settings gallery_images; do
+            grep -q "CREATE TABLE.*${table}" backup.sql \
+              || { echo "::error::table ${table} missing from the dump"; exit 1; }
+          done
+
+      - name: Upload to private R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          key="backups/d1-$(date -u +%Y-%m-%d).sql"
+          npx --yes wrangler@4 r2 object put "wedding-card-assets/${key}" \
+            --file backup.sql --content-type application/sql --remote
+          echo "stored as ${key}"
+
+      - name: Shred the local copy
+        if: always()
+        run: rm -f backup.sql

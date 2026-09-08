@@ -322,7 +322,91 @@ worker to the same value you used in 2.4.
 
 ---
 
-## Part 7 — Before sharing the link
+## Part 7 — Backups
+
+### 7.1 What you already have: Time Travel
+
+D1 keeps a point-in-time history of the database with no setup at all. It is
+the fastest way back from a bad migration or an accidental delete:
+
+```bash
+npx wrangler d1 time-travel info DB                      # current bookmark
+npx wrangler d1 time-travel info DB --timestamp <ISO>    # bookmark at a moment
+npx wrangler d1 time-travel restore DB --bookmark <id>
+```
+
+`restore` **overwrites the live database**. Take an export first (7.3) so you
+can get back if the restore goes to the wrong point.
+
+Time Travel lives inside the same database and the same Cloudflare account,
+so it does not protect against the database or the account being deleted.
+That is what the daily export is for.
+
+### 7.2 Daily export — one setup step
+
+`.github/workflows/backup-d1.yml` runs at 18:00 UTC (02:00 MYT) and writes
+`backups/d1-YYYY-MM-DD.sql` into the **private** `wedding-card-assets` R2
+bucket. It refuses to store a dump under 1KB or one missing any expected
+table, because a silently empty backup is worse than none — it looks like
+one.
+
+Add two repository secrets under **Settings → Secrets and variables →
+Actions**:
+
+| Secret | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | a token with **D1 Read** and **R2 Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | your account id |
+
+Create the token at **My Profile → API Tokens → Create Token → Custom**.
+Give it only those two permissions — this token can read every guest's name
+and phone number, so it should not be an all-privileges token.
+
+Then run it once by hand: **Actions → Daily D1 backup → Run workflow**.
+
+> **The dump is never uploaded as a workflow artifact and never committed.**
+> This repository is public, and artifacts on a public repo are downloadable
+> by anyone with the run URL. The export contains guest phone numbers and the
+> admin password hash.
+
+Old backups: set a lifecycle rule on the bucket (**R2 → wedding-card-assets →
+Settings → Object lifecycle rules**) to delete objects under `backups/` after
+30 or 90 days, rather than keeping every day forever.
+
+### 7.3 Taking a backup by hand
+
+```bash
+npx wrangler d1 export DB --remote --output backup-$(date +%F).sql
+```
+
+Do this before anything irreversible: a migration, a `time-travel restore`,
+or `guests:truncate -- --remote`. Keep the file off this repository.
+
+### 7.4 Restoring
+
+```bash
+npx wrangler d1 execute DB --remote --file backup-2026-09-09.sql
+```
+
+The export includes `CREATE TABLE` statements, so restore into an **empty**
+database — either a fresh one (`wrangler d1 create`, then update
+`database_id` in `wrangler.jsonc`) or after dropping the tables. Restoring
+over a populated database will fail on the existing tables.
+
+To fetch a backup out of R2:
+
+```bash
+npx wrangler r2 object get wedding-card-assets/backups/d1-2026-09-09.sql \
+  --file restore.sql --remote
+```
+
+**Test a restore once before you need one.** Restore a backup into a
+throwaway D1 database and check the RSVP count matches. A backup nobody has
+ever restored is a hypothesis, not a backup.
+
+---
+
+## Part 8 — Before sharing the link
 
 - [ ] Card loads on a real phone, not just a desktop browser at narrow width
 - [ ] Envelope opens, music plays after the tap, mute persists across reload
@@ -354,6 +438,7 @@ migrations** — those are forward-only, so a migration that has run stays run.
 | What | Where |
 |---|---|
 | Security model, threat notes | `SECURITY.md` |
+| Backup workflow | `.github/workflows/backup-d1.yml` |
 | Local development, scripts | `README.md` |
 | Moving settings between local and prod | `README.md` → "Moving settings" |
 | Why `SITE_URL` is not derived from the request | `src/lib/site-url.ts` |
