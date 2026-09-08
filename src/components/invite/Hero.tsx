@@ -39,14 +39,13 @@ export function Hero({ config }: { config: WeddingConfig }) {
         </p>
 
         {/*
-          The sans (Jost), not the serif. Cormorant's figures are drawn for
-          running text and stay slightly fragile at display size even with
-          `lining-nums` forced on. Jost is geometric: the digits are even,
-          the strokes hold their weight at 30px, and it reads instantly —
-          which is what you want from the one line a guest screenshots.
-          Wide tracking keeps it feeling engraved rather than merely plain.
+          Cinzel: Roman inscriptional capitals, the lettering used on
+          engraved invitations. Its figures are lining and evenly weighted
+          by construction, so the date holds together at display size where
+          Cormorant's text figures went fragile and Jost read a little
+          plain against the script names above.
         */}
-        <p className="font-sans text-3xl font-light tracking-[0.25em] text-brown-deep lining-nums">
+        <p className="font-display text-2xl tracking-[0.2em] text-brown-deep">
           {day}
           <span className="mx-2 text-goldenrod">|</span>
           {month}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Cinzel,
   Cormorant_Garamond,
   Dancing_Script,
   Great_Vibes,
@@ -56,6 +57,25 @@ const serif = Cormorant_Garamond({
   display: "swap",
 });
 
+/*
+ * Cinzel, used for one line only: the date on the hero.
+ *
+ * It is drawn from Roman inscriptional capitals — the lettering on carved
+ * stone and on engraved invitations — so its figures are lining, even, and
+ * wide by construction. That makes it right for a date read at a glance
+ * and wrong for anything long, which is why it is scoped to a single
+ * element rather than added to the theme.
+ *
+ * One weight, latin subset: roughly 15KB, and it is the only extra font on
+ * the public page that is not already earning its place elsewhere.
+ */
+const display = Cinzel({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+
 const sans = Jost({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
@@ -106,7 +126,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="ms"
       data-script-font={config.scriptFont}
-      className={`h-full antialiased ${script.variable} ${serif.variable} ${sans.variable} ${greatVibes.variable} ${dancingScript.variable} ${sacramento.variable}`}
+      className={`h-full antialiased ${script.variable} ${serif.variable} ${sans.variable} ${display.variable} ${greatVibes.variable} ${dancingScript.variable} ${sacramento.variable}`}
     >
       <head>
         {/* Reveal-on-scroll elements are server-rendered with an inline

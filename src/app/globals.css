@@ -14,6 +14,8 @@
   --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
   --font-script: var(--font-parisienne), cursive;
+  /* Hero date only — see the Cinzel comment in src/app/layout.tsx. */
+  --font-display: var(--font-cinzel), ui-serif, Georgia, serif;
 }
 
 /*
