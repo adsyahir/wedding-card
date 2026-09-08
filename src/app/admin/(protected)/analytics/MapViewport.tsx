@@ -5,6 +5,18 @@ import type { ReactNode } from "react";
 
 import type { AdminDict } from "@/lib/i18n/admin-dict";
 
+/** One city marker, positioned as a fraction of the map's own box. */
+export type MapMarker = {
+  key: string;
+  /** 0..1 across the map. */
+  fx: number;
+  /** 0..1 down the map. */
+  fy: number;
+  /** Radius in CSS pixels, constant regardless of zoom. */
+  r: number;
+  label: string;
+};
+
 /**
  * Zoom and pan for the analytics map.
  *
@@ -18,13 +30,29 @@ import type { AdminDict } from "@/lib/i18n/admin-dict";
  * viewBox lives on server-rendered markup this component never re-renders.
  * The browser also composites a transform on the GPU, so dragging stays
  * smooth on a phone where re-projecting 173 country paths would not.
+ *
+ * CITY MARKERS ARE NOT INSIDE THAT TRANSFORM. A transform scales everything
+ * under it, so at 8x the dots were eight times wider too and swallowed the
+ * country they were marking. Every real map keeps markers at a constant
+ * screen size and scales only the geography. So the markers live in an
+ * unscaled overlay, and their POSITIONS are computed through the same
+ * transform by hand — one multiply and one add each, for a couple of dozen
+ * points.
  */
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 8;
 const STEP = 1.6;
 
-export function MapViewport({ dict, children }: { dict: AdminDict; children: ReactNode }) {
+export function MapViewport({
+  dict,
+  markers,
+  children,
+}: {
+  dict: AdminDict;
+  markers: MapMarker[];
+  children: ReactNode;
+}) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const frameRef = useRef<HTMLDivElement>(null);
@@ -94,6 +122,7 @@ export function MapViewport({ dict, children }: { dict: AdminDict; children: Rea
         }`}
       >
         <div
+          className="relative"
           style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: "center",
@@ -101,6 +130,32 @@ export function MapViewport({ dict, children }: { dict: AdminDict; children: Rea
           }}
         >
           {children}
+        </div>
+
+        {/*
+          The same transform, applied to POSITIONS only. A point at fraction
+          `f` of the box lands at `0.5 + (f - 0.5) * scale` once scaled about
+          the centre, then shifts by the pan offset. `pointer-events-none` so
+          the layer never intercepts a drag; each marker re-enables them for
+          its own tooltip.
+        */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {markers.map((marker) => (
+            <span
+              key={marker.key}
+              title={marker.label}
+              className="pointer-events-auto absolute rounded-full bg-brown-deep/60 ring-2 ring-cream/70"
+              style={{
+                left: `calc(${(0.5 + (marker.fx - 0.5) * scale) * 100}% + ${offset.x}px)`,
+                top: `calc(${(0.5 + (marker.fy - 0.5) * scale) * 100}% + ${offset.y}px)`,
+                width: marker.r * 2,
+                height: marker.r * 2,
+                marginLeft: -marker.r,
+                marginTop: -marker.r,
+                transition: dragRef.current ? "none" : "left 200ms ease-out, top 200ms ease-out",
+              }}
+            />
+          ))}
         </div>
       </div>
 

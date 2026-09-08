@@ -1,6 +1,6 @@
 import type { CityPoint, KeyCount } from "@/db/queries/analytics";
 import type { AdminDict } from "@/lib/i18n/admin-dict";
-import { MapViewport } from "./MapViewport";
+import { MapViewport, type MapMarker } from "./MapViewport";
 import { projectEquirectangular } from "@/lib/world-map-projection";
 import worldMap from "@/lib/world-map.json";
 
@@ -59,6 +59,25 @@ export function WorldMap({
   const maxCountry = countries.length > 0 ? Math.max(...countries.map((c) => c.count)) : 0;
   const maxCity = cities.length > 0 ? Math.max(...cities.map((c) => c.count)) : 0;
 
+  /*
+   * Markers as FRACTIONS of the map box, with radii in CSS pixels. The
+   * overlay that draws them is not inside the zoom transform, so a radius
+   * here is a real on-screen size at any zoom level.
+   *
+   * Area, not radius, tracks the count: a radius-proportional dot
+   * exaggerates a busy city by the square of its lead.
+   */
+  const markers: MapMarker[] = cities.map((city) => {
+    const { x, y } = projectEquirectangular(city.lat, city.lng, 1, 1);
+    return {
+      key: `${city.city}-${city.country ?? ""}`,
+      fx: x,
+      fy: y,
+      r: 4 + Math.sqrt(city.count / Math.max(maxCity, 1)) * 7,
+      label: `${city.city}: ${city.count}`,
+    };
+  });
+
   if (countries.length === 0 && cities.length === 0) {
     return (
       <p className="px-4 py-10 text-center text-sm text-brown/60">{dict.analytics_emptyCountries}</p>
@@ -67,7 +86,7 @@ export function WorldMap({
 
   return (
     <div className="flex flex-col gap-3">
-      <MapViewport dict={dict}>
+      <MapViewport dict={dict} markers={markers}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -93,20 +112,6 @@ export function WorldMap({
             );
           })}
 
-          {cities.map((city) => {
-            const { x, y } = projectEquirectangular(city.lat, city.lng, width, height);
-            // Area, not radius, tracks the count — a radius-proportional dot
-            // exaggerates a busy city by its square.
-            const r = 2.5 + Math.sqrt(city.count / Math.max(maxCity, 1)) * 7;
-            return (
-              <g key={`${city.city}-${city.country ?? ""}`}>
-                <circle cx={x} cy={y} r={r} fill="var(--color-brown-deep)" fillOpacity={0.55} />
-                <circle cx={x} cy={y} r={Math.max(r * 0.35, 1.2)} fill="var(--color-brown-deep)">
-                  <title>{`${city.city}: ${city.count}`}</title>
-                </circle>
-              </g>
-            );
-          })}
         </svg>
       </MapViewport>
 
