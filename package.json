@@ -17,6 +17,7 @@
     "seed:admin": "node scripts/seed-admin.mjs",
     "db:studio": "drizzle-kit studio --config drizzle.config.local.ts",
     "db:local:path": "node scripts/local-d1-path.mjs",
+    "db:local:link": "node scripts/local-d1-link.mjs",
     "smoke": "node scripts/smoke-test.mjs",
     "settings:export": "node scripts/settings.mjs export",
     "settings:import": "node scripts/settings.mjs import",
