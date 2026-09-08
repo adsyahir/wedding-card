@@ -29,8 +29,19 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
     // Someone who asked for reduced motion gets a plain scrollable list.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    // Nothing to drift through if everything already fits.
-    if (el.scrollHeight <= el.clientHeight + 4) return;
+    let frame = 0;
+    let lastTs = 0;
+    let pausedUntil = 0;
+    let resumeAt = 0;
+    let running = false;
+
+    /*
+     * The position is kept HERE, not read back from the DOM each frame.
+     * At 14px/second a frame advances about 0.23px, and accumulating that
+     * by reading `scrollTop` back invites the browser's own rounding into
+     * the loop. Owning the float and writing it out keeps the rate exact.
+     */
+    let pos = el.scrollTop;
 
     /*
      * NOT `scroll-smooth`. CSS `scroll-behavior: smooth` turns every
@@ -40,28 +51,8 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
      * then jumping backwards. Programmatic per-frame scrolling needs the
      * default instant behaviour.
      */
-    let frame = 0;
-    let lastTs = 0;
-    let pausedUntil = 0;
-    let resumeAt = 0;
-    let cancelled = false;
-
-    /*
-     * Any interaction stops the drift and holds it for RESUME_AFTER_MS. The
-     * guest reading a particular wish should never have it slide out from
-     * under them — the drift exists to show that there ARE more wishes, not
-     * to fight whoever is reading them.
-     */
-    const hold = () => {
-      resumeAt = performance.now() + RESUME_AFTER_MS;
-    };
-
     const step = (ts: number) => {
-      // `cancelled` as well as cancelAnimationFrame: under dev fast-refresh
-      // an already-queued callback can still fire after cleanup, and each
-      // one reschedules itself. Left unguarded they accumulate, and the
-      // drift measurably ran away from 15px/s to ~300px/s.
-      if (cancelled) return;
+      if (!running) return;
       frame = requestAnimationFrame(step);
 
       // Clamp the frame delta. A backgrounded tab or a long main-thread
@@ -73,32 +64,78 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
 
       if (ts < pausedUntil || ts < resumeAt) return;
 
+      // Re-checked every frame rather than once at mount: the wall may not
+      // overflow until the web fonts have swapped in.
       const max = el.scrollHeight - el.clientHeight;
-      if (max <= 0) return;
+      if (max <= 4) return;
 
-      // `scrollTop` is fractional-capable, so a sub-pixel-per-frame rate
-      // accumulates smoothly instead of stuttering one whole pixel at a time.
-      const next = el.scrollTop + (DRIFT_PX_PER_SECOND * delta) / 1000;
+      pos += (DRIFT_PX_PER_SECOND * delta) / 1000;
 
-      if (next >= max) {
+      if (pos >= max) {
+        pos = max;
         el.scrollTop = max;
         pausedUntil = ts + EDGE_PAUSE_MS;
         // Back to the top rather than reversing: a list that scrolls
         // backwards reads as broken.
         window.setTimeout(() => {
+          pos = 0;
           if (scrollRef.current) scrollRef.current.scrollTop = 0;
         }, EDGE_PAUSE_MS);
         return;
       }
 
-      el.scrollTop = next;
+      el.scrollTop = pos;
     };
 
-    frame = requestAnimationFrame(step);
+    const start = () => {
+      if (running) return;
+      running = true;
+      lastTs = 0;
+      pos = el.scrollTop;
+      frame = requestAnimationFrame(step);
+    };
+
+    const stop = () => {
+      running = false;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
+    /*
+     * The drift starts when the guest actually REACHES the wall, and stops
+     * when they leave it.
+     *
+     * Starting on mount was wrong twice over: the whole card is one long
+     * page, so the wall would quietly scroll itself to the bottom while the
+     * guest was still reading the doa, and by the time they arrived the
+     * first wishes had already gone past. It also burned a rAF loop for the
+     * entire visit. 40% visible is the threshold — enough that the wall is
+     * genuinely on screen rather than one line peeking over the fold.
+     */
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) start();
+        else stop();
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+
+    /*
+     * Any interaction stops the drift and holds it for RESUME_AFTER_MS. The
+     * guest reading a particular wish should never have it slide out from
+     * under them — the drift exists to show that there ARE more wishes, not
+     * to fight whoever is reading them.
+     */
+    const hold = () => {
+      resumeAt = performance.now() + RESUME_AFTER_MS;
+      // Adopt wherever the guest scrolled to, rather than resuming from the
+      // drift's own stale idea of the position and yanking them back.
+      pos = el.scrollTop;
+    };
 
     const events: (keyof HTMLElementEventMap)[] = [
       "pointerdown",
-      "pointermove",
       "wheel",
       "touchstart",
       "touchmove",
@@ -108,8 +145,8 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
     for (const name of events) el.addEventListener(name, hold, { passive: true });
 
     return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
+      stop();
+      observer.disconnect();
       for (const name of events) el.removeEventListener(name, hold);
     };
   }, [wishes.length]);
@@ -137,12 +174,17 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
             14.4px/20px body text, a 12.6px uppercase name 4px under it, and
             20px between one wish and the next.
 
-            Two deliberate consequences. The quotes are the SANS at body
-            weight, not italic serif — at 14px an italic serif is markedly
-            harder to read, and the reference is right about that. And there
-            is no edge fade: the reference hard-clips, so a wish is cut
-            mid-line at the bottom, which is what tells you the list
-            continues.
+            The BOX follows the reference; the TYPE deliberately does not.
+            The reference sets its wishes in the body sans, but the italic
+            Cormorant is what makes these read as quoted voices rather than
+            interface text, and it is the choice this card was asked for.
+            Size comes up from the reference's 14.4px to 16px to compensate:
+            Cormorant has a small x-height, so at 14px it would be markedly
+            harder to read than the sans it replaces.
+
+            No edge fade, as the reference has none: it hard-clips, so a
+            wish is cut mid-line at the bottom, which is what tells you the
+            list continues.
           */}
           <div
             ref={scrollRef}
@@ -151,13 +193,13 @@ export function UcapanWall({ wishes }: { wishes: PublicWish[] }) {
             aria-label="Ucapan daripada tetamu"
             className="no-scrollbar max-h-[14.75rem] overflow-y-auto"
           >
-            <div className="flex flex-col gap-5 py-2 text-center">
+            <div className="flex flex-col gap-6 py-2 text-center">
               {wishes.map((wish, index) => (
                 <div key={`${wish.name}-${wish.createdAt}-${index}`}>
-                  <p className="text-[0.9rem] leading-5 text-brown">
+                  <p className="font-serif text-base leading-7 text-brown-deep italic">
                     &ldquo;{wish.message}&rdquo;
                   </p>
-                  <p className="mt-1 text-[0.79rem] leading-5 text-brown/80 uppercase">
+                  <p className="mt-1.5 text-[0.7rem] font-medium tracking-[0.15em] text-brown uppercase">
                     {wish.name}
                   </p>
                 </div>
