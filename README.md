@@ -384,6 +384,10 @@ DBeaver, `sqlite3`, or any other SQLite client.
 - `npm run settings:export` / `npm run settings:import` — move the wedding
   settings between environments as a JSON file (see below)
 - `npm run db:studio` — browse the local SQLite database in Drizzle Studio
+- `npm run seed:gallery` — load `seed/gallery/*.jpg` into the local gallery
+  (R2 + `gallery_images`); refuses `--remote`
+- `npm run gallery:truncate` — remove every gallery image (objects then rows);
+  `--remote` requires typing `PADAM`
 - `npm run db:local:path` — print the local SQLite file path
 
 ## Testing

@@ -21,7 +21,9 @@
     "settings:export": "node scripts/settings.mjs export",
     "settings:import": "node scripts/settings.mjs import",
     "seed:guests": "node scripts/seed-guests.mjs",
-    "guests:truncate": "node scripts/seed-guests.mjs truncate"
+    "guests:truncate": "node scripts/seed-guests.mjs truncate",
+    "seed:gallery": "node scripts/seed-gallery.mjs",
+    "gallery:truncate": "node scripts/seed-gallery.mjs truncate"
   },
   "dependencies": {
     "@next/third-parties": "^15.5.25",
