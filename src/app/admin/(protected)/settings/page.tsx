@@ -9,7 +9,6 @@ import { canSendTestEmail } from "@/lib/admin-privileges";
 import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
 import { NotificationSettings } from "../_components/NotificationSettings";
-import { PasswordSettings } from "../_components/PasswordSettings";
 import { WeddingConfigSettings } from "../_components/WeddingConfigSettings";
 
 // Never statically optimized/cached — every request must actually run the
@@ -69,11 +68,6 @@ export default async function AdminSettingsPage() {
                 lang={lang}
               />
             ),
-          },
-          {
-            id: "akaun",
-            label: dict.password_heading,
-            content: <PasswordSettings username={username} dict={dict} />,
           },
           {
             id: "notifikasi",

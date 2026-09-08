@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { SiteCredit } from "@/components/SiteCredit";
 import type { Metadata } from "next";
 
-import { countPendingWishes } from "@/db/queries/admin";
+import { countPendingWishes, getAdminUsername } from "@/db/queries/admin";
 import { getWeddingConfig } from "@/lib/wedding-config";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
@@ -47,7 +47,7 @@ export default async function ProtectedAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   // The header shows the couple's names and hashtag, so it has to read the
   // RESOLVED config — it previously imported `wedding` (the file defaults)
@@ -55,6 +55,7 @@ export default async function ProtectedAdminLayout({
   // card update, and still see the old names in the header above the form
   // they had just used.
   const config = await getWeddingConfig();
+  const username = await getAdminUsername(session.adminUserId);
 
   const theme = parseAdminTheme((await cookies()).get(ADMIN_THEME_COOKIE_NAME)?.value);
   const lang = await getAdminLang();
@@ -80,6 +81,7 @@ export default async function ProtectedAdminLayout({
         pendingWishCount={pendingWishCount}
         coupleNames={`${config.groom.shortName} & ${config.bride.shortName}`}
         hashtag={config.hashtag}
+        username={username}
       />
 
       {/* `min-w-0` so a wide table inside `main` scrolls itself instead of
@@ -102,6 +104,7 @@ export default async function ProtectedAdminLayout({
               lang={lang}
               theme={theme}
               pendingWishCount={pendingWishCount}
+              username={username}
             />
           </div>
         </header>

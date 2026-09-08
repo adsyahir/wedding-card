@@ -65,7 +65,7 @@ const ms = {
   nav_analitik: "Analitik",
   nav_tetapan: "Tetapan",
 
-  // Logout button (src/app/admin/(protected)/LogoutButton.tsx)
+  // Account menu (src/app/admin/(protected)/AccountMenu.tsx)
   logout_action: "Log Keluar",
   logout_pending: "Log keluar…",
 
@@ -82,6 +82,7 @@ const ms = {
   login_passwordLabel: "Kata Laluan",
   login_submit: "Log Masuk",
   login_remember: "Ingat saya selama 30 hari",
+  account_menu: "Akaun",
   password_heading: "Kata Laluan",
   password_intro:
     "Tukar kata laluan akaun anda. Anda perlu memasukkan kata laluan semasa. Selepas berjaya, semua peranti lain akan dilog keluar.",
@@ -428,6 +429,7 @@ const en: Record<keyof typeof ms, string> = {
   login_passwordLabel: "Password",
   login_submit: "Log In",
   login_remember: "Remember me for 30 days",
+  account_menu: "Account",
   password_heading: "Password",
   password_intro:
     "Change your account password. You must enter your current password. On success, every other device is signed out.",

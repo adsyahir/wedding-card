@@ -1,9 +1,9 @@
 import type { AdminTheme } from "@/lib/admin-theme";
 import type { AdminDict, AdminLang } from "@/lib/i18n/admin-dict";
 
+import { AccountMenu } from "./AccountMenu";
 import { AdminNav } from "./AdminNav";
 import { LangToggle } from "./LangToggle";
-import { LogoutButton } from "./LogoutButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 /**
@@ -26,6 +26,7 @@ export function AdminSidebar({
   pendingWishCount,
   coupleNames,
   hashtag,
+  username,
 }: {
   dict: AdminDict;
   lang: AdminLang;
@@ -33,6 +34,8 @@ export function AdminSidebar({
   pendingWishCount: number;
   coupleNames: string;
   hashtag: string;
+  /** Signed-in admin, shown in the account menu at the foot of the sidebar. */
+  username: string;
 }) {
   return (
     <aside className="hidden w-60 shrink-0 border-r border-tan/40 bg-sand/60 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
@@ -57,7 +60,7 @@ export function AdminSidebar({
           <span className="text-xs text-brown/70">{dict.nav_language}</span>
           <LangToggle current={lang} />
         </div>
-        <LogoutButton dict={dict} />
+        <AccountMenu username={username} dict={dict} />
       </div>
     </aside>
   );

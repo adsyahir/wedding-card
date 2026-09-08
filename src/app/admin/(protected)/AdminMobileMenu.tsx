@@ -6,9 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import type { AdminTheme } from "@/lib/admin-theme";
 import type { AdminDict, AdminLang } from "@/lib/i18n/admin-dict";
 
+import { AccountMenu } from "./AccountMenu";
 import { AdminNav } from "./AdminNav";
 import { LangToggle } from "./LangToggle";
-import { LogoutButton } from "./LogoutButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 /**
@@ -28,11 +28,13 @@ export function AdminMobileMenu({
   lang,
   theme,
   pendingWishCount,
+  username,
 }: {
   dict: AdminDict;
   lang: AdminLang;
   theme: AdminTheme;
   pendingWishCount: number;
+  username: string;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -109,7 +111,7 @@ export function AdminMobileMenu({
               <span className="text-xs text-brown/70">{dict.nav_language}</span>
               <LangToggle current={lang} />
             </div>
-            <LogoutButton dict={dict} />
+            <AccountMenu username={username} dict={dict} />
           </div>
         </div>
       )}
