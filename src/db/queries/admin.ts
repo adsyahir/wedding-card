@@ -3,7 +3,14 @@ import "server-only";
 import { and, asc, count, desc, eq, isNull, or, sql, sum } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { galleryImages, musicTracks, rsvps, siteSettings, wishes } from "@/db/schema";
+import {
+  adminUsers,
+  galleryImages,
+  musicTracks,
+  rsvps,
+  siteSettings,
+  wishes,
+} from "@/db/schema";
 import { ACTIVE_MUSIC_TRACK_KEY } from "@/db/queries/public";
 
 /**
@@ -606,4 +613,21 @@ export function isValidGalleryReorder(currentIds: string[], requestedIds: string
     seen.add(id);
   }
   return true;
+}
+
+/**
+ * The username for one admin id, or "" if the row has gone.
+ *
+ * Selected by explicit column: the caller only needs the name to show it
+ * and to check a new password is not simply the username, and there is no
+ * reason for the hash, salt or lockout state to travel to a page.
+ */
+export async function getAdminUsername(adminUserId: string): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .select({ username: adminUsers.username })
+    .from(adminUsers)
+    .where(eq(adminUsers.id, adminUserId))
+    .limit(1);
+  return row?.username ?? "";
 }

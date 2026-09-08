@@ -180,6 +180,23 @@ export async function validateSession(token: string): Promise<ValidSession | nul
   return { adminUserId: row.adminUserId, csrfHash: row.csrfHash };
 }
 
+/**
+ * Revokes every live session belonging to one admin, and reports how many.
+ *
+ * Used after a password change: the point of changing a password is to cut
+ * off whoever might have had the old one, and leaving their existing
+ * sessions alive would do exactly nothing about that. The admin doing the
+ * change gets a fresh session immediately, so only OTHER devices are
+ * signed out.
+ */
+export async function revokeAllSessionsForUser(adminUserId: string): Promise<void> {
+  const db = getDb();
+  await db
+    .update(sessions)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(sessions.adminUserId, adminUserId), isNull(sessions.revokedAt)));
+}
+
 /** Revokes a session by its raw token (used by logout). */
 export async function revokeSession(token: string): Promise<void> {
   const tokenHash = await sha256Hex(token);

@@ -3,10 +3,12 @@ import { getActiveMusicSetting, listGalleryImagesForAdmin, listMusicTracks } fro
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDict, getAdminLang } from "@/lib/i18n/admin";
 import { getWeddingConfig } from "@/lib/wedding-config";
+import { getAdminUsername } from "@/db/queries/admin";
 
 import { GallerySettings } from "../_components/GallerySettings";
 import { MusicSettings } from "../_components/MusicSettings";
 import { NotificationSettings } from "../_components/NotificationSettings";
+import { PasswordSettings } from "../_components/PasswordSettings";
 import { WeddingConfigSettings } from "../_components/WeddingConfigSettings";
 
 // Never statically optimized/cached — every request must actually run the
@@ -24,8 +26,9 @@ export default async function AdminSettingsPage() {
   // Defense in depth: the `(protected)` layout already calls `requireAdmin()`,
   // but every page under it calls it again independently — never rely on
   // the layout's call alone.
-  await requireAdmin();
+  const session = await requireAdmin();
 
+  const username = await getAdminUsername(session.adminUserId);
   const lang = await getAdminLang();
   const dict = getAdminDict(lang);
 
@@ -65,6 +68,11 @@ export default async function AdminSettingsPage() {
                 lang={lang}
               />
             ),
+          },
+          {
+            id: "akaun",
+            label: dict.password_heading,
+            content: <PasswordSettings username={username} dict={dict} />,
           },
           {
             id: "notifikasi",
