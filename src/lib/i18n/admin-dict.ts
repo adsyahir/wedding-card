@@ -367,8 +367,8 @@ const ms = {
 
   // Notification settings (src/app/admin/(protected)/_components/NotificationSettings.tsx)
   notif_heading: "Notifikasi",
-  notif_secretsNotice:
-    "Kelayakan Mailjet (kunci API, alamat penghantar) ditetapkan sebagai secret pelayan (`wrangler secret put`), bukan dari skrin ini. Jika e-mel ujian gagal dengan mesej \"belum dikonfigurasikan\", itu bermakna secret tersebut belum ditetapkan pada deployment ini.",
+  notif_intro:
+    "Apabila diaktifkan, e-mel akan dihantar kepada penerima di bawah setiap kali ada RSVP baharu atau ucapan baharu daripada tetamu.",
   notif_enable: "Aktifkan notifikasi e-mel",
   notif_recipientLabel: "Penerima {n}",
   notif_recipientPlaceholder: "nama@contoh.com",
@@ -701,8 +701,8 @@ const en: Record<keyof typeof ms, string> = {
   gallery_confirmDelete: "Delete this photo? This action cannot be undone.",
 
   notif_heading: "Notifications",
-  notif_secretsNotice:
-    "Mailjet credentials (API key, sender address) are set as server secrets (`wrangler secret put`), not from this screen. If the test email fails with an \"unconfigured\" message, those secrets haven't been set on this deployment yet.",
+  notif_intro:
+    "When enabled, an email is sent to the recipients below every time a guest submits a new RSVP or a new ucapan.",
   notif_enable: "Enable email notifications",
   notif_recipientLabel: "Recipient {n}",
   notif_recipientPlaceholder: "name@example.com",
