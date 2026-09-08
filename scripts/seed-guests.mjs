@@ -10,6 +10,9 @@
  *   npm run guests:truncate                # wipe rsvps + wishes, local
  *   npm run guests:truncate -- --remote    # wipe them on the DEPLOYED database
  *
+ *   npm run seed:guests -- --remote --wishes-only      # ucapan only, live site
+ *   npm run guests:truncate -- --remote --wishes-only  # remove just those
+ *
  * TWO DELIBERATE ASYMMETRIES, because these commands are not equally safe:
  *
  * 1. SEEDING IS LOCAL ONLY. `--remote` is refused outright. There is no
@@ -37,6 +40,16 @@ import readline from "node:readline";
 const args = process.argv.slice(2);
 const mode = args[0] === "truncate" ? "truncate" : "seed";
 const useRemote = args.includes("--remote");
+/**
+ * Ucapan only: no RSVP rows written or deleted.
+ *
+ * This is what makes `--remote` defensible at all. The refusal below exists
+ * because an invented RSVP becomes a headcount the caterer cooks for; an
+ * invented ucapan has no such downstream consumer, it is just text on a
+ * wall that the couple can delete. So wishes may go to the deployed site
+ * (behind a confirmation) while RSVPs still may not.
+ */
+const wishesOnly = args.includes("--wishes-only");
 
 const countIndex = args.indexOf("--count");
 const count = countIndex !== -1 ? Number(args[countIndex + 1]) : 12;
@@ -96,12 +109,26 @@ const WISHES = [
 ];
 
 async function seed() {
-  if (useRemote) {
+  if (useRemote && !wishesOnly) {
     fail(
-      "seeding is local only.\n" +
-        "Inventing guests in the real wedding's database would put fake names and\n" +
-        "fake headcounts in front of the caterer. Drop --remote.",
+      "seeding RSVPs is local only.\n" +
+        "An invented RSVP becomes a headcount the caterer cooks for. Ucapan have\n" +
+        "no such consequence, so if it is the wall you want to fill, use:\n" +
+        "  npm run seed:guests -- --remote --wishes-only",
     );
+  }
+  if (useRemote) {
+    console.log(
+      `\n*** Ini akan menambah ucapan CONTOH ke ${target}. ***\n` +
+        `Ucapan yang diluluskan akan terus kelihatan pada kad jemputan sebenar.\n` +
+        `Padamkannya kemudian dengan:\n` +
+        `  npm run guests:truncate -- --remote --wishes-only\n`,
+    );
+    const answer = await ask("Taip TAMBAH untuk teruskan: ");
+    if (answer !== "TAMBAH") {
+      console.log("\nDibatalkan. Tiada apa-apa ditambah.\n");
+      process.exit(0);
+    }
   }
   if (!Number.isInteger(count) || count < 1 || count > 200) {
     fail("--count mesti nombor antara 1 dan 200.");
@@ -137,35 +164,42 @@ async function seed() {
     }
   }
 
-  await execute(
-    `INSERT INTO rsvps (id, name, phone, attending, adults, children, message, created_at, visitor_hash, deleted_at) VALUES\n${rsvpRows.join(",\n")};\n` +
-      `INSERT INTO wishes (id, name, message, status, created_at, moderated_at, moderated_by, visitor_hash) VALUES\n${wishRows.join(",\n")};`,
-  );
+  const wishInsert =
+    `INSERT INTO wishes (id, name, message, status, created_at, moderated_at, moderated_by, visitor_hash) VALUES\n${wishRows.join(",\n")};`;
+  const rsvpInsert =
+    `INSERT INTO rsvps (id, name, phone, attending, adults, children, message, created_at, visitor_hash, deleted_at) VALUES\n${rsvpRows.join(",\n")};`;
+
+  await execute(wishesOnly ? wishInsert : `${rsvpInsert}\n${wishInsert}`);
 
   const pending = wishRows.filter((r) => r.includes("'pending'")).length;
   console.log(
-    `\nBerjaya: ${count} RSVP dan ${wishRows.length} ucapan ditambah ke ${target}.\n` +
+    `\nBerjaya: ${wishesOnly ? "" : `${count} RSVP dan `}${wishRows.length} ucapan ditambah ke ${target}.\n` +
       `(${pending} ucapan menunggu semakan, ${wishRows.length - pending} diluluskan)\n` +
-      `Padam semula dengan: npm run guests:truncate\n`,
+      `Padam semula dengan: npm run guests:truncate${useRemote ? " -- --remote" : ""}${wishesOnly ? " --wishes-only" : ""}\n`,
   );
 }
 
 async function truncate() {
+  // `--wishes-only` matters most HERE. Clearing seeded ucapan off the live
+  // site must not take real RSVPs with it, and by the time anyone runs this
+  // there may well be real RSVPs to lose.
+  const what = wishesOnly ? "ucapan" : "RSVP dan ucapan";
+
   if (useRemote) {
     console.log(
-      `\n*** Ini akan MEMADAM SEMUA RSVP dan ucapan pada ${target}. ***\n` +
-        `Jika kad sudah diedarkan, ini memadam jemputan sebenar daripada tetamu sebenar.\n` +
+      `\n*** Ini akan MEMADAM SEMUA ${what} pada ${target}. ***\n` +
+        `Jika kad sudah diedarkan, ini memadam ${what} sebenar daripada tetamu sebenar.\n` +
         `Tiada cara untuk membatalkannya.\n`,
     );
-    const answer = await ask('Taip PADAM untuk teruskan: ');
+    const answer = await ask("Taip PADAM untuk teruskan: ");
     if (answer !== "PADAM") {
       console.log("\nDibatalkan. Tiada apa-apa dipadam.\n");
       process.exit(0);
     }
   }
 
-  await execute("DELETE FROM rsvps;\nDELETE FROM wishes;");
-  console.log(`\nBerjaya: semua RSVP dan ucapan dipadam daripada ${target}.\n`);
+  await execute(wishesOnly ? "DELETE FROM wishes;" : "DELETE FROM rsvps;\nDELETE FROM wishes;");
+  console.log(`\nBerjaya: semua ${what} dipadam daripada ${target}.\n`);
 }
 
 if (mode === "truncate") {
