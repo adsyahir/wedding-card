@@ -1,5 +1,6 @@
 import type { CityPoint, KeyCount } from "@/db/queries/analytics";
 import type { AdminDict } from "@/lib/i18n/admin-dict";
+import { MapViewport } from "./MapViewport";
 import { projectEquirectangular } from "@/lib/world-map-projection";
 import worldMap from "@/lib/world-map.json";
 
@@ -66,13 +67,12 @@ export function WorldMap({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Scrolls inside itself on a phone rather than stretching the page. */}
-      <div className="overflow-x-auto">
+      <MapViewport dict={dict}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-label={dict.analytics_mapAria}
-          className="block h-auto w-full min-w-[540px]"
+          className="block h-auto w-full"
         >
           <rect width={width} height={height} fill="var(--color-cream)" />
 
@@ -108,7 +108,7 @@ export function WorldMap({
             );
           })}
         </svg>
-      </div>
+      </MapViewport>
 
       <p className="text-xs text-brown/60">
         {cities.length > 0 ? dict.analytics_mapLegend : dict.analytics_mapNoCityCoords}

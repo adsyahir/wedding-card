@@ -200,6 +200,9 @@ const ms = {
   analytics_chartSeriesViews: "Lawatan",
   analytics_chartSeriesUniques: "Pelawat unik",
   analytics_mapHeading: "Peta Dunia",
+  analytics_mapZoomIn: "Zum masuk",
+  analytics_mapZoomOut: "Zum keluar",
+  analytics_mapReset: "Set semula paparan peta",
   analytics_mapAria: "Peta dunia menunjukkan negara dan bandar tetamu",
   analytics_mapLegend:
     "Warna menunjukkan bilangan lawatan mengikut negara. Bulatan menandakan bandar; saiznya mengikut bilangan lawatan.",
@@ -531,6 +534,9 @@ const en: Record<keyof typeof ms, string> = {
   analytics_chartSeriesViews: "Visits",
   analytics_chartSeriesUniques: "Unique visitors",
   analytics_mapHeading: "World Map",
+  analytics_mapZoomIn: "Zoom in",
+  analytics_mapZoomOut: "Zoom out",
+  analytics_mapReset: "Reset map view",
   analytics_mapAria: "World map showing visitor countries and cities",
   analytics_mapLegend:
     "Colour shows visits per country. Circles mark cities, sized by visit count.",

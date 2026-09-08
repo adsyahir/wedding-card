@@ -57,16 +57,53 @@ const projected = (lon, lat) => [
   (((90 - lat) / 180) * HEIGHT).toFixed(PRECISION),
 ];
 
+/**
+ * Countries that are simply not worth drawing here.
+ *
+ * Antarctica spans every longitude and reaches the pole, so in an
+ * equirectangular projection it renders as a band smeared across the whole
+ * bottom of the map — visually enormous, and no wedding guest is browsing
+ * from it. Google Analytics omits it from its map for the same reason.
+ */
+const SKIP_ALPHA2 = new Set(["AQ"]);
+
+/**
+ * Longitude gap above which two consecutive points are assumed to be on
+ * opposite sides of the antimeridian rather than genuinely that far apart.
+ * No real country has a 180-degree step between adjacent border points.
+ */
+const ANTIMERIDIAN_JUMP = 180;
+
 function ringToPath(ring) {
   let d = "";
   let last = null;
+  let lastLon = null;
+
   for (const [lon, lat] of ring) {
     const [x, y] = projected(lon, lat);
+
+    /*
+     * Break the subpath when the ring crosses the antimeridian.
+     *
+     * Russia, Fiji and the Aleutians have borders that pass through 180
+     * degrees. Projected naively, the point before the crossing is at the
+     * far right of the canvas and the point after is at the far left, so
+     * joining them with `L` draws a horizontal band straight across the
+     * whole map. That band was visible across the top of the rendered map
+     * before this: it looked like a rendering glitch because it was one.
+     *
+     * Starting a fresh subpath with `M` leaves the two halves drawn where
+     * they belong and nothing stretched between them.
+     */
+    const wrapped = lastLon !== null && Math.abs(lon - lastLon) > ANTIMERIDIAN_JUMP;
+    lastLon = lon;
+
     // Drop points that round to the same place: at 110m resolution a lot of
     // coastline detail collapses at this size, and keeping it triples the
     // file for pixels nobody can see.
-    if (last && last[0] === x && last[1] === y) continue;
-    d += `${d ? "L" : "M"}${x},${y}`;
+    if (!wrapped && last && last[0] === x && last[1] === y) continue;
+
+    d += `${d && !wrapped ? "L" : "M"}${x},${y}`;
     last = [x, y];
   }
   return d ? `${d}Z` : "";
@@ -93,6 +130,7 @@ for (const f of collection.features) {
     skipped.push(f.properties?.name ?? f.id);
     continue;
   }
+  if (SKIP_ALPHA2.has(alpha2)) continue;
   const d = geometryToPath(f.geometry);
   if (d) paths[alpha2] = d;
 }
