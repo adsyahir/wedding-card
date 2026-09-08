@@ -54,6 +54,31 @@ export function Undangan({ config }: { config: WeddingConfig }) {
           {config.dayNameMs}, {config.displayDate}
         </p>
       </Reveal>
+
+      {/*
+        The closing doa. It has always been in the config and editable in
+        Tetapan, validated and saved — and nothing rendered it, so whatever
+        the family typed there went nowhere. It closes the Undangan, which
+        is where a doa belongs: after the invitation and the names, not
+        before them.
+
+        Italic serif, set apart by a divider and narrower than the body, so
+        it reads as a prayer rather than another paragraph of the letter.
+      */}
+      {config.doa.trim() !== "" && (
+        <>
+          <Reveal delay={0.55}>
+            <Divider className="my-8" />
+          </Reveal>
+
+          <Reveal
+            delay={0.6}
+            className="mx-auto max-w-sm font-serif text-base leading-8 text-brown-deep italic"
+          >
+            <p>{config.doa}</p>
+          </Reveal>
+        </>
+      )}
     </section>
   );
 }
