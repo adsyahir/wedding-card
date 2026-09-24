@@ -14,11 +14,20 @@ import Image from "next/image";
  * Licensing for `floral-border.webp` rests with whoever added it: it was
  * provided for this card, and nothing here verifies its terms.
  *
- * `z-0` here and `z-10` on the hero's content, because this image is OPAQUE
- * in the middle where the old SVG frame was transparent. An absolutely
- * positioned element paints above static siblings, so without the stacking
- * order being stated the border covered the couple's names completely —
- * the page rendered as an empty frame.
+ * `-z-10` here, with `z-10` on the hero's content, because this image is
+ * OPAQUE in the middle where the old SVG frame was transparent. An
+ * absolutely positioned element paints above static siblings, so without
+ * the stacking order being stated the border covered the couple's names
+ * completely — the page rendered as an empty frame.
+ *
+ * NEGATIVE rather than `z-0`, which is what it was first: at `z-0` this
+ * also covered the drifting leaves, since `.petal-layer` sits at z-index 0
+ * and comes earlier in the document. A negative z-index paints in the
+ * stacking context's second step, below every z-auto and z-0 descendant,
+ * so the leaves drift across the artwork while the names stay above both.
+ * This depends on `.invite-card` carrying `isolate` — without a stacking
+ * context there, a negative z-index would put this behind that element's
+ * own background instead, and the frame would disappear.
  *
  * `object-fill`, deliberately, where `object-cover` would be the usual
  * choice. A border has to meet all four edges of the card. The artwork is
@@ -32,7 +41,7 @@ export function FloralFrame({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 z-0 overflow-hidden ${className}`}
+      className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${className}`}
     >
       <Image
         src="/images/frame/floral-border.webp"

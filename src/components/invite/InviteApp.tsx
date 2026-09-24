@@ -104,7 +104,14 @@ export function InviteApp({
 
       <MusicPlayer src={musicSrc} play={musicShouldPlay} />
 
-      <div className="invite-card relative mx-auto flex w-full max-w-[480px] flex-col pb-24">
+      {/*
+        `isolate` makes this a stacking context, which is what lets the
+        drifting leaves sit ABOVE the hero's floral artwork. The frame is
+        given a negative z-index; without a stacking context here that
+        would drop it behind this element's own background and it would
+        vanish entirely. See FloralFrame and `.petal-layer`.
+      */}
+      <div className="invite-card relative isolate mx-auto flex w-full max-w-[480px] flex-col pb-24">
         <Petals />
         <Hero config={config} />
         {sections.undangan && <Undangan config={config} />}

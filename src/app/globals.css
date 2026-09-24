@@ -163,7 +163,21 @@ body > * {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.invite-card > *:not(.petal-layer) {
+/*
+ * Every section sits above the drifting leaves so their text stays
+ * readable — except the hero, which is excluded because it hosts the
+ * floral frame.
+ *
+ * The frame is an opaque image behind the hero's content, so it carries a
+ * negative z-index. A `z-index` here would make the hero a stacking
+ * context and trap that negative value inside it: the frame would still
+ * be behind the hero's own text, but the whole hero — frame included —
+ * would paint above the leaves, and they would vanish for the length of
+ * the first screen. Leaving the hero at `z-index: auto` lets the frame
+ * fall through to the card's stacking context, below the leaf layer,
+ * while the hero's content keeps its own `z-10` above it.
+ */
+.invite-card > *:not(.petal-layer):not(.hero-section) {
   position: relative;
   z-index: 1;
 }

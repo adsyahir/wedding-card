@@ -16,7 +16,7 @@ export function Hero({ config }: { config: WeddingConfig }) {
      * tracks the visible height, so the first screen is genuinely one
      * screen.
      */
-    <section className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
+    <section className="hero-section relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
       {/*
         The floral frame, on the first page only. The old corner ornaments
         were a stem and three berries each — at arm's length on a phone they
