@@ -25,7 +25,7 @@ export function Hero({ config }: { config: WeddingConfig }) {
       */}
       <FloralFrame />
 
-      <Reveal className="flex flex-col items-center gap-6">
+      <Reveal className="relative z-10 flex flex-col items-center gap-6">
         <p className="text-xs font-medium tracking-[0.35em] text-brown uppercase">
           {config.eventType}
         </p>
