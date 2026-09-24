@@ -58,7 +58,14 @@ html[data-script-font="cormorantGaramond"] {
  *  3. A faint gold tint at the very top, picking up the goldenrod accent.
  */
 body {
-  background-color: var(--color-sand);
+  /*
+   * The same paper as the card, not `--color-sand`. On a wide screen the
+   * card is 480px centred and the page shows either side of it; two creams
+   * a shade apart put a visible seam down both edges. `--color-sand` still
+   * does its job as a FILL colour inside the card — it just should not be
+   * the surface the card sits on.
+   */
+  background-color: var(--color-cream);
   background-image:
     radial-gradient(ellipse 90% 45% at 50% 0%, #FCF9F3 0%, transparent 70%),
     radial-gradient(ellipse 120% 55% at 50% 100%, #E9DCC6 0%, transparent 65%),
