@@ -1,6 +1,6 @@
 import type { WeddingConfig } from "@/config/wedding";
 
-import { BotanicalCorner } from "./Botanical";
+import { FloralFrame } from "./FloralFrame";
 import { Reveal } from "./Reveal";
 
 export function Hero({ config }: { config: WeddingConfig }) {
@@ -16,12 +16,14 @@ export function Hero({ config }: { config: WeddingConfig }) {
      * screen.
      */
     <section className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
-      {/* Sized generously and bled slightly off the edges: at 88px these
-          read as stray marks on a phone rather than as framing. */}
-      <BotanicalCorner className="pointer-events-none absolute -top-2 -left-3" />
-      <BotanicalCorner className="pointer-events-none absolute -top-2 -right-3 -scale-x-100" />
-      <BotanicalCorner className="pointer-events-none absolute -bottom-2 -left-3 -scale-y-100" />
-      <BotanicalCorner className="pointer-events-none absolute -right-3 -bottom-2 -scale-x-100 -scale-y-100" />
+      {/*
+        The floral frame, on the first page only. The old corner ornaments
+        were a stem and three berries each — at arm's length on a phone they
+        read as stray marks rather than as framing. This has the mass to
+        actually frame the page, and the side strips are what make it a
+        frame rather than four separate ornaments.
+      */}
+      <FloralFrame />
 
       <Reveal className="flex flex-col items-center gap-6">
         <p className="text-xs font-medium tracking-[0.35em] text-brown uppercase">
