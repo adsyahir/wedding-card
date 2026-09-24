@@ -7,6 +7,7 @@ import {
   malayDisplayDate,
   malayFullPreview,
   partsToIso,
+  hijriDate,
 } from "./datetime-my";
 
 describe("isoToParts", () => {
@@ -110,5 +111,35 @@ describe("malayFullPreview", () => {
 
   it("returns empty when the date is unusable", () => {
     expect(malayFullPreview("", "11:00")).toBe("");
+  });
+});
+
+describe("hijriDate", () => {
+  /*
+    Anchors chosen because each is independently checkable and they are
+    spread across the tabular cycle, so an off-by-one in the leap-year
+    arithmetic cannot pass all of them.
+  */
+  it("converts known dates", () => {
+    // The Hijra epoch itself.
+    expect(hijriDate("0622-07-18")).toBe("1 Muharram 1 H");
+    // The wedding, as used on the card.
+    expect(hijriDate("2026-11-14")).toBe("4 Jamadilakhir 1448 H");
+  });
+
+  it("uses the Malay Takwim spellings, not the Arabic ones", () => {
+    expect(hijriDate("2026-11-14")).toContain("Jamadilakhir");
+  });
+
+  it("advances a day with the Gregorian date", () => {
+    const a = hijriDate("2026-11-14");
+    const b = hijriDate("2026-11-15");
+    expect(Number(a.split(" ")[0]) + 1).toBe(Number(b.split(" ")[0]));
+  });
+
+  it("returns empty for junk rather than a plausible wrong date", () => {
+    expect(hijriDate("")).toBe("");
+    expect(hijriDate("14-11-2026")).toBe("");
+    expect(hijriDate("2026-13-01")).toBe("");
   });
 });

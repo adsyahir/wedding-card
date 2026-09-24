@@ -11,6 +11,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { buildMapEmbedUrl } from "@/lib/map-embed";
 import {
   formatMalayTime,
+  hijriDate,
   isoToParts,
   malayDayName,
   malayDisplayDate,
@@ -79,20 +80,25 @@ async function saveSlice(
 function Field({
   label,
   error,
+  hint,
   children,
 }: {
   label: string;
   error?: string;
+  /** Guidance shown under the input; hidden once there is an error to show instead. */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm text-brown-deep">
       <span className="font-medium">{label}</span>
       {children}
-      {error && (
+      {error ? (
         <span role="alert" className="text-xs text-red-700">
           {error}
         </span>
+      ) : (
+        hint && <span className="text-xs text-brown">{hint}</span>
       )}
     </label>
   );
@@ -377,6 +383,15 @@ function ButiranTab({
   const [endTimeOfDay, setEndTimeOfDay] = useState(initialEnd.time);
   const [deadlineDate, setDeadlineDate] = useState(initialDeadline.date);
   const [hashtag, setHashtag] = useState(initialConfig.hashtag);
+  /*
+    Held as its own state rather than derived at render like `dayNameMs`
+    and `displayDate`. Those two are facts about the Gregorian date and can
+    only ever be computed; the Hijri date is set by moon sighting, so the
+    family has to be able to correct our arithmetic against the Takwim.
+    Picking a new date reseeds it (below) — a corrected value for the old
+    date would be wrong for the new one.
+  */
+  const [hijri, setHijri] = useState(initialConfig.hijriDate);
   const [doa, setDoa] = useState(initialConfig.doa);
   const [scriptFont, setScriptFont] = useState<ScriptFontKey>(initialConfig.scriptFont);
 
@@ -395,6 +410,7 @@ function ButiranTab({
       date: partsToIso(eventDate, startTime),
       dayNameMs: malayDayName(eventDate),
       displayDate: malayDisplayDate(eventDate),
+      hijriDate: hijri.trim(),
       endTime: partsToIso(eventDate, endTimeOfDay),
       rsvpDeadline: partsToIso(deadlineDate, "23:59", "59"),
       rsvpDeadlineDisplay: malayDisplayDate(deadlineDate),
@@ -430,7 +446,18 @@ function ButiranTab({
             type="date"
             className={inputClass}
             value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
+            onChange={(e) => {
+              setEventDate(e.target.value);
+              setHijri(hijriDate(e.target.value));
+            }}
+          />
+        </Field>
+        <Field label={dict.wc_hijriDate} error={fieldErrors.hijriDate} hint={dict.wc_hijriDateHint}>
+          <input
+            className={inputClass}
+            value={hijri}
+            placeholder={dict.wc_hijriDatePlaceholder}
+            onChange={(e) => setHijri(e.target.value)}
           />
         </Field>
         <Field label={dict.wc_startTime}>

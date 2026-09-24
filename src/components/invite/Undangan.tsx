@@ -25,9 +25,12 @@ export function Undangan({ config }: { config: WeddingConfig }) {
           doing the inviting, and at `text-lg` they read as another line of
           the letter rather than as the names. `leading-9` because the value
           is three stacked lines — at the inherited `leading-8` the extra
-          size just closed the gaps up.
+          size just closed the gaps up. `font-medium` is a real cut — the
+          serif is loaded at 400/500/600/700 — so this is not the browser
+          smearing the 400 into a fake bold, which on a high-contrast
+          Garamond thickens the hairlines and muddies it.
         */}
-        <p className="mt-3 whitespace-pre-line font-serif text-xl leading-9 text-brown-deep">
+        <p className="mt-3 whitespace-pre-line font-serif text-xl leading-9 font-medium text-brown-deep">
           {config.hosts.names}
         </p>
       </Reveal>
@@ -57,9 +60,19 @@ export function Undangan({ config }: { config: WeddingConfig }) {
       </Reveal>
 
       <Reveal delay={0.5} className="mt-6 text-sm tracking-[0.1em] text-brown uppercase">
-        <p>
+        {/*
+          The Hijri date on its own line rather than joined to the
+          Gregorian one with a pipe. Together they ran to a single long
+          line that wrapped at an arbitrary point on a narrow phone,
+          breaking the date across two lines mid-month. Stacked, each date
+          is read as a whole. The negative inline-end margins cancel the
+          trailing letter-space that `tracking` adds after the last glyph,
+          which would otherwise leave the two lines centred differently.
+        */}
+        <p className="-me-[0.1em]">
           {config.dayNameMs}, {config.displayDate}
         </p>
+        {config.hijriDate && <p className="-me-[0.1em] mt-1">{config.hijriDate}</p>}
       </Reveal>
 
       {/*

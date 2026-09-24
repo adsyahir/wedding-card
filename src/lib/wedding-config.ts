@@ -297,6 +297,9 @@ export const weddingConfigDocSchema = z.object({
   date: isoDateTimeSchema.optional(),
   dayNameMs: trimmedString(1, 20).optional(),
   displayDate: trimmedString(1, 60).optional(),
+  // Allowed to be empty, unlike the Gregorian strings: clearing it is how
+  // the family opts out of showing a Hijri date at all.
+  hijriDate: trimmedString(0, 60).optional(),
   endTime: isoDateTimeSchema.optional(),
   venue: venueSchema.optional(),
   aturCara: z.array(aturCaraItemSchema).max(MAX_ATUR_CARA).optional(),
@@ -388,6 +391,7 @@ export function mergeWeddingConfig(
     ...(partial.date !== undefined && { date: partial.date }),
     ...(partial.dayNameMs !== undefined && { dayNameMs: partial.dayNameMs }),
     ...(partial.displayDate !== undefined && { displayDate: partial.displayDate }),
+    ...(partial.hijriDate !== undefined && { hijriDate: partial.hijriDate }),
     ...(partial.endTime !== undefined && { endTime: partial.endTime }),
     // `lat`/`lng` are optional in the doc but always present (possibly
     // null) on the resolved config, so an omitted coordinate normalises to

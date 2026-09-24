@@ -258,6 +258,10 @@ const ms = {
   wc_brideShort: "Nama Pendek Pengantin Perempuan",
   wc_brideFull: "Nama Penuh Pengantin Perempuan",
   wc_eventDate: "Tarikh Majlis",
+  wc_hijriDate: "Tarikh Hijrah",
+  wc_hijriDateHint:
+    "Dikira secara automatik daripada tarikh majlis. Sila semak dengan Takwim rasmi dan betulkan jika perlu. Kosongkan untuk menyembunyikannya daripada kad.",
+  wc_hijriDatePlaceholder: "4 Jamadilakhir 1448 H",
   wc_startTime: "Masa Mula",
   wc_endTimeOfDay: "Masa Tamat",
   wc_rsvpDeadlineDate: "Tarikh Tutup RSVP",
@@ -596,6 +600,10 @@ const en: Record<keyof typeof ms, string> = {
   wc_brideShort: "Bride's Short Name",
   wc_brideFull: "Bride's Full Name",
   wc_eventDate: "Ceremony Date",
+  wc_hijriDate: "Hijri Date",
+  wc_hijriDateHint:
+    "Calculated from the ceremony date. Check it against the official Takwim and correct it if needed. Leave empty to hide it from the card.",
+  wc_hijriDatePlaceholder: "4 Jamadilakhir 1448 H",
   wc_startTime: "Start Time",
   wc_endTimeOfDay: "End Time",
   wc_rsvpDeadlineDate: "RSVP Deadline",

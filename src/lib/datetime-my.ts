@@ -137,3 +137,84 @@ export function formatMalayTime(time: string): string {
   const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
   return `${hour12}.${minute} ${suffix}`;
 }
+
+/**
+ * Hijri month names as they are written in Malaysia. Note these are the
+ * Malay spellings used on JAKIM's Takwim (`Rabiulawal`, `Jamadilakhir`),
+ * not the Arabic transliterations (`Rabi' al-Awwal`, `Jumada al-Thani`) —
+ * the card is in Malay and the guests read the Malay forms.
+ */
+export const HIJRI_MONTHS_MS = [
+  "Muharram",
+  "Safar",
+  "Rabiulawal",
+  "Rabiulakhir",
+  "Jamadilawal",
+  "Jamadilakhir",
+  "Rejab",
+  "Syaaban",
+  "Ramadan",
+  "Syawal",
+  "Zulkaedah",
+  "Zulhijjah",
+] as const;
+
+/**
+ * `2026-11-14` -> `4 Jamadilakhir 1448 H`.
+ *
+ * THIS IS AN APPROXIMATION, and deliberately only a starting value. It is
+ * the tabular calendar, which fixes month lengths arithmetically, on the
+ * astronomical epoch that Malaysia's Takwim reckons from. The Takwim
+ * itself is set by the Penyimpan Mohor Besar from actual moon sighting, so
+ * a given Gregorian date can still land a day away from what this returns.
+ *
+ * That is why the result is stored as an ordinary editable config string
+ * rather than computed at render time: the family can correct it against
+ * the official Takwim once, and the card then shows what they entered. A
+ * religious date on a wedding invitation is not something to leave to an
+ * algorithm's best guess.
+ *
+ * Pure integer arithmetic on the literal date parts, like the helpers
+ * above, so it never depends on the evaluating machine's timezone.
+ */
+export function hijriDate(date: string): string {
+  const match = DATE_RE.exec(date);
+  if (!match) return "";
+  const gy = Number(match[1]);
+  const gm = Number(match[2]);
+  const gd = Number(match[3]);
+  if (gm < 1 || gm > 12) return "";
+
+  // Gregorian -> Julian Day Number.
+  const y = gm < 3 ? gy - 1 : gy;
+  const m = gm < 3 ? gm + 12 : gm;
+  const a = Math.floor(y / 100);
+  const b = 2 - a + Math.floor(a / 4);
+  const jdn =
+    Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + gd + b - 1524;
+
+  // Julian Day Number -> tabular Hijri.
+  // 1948439 = 18 July 622 CE, the ASTRONOMICAL Hijra epoch. The other
+  // convention in common use ("civil"/Kuwaiti) puts it a day later at
+  // 1948440, and every date it produces is then one lower. Malaysia's
+  // Takwim follows the astronomical reckoning, so that is what the card
+  // must use — with 1948440 this returned 3 Jamadilakhir for the wedding
+  // where the Takwim says 4.
+  let days = jdn - 1948439 + 10632;
+  const cycles = Math.floor((days - 1) / 10631);
+  days = days - 10631 * cycles + 354;
+  const j =
+    Math.floor((10985 - days) / 5316) * Math.floor((50 * days) / 17719) +
+    Math.floor(days / 5670) * Math.floor((43 * days) / 15238);
+  days =
+    days -
+    Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
+    Math.floor(j / 16) * Math.floor((15238 * j) / 43) +
+    29;
+  const hm = Math.floor((24 * days) / 709);
+  const hd = days - Math.floor((709 * hm) / 24);
+  const hy = 30 * cycles + j - 30;
+
+  if (hm < 1 || hm > 12) return "";
+  return `${hd} ${HIJRI_MONTHS_MS[hm - 1]} ${hy} H`;
+}

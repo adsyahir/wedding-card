@@ -137,10 +137,20 @@ describe("mergeWeddingConfig (deep-merge over file defaults)", () => {
       rsvpPaxMode: "total",
       scriptFont: "greatVibes",
       hashtag: "#Merged",
+      hijriDate: "4 Jamadilakhir 1448 H",
     });
     expect(merged.rsvpPaxMode).toBe("total");
     expect(merged.scriptFont).toBe("greatVibes");
     expect(merged.hashtag).toBe("#Merged");
+    // Validated-but-not-merged is this file's recurring bug: the value
+    // passes the schema, the admin reports a successful save, and the card
+    // silently keeps the old date.
+    expect(merged.hijriDate).toBe("4 Jamadilakhir 1448 H");
+  });
+
+  it("accepts an empty hijriDate, which is how the card hides it", () => {
+    const merged = mergeWeddingConfig(fileDefaults(), { hijriDate: "" });
+    expect(merged.hijriDate).toBe("");
   });
 
   it("leaves scalar fields at their defaults when the partial omits them", () => {

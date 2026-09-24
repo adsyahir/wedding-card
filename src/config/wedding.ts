@@ -55,6 +55,13 @@ export type WeddingConfig = {
   dayNameMs: string;
   /** Human-readable date, e.g. "01 November 2026" */
   displayDate: string;
+  /**
+   * Hijri date, e.g. "3 Jamadilakhir 1448H". Seeded from the Gregorian date
+   * by the admin form, but stored and editable, because the arithmetic
+   * calendar can sit a day off the official Takwim — see `hijriDate()`.
+   * Empty string hides it from the card entirely.
+   */
+  hijriDate: string;
   /** ISO 8601 datetime the event ends — used to build the calendar (.ics) entry. */
   endTime: string;
   venue: {
@@ -121,6 +128,7 @@ export const wedding = {
   date: "2026-11-01T11:00:00+08:00",
   dayNameMs: "Ahad",
   displayDate: "01 November 2026",
+  hijriDate: "21 Jamadilawal 1448 H",
 
   endTime: "2026-11-01T16:00:00+08:00",
 
