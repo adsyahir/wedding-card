@@ -20,7 +20,14 @@ export function Undangan({ config }: { config: WeddingConfig }) {
 
       <Reveal delay={0.2} className="mx-auto max-w-md text-base leading-8 text-brown">
         <p>{config.hosts.line}</p>
-        <p className="mt-3 whitespace-pre-line font-serif text-lg text-brown-deep">
+        {/*
+          Larger than the body around it: these are the hosts, the people
+          doing the inviting, and at `text-lg` they read as another line of
+          the letter rather than as the names. `leading-9` because the value
+          is three stacked lines — at the inherited `leading-8` the extra
+          size just closed the gaps up.
+        */}
+        <p className="mt-3 whitespace-pre-line font-serif text-xl leading-9 text-brown-deep">
           {config.hosts.names}
         </p>
       </Reveal>
